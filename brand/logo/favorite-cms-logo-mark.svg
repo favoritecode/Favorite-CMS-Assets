@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="fav_core_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="fav_ext_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+  </defs>
+  <!-- Favorite CMS Master Mark -->
+  <!-- Foundation Spine & Forward Upper Arm -->
+  <path d="M 112 112 C 112 89.9 129.9 72 152 72 L 368 72 C 382 72 395 79.5 402 91.5 L 426 133 C 435 149 423.5 168 405 168 L 216 168 L 216 400 C 216 422.1 198.1 440 176 440 L 152 440 C 129.9 440 112 422.1 112 400 Z" fill="url(#fav_core_blue)"/>
+  <!-- Modular Extension Wing (Crossbar) -->
+  <path d="M 232 232 L 312 232 C 326 232 339 239.5 346 251.5 L 370 293 C 379 309 367.5 328 349 328 L 232 328 Z" fill="url(#fav_ext_cyan)"/>
+</svg>

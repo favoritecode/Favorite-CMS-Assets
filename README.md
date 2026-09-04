@@ -6,6 +6,7 @@ Private asset repository for the Favorite CMS ecosystem.
 
 - **Private Repository**: This repository is private and dedicated solely to Favorite CMS brand, design, and visual resources.
 - **Purpose**: Centralized storage for brand assets, design specifications, icons, screenshots, demo content, theme assets, and plugin visuals.
+- **Current Status**: Contains the official Favorite CMS master brand identity (`brand/logo/`, `brand/favicon/`, and `brand/guidelines/`).
 - **Independent Project**: Favorite CMS Core is a separate public/open-source repository. This repository is **NOT** a runtime dependency of Favorite CMS Core.
 - **No Source Code**: Do not place application source code, package managers, or runtime dependencies here (no PHP, Node.js, JavaScript apps, Composer, or build tools).
 - **Security & Privacy**: Never store secrets, passwords, API keys, access tokens, customer data, private hosting credentials, or database dumps here.
@@ -18,8 +19,18 @@ Favorite-CMS-Assets/
 ├── brand/
 │   ├── README.md
 │   ├── logo/
+│   │   ├── favorite-cms-logo.svg / .png
+│   │   ├── favorite-cms-logo-horizontal.svg / .png
+│   │   ├── favorite-cms-logo-mark.svg / .png
+│   │   └── favorite-cms-wordmark.svg
 │   ├── favicon/
+│   │   ├── favicon.svg / .png
+│   │   ├── favicon-32x32.png / 16x16.png
+│   │   └── apple-touch-icon.png
 │   └── guidelines/
+│       ├── brand-overview.md
+│       ├── brand-colors.md
+│       └── logo-usage.md
 ├── icons/
 │   └── README.md
 ├── design/
