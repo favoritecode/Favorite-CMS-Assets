@@ -4,12 +4,11 @@ Private asset repository for the Favorite CMS ecosystem.
 
 ## Overview
 
-- **Private Repository**: This repository is private and intended solely for the Favorite CMS ecosystem.
-- **Purpose**: It stores brand assets, design resources, icons, screenshots, demo content, and reusable project assets.
-- **Separation of Concerns**: Favorite CMS Core is a separate public/open-source project. This repository is **NOT** a runtime dependency of Favorite CMS Core.
-- **No Source Code**: Do not place application source code here.
-- **Security & Data Safety**: Do not place secrets, passwords, API keys, private credentials, customer data, or production database dumps here.
-- **Usage**: Future Favorite CMS ecosystem projects may use assets from this repository during development and design workflows.
+- **Private Repository**: This repository is private and dedicated solely to Favorite CMS brand, design, and visual resources.
+- **Purpose**: Centralized storage for brand assets, design specifications, icons, screenshots, demo content, theme assets, and plugin visuals.
+- **Independent Project**: Favorite CMS Core is a separate public/open-source repository. This repository is **NOT** a runtime dependency of Favorite CMS Core.
+- **No Source Code**: Do not place application source code, package managers, or runtime dependencies here (no PHP, Node.js, JavaScript apps, Composer, or build tools).
+- **Security & Privacy**: Never store secrets, passwords, API keys, access tokens, customer data, private hosting credentials, or database dumps here.
 
 ## Directory Structure
 
@@ -17,26 +16,42 @@ Private asset repository for the Favorite CMS ecosystem.
 Favorite-CMS-Assets/
 ├── README.md
 ├── brand/
+│   ├── README.md
 │   ├── logo/
 │   ├── favicon/
 │   └── guidelines/
 ├── icons/
+│   └── README.md
 ├── design/
+│   └── README.md
 ├── screenshots/
+│   └── README.md
 ├── demo-content/
+│   └── README.md
 ├── theme-assets/
+│   └── README.md
 ├── plugin-assets/
+│   ├── README.md
 │   ├── favorite-pay/
+│   │   └── README.md
 │   ├── favorite-digital/
+│   │   └── README.md
 │   └── favorite-shop/
+│       └── README.md
 └── internal/
+    └── README.md
 ```
 
-- `brand/`: Brand identity resources (logos, favicons, guidelines).
-- `icons/`: Iconography and vector symbols.
-- `design/`: Design concepts, UI layouts, and design specifications.
-- `screenshots/`: Interface previews, theme captures, and marketing screenshots.
-- `demo-content/`: Sample media and placeholder materials for demos.
-- `theme-assets/`: Styling resources, templates, and theme media.
-- `plugin-assets/`: Media and graphics for plugins (`favorite-pay`, `favorite-digital`, `favorite-shop`).
-- `internal/`: Internal materials, draft notes, and private design artifacts.
+Each subdirectory contains its own `README.md` detailing asset scope, permissible files, reusability, and conventions.
+
+## Asset Conventions
+
+- **File Naming**:
+  - Use lowercase letters where practical.
+  - Use hyphens (`-`) for multi-word file names (kebab-case).
+  - Use descriptive, meaningful names (e.g., `favorite-cms-logo-horizontal.svg`, `dashboard-overview-dark.png`).
+  - Avoid ambiguous or version-tagged names like `final-final2.png`, `new-logo.png`, or `test123.svg`.
+- **Source Preservation**:
+  - Preserve original source files (e.g., vector SVGs or master design files) whenever appropriate.
+  - Do not overwrite source assets merely to create optimized or web-ready derivatives.
+  - If source and derived variants are needed in the future, follow a simple pairing convention when assets are introduced.
