@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="wal_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="wal_emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="wal_sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="card_white" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="wal_shadow" x="-10%" y="-10%" width="125%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.09"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop Circles -->
+  <circle cx="200" cy="150" r="110" fill="#2563EB" fill-opacity="0.03"/>
+  <circle cx="200" cy="150" r="80" fill="#10B981" fill-opacity="0.04"/>
+
+  <!-- Orbiting Balance / Transfer Particles -->
+  <g stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="3 4">
+    <path d="M90 140C90 90 140 60 200 60C260 60 310 90 310 140"/>
+  </g>
+  <circle cx="120" cy="80" r="5" fill="#10B981" fill-opacity="0.5"/>
+  <circle cx="280" cy="80" r="5" fill="#0EA5E9" fill-opacity="0.5"/>
+
+  <!-- Emerging Value Tokens / Cards from Wallet -->
+  <!-- Back Card (Sky Accent) -->
+  <g transform="translate(130, 80) rotate(-6)" filter="url(#wal_shadow)">
+    <rect x="0" y="0" width="130" height="80" rx="8" fill="url(#wal_sky)"/>
+    <rect x="12" y="14" width="40" height="8" rx="2" fill="#FFFFFF" fill-opacity="0.5"/>
+    <rect x="12" y="54" width="60" height="6" rx="2" fill="#FFFFFF" fill-opacity="0.4"/>
+    <circle cx="106" cy="24" r="10" fill="#FFFFFF" fill-opacity="0.2"/>
+  </g>
+
+  <!-- Middle Card (Emerald Pay Accent) -->
+  <g transform="translate(145, 95) rotate(4)" filter="url(#wal_shadow)">
+    <rect x="0" y="0" width="130" height="80" rx="8" fill="url(#wal_emerald)"/>
+    <rect x="12" y="14" width="45" height="8" rx="2" fill="#FFFFFF" fill-opacity="0.6"/>
+    <rect x="12" y="54" width="50" height="6" rx="2" fill="#FFFFFF" fill-opacity="0.4"/>
+    <circle cx="106" cy="40" r="12" fill="#FFFFFF" fill-opacity="0.25"/>
+  </g>
+
+  <!-- Main Wallet Body (Front Layer) -->
+  <g transform="translate(100, 130)" filter="url(#wal_shadow)">
+    <!-- Wallet Main Shell -->
+    <rect x="0" y="15" width="200" height="110" rx="14" fill="#0F172A"/>
+    <!-- Top inner seam -->
+    <rect x="6" y="20" width="188" height="24" rx="6" fill="#1E293B"/>
+    <!-- Wallet Front Flap -->
+    <path d="M0 45C0 35 8 28 18 28H182C192 28 200 35 200 45V111C200 119 192 125 182 125H18C8 125 0 119 0 111V45Z" fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+
+    <!-- Wallet Clasp Closure -->
+    <g transform="translate(140, 60)">
+      <rect x="0" y="0" width="60" height="34" rx="8" fill="url(#wal_blue)"/>
+      <circle cx="42" cy="17" r="6" fill="#FFFFFF"/>
+      <circle cx="42" cy="17" r="3" fill="#10B981"/>
+    </g>
+
+    <!-- Subtle Stitching Accent Line -->
+    <line x1="12" y1="36" x2="135" y2="36" stroke="#475569" stroke-width="1" stroke-dasharray="3 3"/>
+    <line x1="12" y1="116" x2="188" y2="116" stroke="#475569" stroke-width="1" stroke-dasharray="3 3"/>
+  </g>
+
+  <!-- Floating Balance Recharge Indicator -->
+  <g transform="translate(70, 175)" filter="url(#wal_shadow)">
+    <rect x="0" y="0" width="64" height="28" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+    <circle cx="14" cy="14" r="8" fill="url(#wal_emerald)"/>
+    <polyline points="10.5 14 13 16.5 17.5 12" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="28" y="10" width="24" height="8" rx="2" fill="#94A3B8"/>
+  </g>
+</svg>
