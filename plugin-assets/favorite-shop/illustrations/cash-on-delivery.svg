@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="cod_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="cod_emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="cod_sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="parcel_bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <filter id="cod_shadow" x="-10%" y="-10%" width="125%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0F172A" flood-opacity="0.09"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop Circles -->
+  <circle cx="200" cy="150" r="115" fill="#10B981" fill-opacity="0.04"/>
+  <circle cx="200" cy="150" r="85" fill="#2563EB" fill-opacity="0.03"/>
+
+  <!-- Doorstep Exchange Rays -->
+  <g stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="3 4">
+    <path d="M80 180C80 120 140 80 200 80C260 80 320 120 320 180"/>
+  </g>
+  <circle cx="95" cy="150" r="4" fill="#0EA5E9" fill-opacity="0.5"/>
+  <circle cx="305" cy="150" r="4" fill="#10B981" fill-opacity="0.5"/>
+
+  <!-- Central Physical Delivery Parcel (Isometric Package) -->
+  <g transform="translate(120, 85)" filter="url(#cod_shadow)">
+    <!-- Package Box -->
+    <rect x="0" y="0" width="160" height="130" rx="12" fill="url(#parcel_bg)" stroke="#E2E8F0" stroke-width="1.5"/>
+    <!-- Brand Packaging Tape Ribbon -->
+    <rect x="0" y="35" width="160" height="24" fill="url(#cod_blue)"/>
+    <line x1="80" y1="0" x2="80" y2="130" stroke="#1D4ED8" stroke-width="3"/>
+
+    <!-- Shipping Label on Box -->
+    <g transform="translate(18, 70)">
+      <rect x="0" y="0" width="50" height="42" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+      <rect x="6" y="8" width="28" height="4" rx="1" fill="#64748B"/>
+      <rect x="6" y="16" width="20" height="4" rx="1" fill="#94A3B8"/>
+      <!-- Barcode lines -->
+      <line x1="6" y1="26" x2="6" y2="34" stroke="#0F172A" stroke-width="1.5"/>
+      <line x1="10" y1="26" x2="10" y2="34" stroke="#0F172A" stroke-width="1"/>
+      <line x1="14" y1="26" x2="14" y2="34" stroke="#0F172A" stroke-width="2"/>
+      <line x1="19" y1="26" x2="19" y2="34" stroke="#0F172A" stroke-width="1"/>
+      <line x1="23" y1="26" x2="23" y2="34" stroke="#0F172A" stroke-width="1.5"/>
+    </g>
+
+    <!-- Cash Payment Hand-Off Token on Delivery -->
+    <g transform="translate(90, 72)" filter="url(#cod_shadow)">
+      <rect x="0" y="0" width="58" height="38" rx="6" fill="#0F172A"/>
+      <rect x="3" y="3" width="52" height="32" rx="4" fill="#1E293B"/>
+      <circle cx="29" cy="19" r="8" fill="url(#cod_emerald)"/>
+      <circle cx="29" cy="19" r="4" fill="#FFFFFF" fill-opacity="0.3"/>
+    </g>
+  </g>
+
+  <!-- Verified Doorstep Settlement Seal -->
+  <g transform="translate(245, 175)" filter="url(#cod_shadow)">
+    <circle cx="18" cy="18" r="20" fill="url(#cod_emerald)"/>
+    <polyline points="11 18 16 23 25 13" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
