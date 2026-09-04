@@ -702,3 +702,4 @@ The following four specific decisions require explicit operator review and confi
 
 ---
 *End of Architectural Specification.*
+
