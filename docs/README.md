@@ -14,7 +14,7 @@ This directory houses the foundational standards, architectural blueprints, asse
 | [**ASSET-CONVENTIONS.md**](./ASSET-CONVENTIONS.md) | Standard rules for asset placement, kebab-case naming, vector vs. raster formats, source preservation, derivative management, future plugin assets, and future theme assets. | Designers, Developers, AI Agents |
 | [**GIT-WORKFLOW.md**](./GIT-WORKFLOW.md) | Git operations, branching, commit conventions, new PC onboarding, multi-PC synchronization, and diff verification rules. | Developers, Maintainers, AI Agents |
 | [**AI-INSTRUCTIONS.md**](./AI-INSTRUCTIONS.md) | Explicit operational guardrails and guidelines for AI coding agents (Antigravity, DeepMind AI, etc.) working inside this repository. | AI Agents, Developers Pairing with AI |
-| [**FAVORITE-PAY-ARCHITECTURE.md**](./FAVORITE-PAY-ARCHITECTURE.md) | Detailed technical architecture blueprint for the Favorite Pay payment gateway, currency locking, wallet accounting, and transaction orchestrator. | Core Developers, Plugin Architects |
+| [**FAVORITE-PAY-ARCHITECTURE.md**](./FAVORITE-PAY-ARCHITECTURE.md) | Technical architecture reference and implementation blueprint for Favorite Pay. Serves as ecosystem architectural documentation; does not contain application runtime code or replace the Favorite Pay source repository. | Core Developers, Plugin Architects |
 
 ---
 
@@ -25,3 +25,4 @@ This directory houses the foundational standards, architectural blueprints, asse
 3. **GitHub as Canonical Truth**: The remote GitHub repository (`https://github.com/favoritecode/Favorite-CMS-Assets`) is the authoritative source of truth. Local clones are temporary working copies.
 4. **Zero Secrets**: Passwords, API keys, private keys, payment credentials, webhook secrets, customer PII, and `.env` files containing sensitive values are strictly forbidden.
 5. **Preservation of Existing Assets**: Never delete, move, or rename existing assets for cosmetic reasons. New assets must conform to standard conventions while respecting existing filenames.
+6. **Internal / Private Repository Role**: Although currently hosted on GitHub and temporarily public for development and inspection, this repository is intended as a private, internal asset resource for the project team. Security and data privacy rules apply unconditionally.

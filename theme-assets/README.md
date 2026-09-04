@@ -18,7 +18,14 @@ This directory houses the foundational visual identity and static design compone
   - **No Application or Theme Code**: No PHP templates, Blade/Twig engines, JavaScript modules, or CSS stylesheets.
   - **No Frameworks / Build Systems**: No Tailwind configurations, Bootstrap bundles, Sass files, or Node.js packages.
   - **No Runtime Archives**: No compiled distribution packages or `.zip` theme archives.
-  - Source code for themes belongs exclusively in their respective theme repositories (e.g. `Favorite-Web`).
+  - Source code for themes belongs exclusively in their respective theme source repositories (e.g. Favorite Web theme source repository).
+
+### Theme Asset ↔ Source Code Mapping
+
+| Theme Asset Directory | Target Ecosystem Role | Source-Code Implementation |
+| :--- | :--- | :--- |
+| `theme-assets/favorite-web/` | Flagship storefront theme & presentation layout | Favorite Web theme source repository |
+| `theme-assets/<future-theme>/` | Future official or community themes | Respective theme source repository |
 
 ---
 

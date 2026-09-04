@@ -8,9 +8,18 @@ Visual assets, marketplace media, and feature graphics for official and ecosyste
 
 This directory serves as the centralized visual foundation for all Favorite CMS plugins.
 
-- **Visual Assets Only**: Stores SVG icons, feature illustrations, promotional badges, and placeholder specifications.
-- **Zero Runtime Code**: This directory contains **NO** PHP backend code, controller logic, database migrations, Composer dependencies, or runtime `.zip` distribution packages. Plugin application code resides in its respective product repository or `Favorite-CMS-Universal/plugins/`.
+- **Visual Assets & Design Specifications Only**: Stores SVG icons, feature illustrations, promotional badges, payment brand guidelines, and placeholder specifications.
+- **Zero Runtime Code**: This directory contains **NO** PHP backend code, controller logic, database migrations, Composer dependencies, or runtime `.zip` distribution packages. Plugin application code resides exclusively in its respective product source repository (e.g., Favorite Pay, Favorite Digital, Favorite Shop, or future plugin repositories).
 - **Zero Secrets**: Never store merchant credentials, API keys, test credentials, or private access tokens here.
+
+### Plugin Asset ↔ Source Code Mapping
+
+| Plugin Asset Directory | Target Ecosystem Role | Source-Code Implementation |
+| :--- | :--- | :--- |
+| `plugin-assets/favorite-pay/` | Financial orchestrator, payment gateways, wallet ledger | Favorite Pay plugin source repository |
+| `plugin-assets/favorite-digital/` | Digital products, file delivery, licenses, memberships | Favorite Digital plugin source repository |
+| `plugin-assets/favorite-shop/` | Physical commerce, variants, inventory, shipping, COD | Favorite Shop plugin source repository |
+| `plugin-assets/<future-plugin>/` | Future ecosystem or community plugins | Respective plugin source repository |
 
 ---
 

@@ -10,11 +10,30 @@ Its purpose is to:
 - Serve as the documentation archive for architectural specifications, visual standards, and ecosystem conventions.
 - Enable any developer or AI on any computer in the world to clone the repository, understand its structure immediately, locate needed assets, and extend it cleanly.
 
+> [!NOTE]
+> **Internal / Private Asset Repository Status**
+> Although this repository is hosted on GitHub and may be temporarily public for collaborative development and inspection, its intended role is an internal, private central resource repository for the project owner and core engineering team. All security, privacy, and asset hygiene rules apply unconditionally regardless of current repository visibility.
+
 ---
 
 ## 2. Ecosystem Relationships & Boundaries
 
 Favorite CMS is an interconnected suite of open-source and modular commerce solutions:
+
+### Current Ecosystem Projects
+- **Favorite CMS Universal**: Core runtime application (CMS kernel, router, MVC, database, admin dashboard).
+- **Favorite Pay**: Shared financial layer, payment gateway orchestration, exchange-rate locking, and digital wallet.
+- **Favorite Digital**: Digital products, instant file downloads, licensing keys, and subscription memberships.
+- **Favorite Shop**: Physical retail commerce, multi-variant inventory, shipping rate zones, and Cash on Delivery (COD).
+- **Favorite Web**: Flagship presentation theme and storefront UI.
+
+### Future Ecosystem Components
+The ecosystem is designed to accommodate:
+- Additional official plugins
+- Additional community plugins
+- Additional official themes
+- Additional community themes
+- Additional official ecosystem components
 
 ```text
 Favorite CMS Ecosystem
@@ -26,13 +45,34 @@ Favorite CMS Ecosystem
 │   ├── Screenshots (feature showcases, release media)
 │   ├── Demo content (safe sample media, dummy placeholders)
 │   ├── Theme assets (visual assets for Favorite Web and future themes)
-│   └── Plugin assets (visual assets for Favorite Pay, Digital, Shop, and future plugins)
+│   ├── Plugin assets (visual assets for Favorite Pay, Digital, Shop, and future plugins)
+│   └── Ecosystem Documentation (Repository guides, asset standards, and architectural blueprints)
 └── Individual Product Repositories
-    ├── Favorite-Web (Flagship presentation theme source code)
+    ├── Favorite Web (Flagship presentation theme source code)
     ├── Favorite Pay (Payment orchestrator, wallet, gateways runtime code)
     ├── Favorite Digital (Digital downloads & memberships runtime code)
     └── Favorite Shop (Physical commerce & inventory runtime code)
 ```
+
+### Asset ↔ Source Project Mapping
+
+The relationship between visual/architectural assets in this repository and standalone source-code repositories across the ecosystem:
+
+| Ecosystem Component | Asset Location (In this repo) | Source Code / Implementation |
+| :--- | :--- | :--- |
+| **Favorite CMS Universal** | `brand/`, `icons/`, `design/`, `screenshots/`, `demo-content/` | Favorite CMS Universal core repository |
+| **Favorite Pay** | `plugin-assets/favorite-pay/`, `docs/FAVORITE-PAY-ARCHITECTURE.md` | Favorite Pay plugin source repository |
+| **Favorite Digital** | `plugin-assets/favorite-digital/` | Favorite Digital plugin source repository |
+| **Favorite Shop** | `plugin-assets/favorite-shop/` | Favorite Shop plugin source repository |
+| **Favorite Web** | `theme-assets/favorite-web/` | Favorite Web theme source repository |
+| **Future Plugins** | `plugin-assets/<plugin-name>/` | Respective plugin repository |
+| **Future Themes** | `theme-assets/<theme-name>/` | Respective theme repository |
+
+### Role of `docs/FAVORITE-PAY-ARCHITECTURE.md`
+`docs/FAVORITE-PAY-ARCHITECTURE.md` is an ecosystem architectural reference and implementation blueprint for Favorite Pay.
+- It is **NOT** application runtime code.
+- It does **NOT** replace the standalone Favorite Pay source-code repository.
+- It is preserved in this repository because `Favorite-CMS-Assets` functions as the central documentation and specifications hub for the entire Favorite CMS ecosystem. Core developers and plugin architects use it as the definitive blueprint for payment orchestrator contracts, currency conversion locks, and ledger mechanics.
 
 ### What Belongs in THIS Repository (`Favorite-CMS-Assets`)
 - Brand identity files (SVGs, PNGs, brand marks, logotypes, wordmarks).

@@ -6,6 +6,10 @@
 **Target Platform**: Favorite CMS Core (`Favorite-CMS-Universal`)  
 **Ecosystem Dependencies**: Favorite Pay (Foundation) → Favorite Digital, Favorite Shop, Favorite Web Theme  
 
+> [!NOTE]
+> **Ecosystem Architectural Reference & Implementation Blueprint**
+> This document is an architectural reference and implementation blueprint for the Favorite Pay payment system. It is **NOT** application runtime code, and it does **NOT** replace the standalone Favorite Pay source-code repository. It is archived here in `Favorite-CMS-Assets/docs/` because this repository serves as the central documentation and asset hub for the entire Favorite CMS ecosystem. Application source code, PHP classes, database migrations, and runtime tests reside exclusively in the Favorite Pay source project.
+
 ---
 
 ## 1. Executive Summary & Purpose

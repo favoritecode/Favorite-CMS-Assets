@@ -11,19 +11,34 @@ The central asset and documentation repository for the **Favorite CMS Ecosystem*
 ### Key Principles
 - **Central Asset Hub**: Stores all reusable visual, graphic, and design specifications for Favorite CMS Core, themes, and plugins.
 - **Visual Assets & Documentation Only**: This repository contains **zero runtime application code**. No PHP backend logic, Node.js applications, Composer packages, npm dependencies, or compiled `.zip` archives belong here. Application code lives in respective product repositories (e.g. `Favorite-CMS-Universal`, `Favorite-Pay`).
+- **Internal / Private Asset Repository Status**: While this repository is hosted on GitHub and may be temporarily public for inspection and collaborative development, its intended purpose is an internal, private central resource repository for the project owner and development team. Strict security, sanitization, and data protection rules apply unconditionally regardless of current repository visibility.
 - **Canonical Source of Truth**: The remote GitHub repository (`https://github.com/favoritecode/Favorite-CMS-Assets`) is the single authoritative source of truth. Any developer or AI on any computer can clone this repository, read this documentation, and immediately work with complete clarity.
 - **Zero Secrets & Absolute Privacy**: Never store passwords, API keys, merchant credentials, access tokens, private keys, customer data, or live database dumps in this repository.
 
 ---
 
-## 2. Ecosystem Architecture
+## 2. Ecosystem Architecture & Scope
 
-Favorite CMS is designed as a unified ecosystem of modular open-source solutions:
+Favorite CMS is designed as a unified ecosystem of modular solutions. This repository serves as the central asset and documentation home for all current and future projects:
+
+### Current Ecosystem Projects
+- **Favorite CMS Universal**: Core open-source CMS runtime engine (MVC, database, routing, admin panel).
+- **Favorite Pay**: Shared financial layer, payment gateway orchestration, exchange-rate locking, and digital wallet.
+- **Favorite Digital**: Digital products, instant file downloads, licensing keys, and subscription memberships.
+- **Favorite Shop**: Physical retail commerce, multi-variant inventory, shipping rate zones, and Cash on Delivery (COD).
+- **Favorite Web**: Flagship presentation theme and front-of-house storefront layout.
+
+### Future Ecosystem Scaling
+The repository is architected to scale cleanly without restructuring:
+- **Additional Official & Community Plugins**: Receive dedicated directories under `plugin-assets/<plugin-name>/`.
+- **Additional Official & Community Themes**: Receive dedicated directories under `theme-assets/<theme-name>/`.
+- **Additional Ecosystem Components**: Supported via existing foundational directories (`icons/`, `design/`, `docs/`).
+- *Note*: Never create empty placeholder directories for hypothetical future projects; directories are created only when real assets are introduced.
 
 ```text
 Favorite CMS Ecosystem
 │
-├── Favorite CMS Universal  (Core open-source CMS runtime engine: MVC, database, routing, admin panel)
+├── Favorite CMS Universal  (Core CMS runtime engine: MVC, database, routing, admin panel)
 │
 ├── Favorite-CMS-Assets     (THIS REPOSITORY: Central design, visual assets, and specifications)
 │   ├── Brand Identity      (Official logos, favicons, brand guidelines)
@@ -32,14 +47,34 @@ Favorite CMS Ecosystem
 │   ├── Screenshots         (Showcases, feature captures, release media)
 │   ├── Demo Content        (Royalty-free sample media, placeholder content)
 │   ├── Theme Assets        (Flagship Favorite Web theme and future theme visual assets)
-│   └── Plugin Assets       (Favorite Pay, Favorite Digital, Favorite Shop, and future plugins)
+│   ├── Plugin Assets       (Favorite Pay, Favorite Digital, Favorite Shop, and future plugins)
+│   └── Documentation       (Repository guide, asset standards, git workflow, architectural blueprints)
 │
-└── Product Repositories    (Independent runtime implementations)
+└── Product Repositories    (Independent source-code and runtime implementations)
     ├── Favorite Web        (Flagship theme source code)
     ├── Favorite Pay        (Shared financial layer, payment gateways, wallet ledger)
     ├── Favorite Digital    (Digital products, downloads, licensing, and memberships)
     └── Favorite Shop       (Physical commerce, multi-variant products, shipping, COD)
 ```
+
+### Asset ↔ Source Project Mapping
+
+This repository maintains visual identity and architectural specifications, while individual product repositories maintain execution logic:
+
+| Ecosystem Component | Asset Location (In this repo) | Source Code / Implementation |
+| :--- | :--- | :--- |
+| **Favorite CMS Universal** | `brand/`, `icons/`, `design/`, `screenshots/`, `demo-content/` | Favorite CMS Universal core repository |
+| **Favorite Pay** | `plugin-assets/favorite-pay/`, `docs/FAVORITE-PAY-ARCHITECTURE.md` | Favorite Pay plugin source repository |
+| **Favorite Digital** | `plugin-assets/favorite-digital/` | Favorite Digital plugin source repository |
+| **Favorite Shop** | `plugin-assets/favorite-shop/` | Favorite Shop plugin source repository |
+| **Favorite Web** | `theme-assets/favorite-web/` | Favorite Web theme source repository |
+| **Future Plugins** | `plugin-assets/<plugin-name>/` | Respective plugin repository |
+| **Future Themes** | `theme-assets/<theme-name>/` | Respective theme repository |
+
+> [!IMPORTANT]
+> **Strict Separation of Concerns**:
+> - **`Favorite-CMS-Assets`** stores visual assets, SVG symbols, UI design tokens, marketing screenshots, and ecosystem architectural blueprints.
+> - **Source-code repositories** store PHP backend code, Blade/HTML templates, MVC controllers, database migrations, automated tests, Composer packages, and runtime logic.
 
 ---
 
