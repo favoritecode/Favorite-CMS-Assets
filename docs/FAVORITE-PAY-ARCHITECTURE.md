@@ -2,7 +2,7 @@
 
 **Document Version**: 1.0.0  
 **Status**: Architectural Proposal / Implementation Blueprint  
-**Plugin Identifier**: `favorite.plugin.pay`  
+**Plugin Identifier**: `favorite-pay`  
 **Target Platform**: Favorite CMS Core (`Favorite-CMS-Universal`)  
 **Ecosystem Dependencies**: Favorite Pay (Foundation) → Favorite Digital, Favorite Shop, Favorite Web Theme  
 
@@ -60,24 +60,22 @@ To ensure strict separation of concerns, Favorite Pay does **NOT** own or manage
 
 ## 5. Dependency Relationship with Favorite CMS Core
 
-Favorite Pay is implemented as a standard first-party plugin (`favorite.plugin.pay`) conforming strictly to the Core Extension System:
+Favorite Pay is implemented as a standard first-party plugin (`favorite-pay`) conforming strictly to the Core Extension System:
 
 ```text
 Favorite CMS Core
-  ├── ServiceContainer       → Resolves shared platform services
-  ├── DatabaseEngine         → SQLAlchemy session & transactional persistence
-  ├── DatabaseMigrationEngine→ Schema creation & versioned migration execution
-  ├── SettingsEngine         → Gateway settings, toggle switches, and rate thresholds
-  ├── RoutingEngine          → Public webhook routes and customer redirect endpoints
-  ├── APIEngine              → REST endpoints for checkout & admin management
-  ├── EventEngine            → Event publishing (`favorite.pay.*`) with listener isolation
-  ├── PermissionEngine       → Granular capability grants & role checks
-  ├── NotificationEngine     → Email/SMS triggers for payment receipts & admin alerts
-  └── AdminEngine            → Next.js Admin console navigation and modules
+  ├── Application            → Service Container & IoC resolution
+  ├── Database               → PDO transactional persistence (MySQL/SQLite)
+  ├── Migrator               → Schema creation & versioned PHP migration execution
+  ├── Setting                → Gateway settings, toggle switches, and rate thresholds
+  ├── Router                 → Public webhook routes and customer redirect endpoints
+  ├── Hook                   → Action & Filter event bus (`favorite.pay.*`) with listener isolation
+  ├── AdminMenu              → Admin dashboard menu registration and navigation
+  └── PluginManager          → Plugin manifest validation, lifecycle, and failure isolation
 ```
 
 ### Core Stack Reality Check
-Inspection of the actual Favorite CMS Core repository (`Favorite-CMS-Universal`) reveals that the platform is built with **Python 3.12+ (FastAPI / SQLAlchemy)** for the backend and **Next.js / TypeScript** for the Admin interface. While web developers often default to PHP terminology, Favorite Pay's implementation blueprint directly matches the **actual Python / SQLAlchemy / FastAPI Core**, while exposing language-agnostic REST and event contracts.
+Inspection of the actual Favorite CMS Core repository (`Favorite-CMS-Universal`) confirms that the platform is built with **PHP 8.1+** using Composer PSR-4 autoloading (`FavoriteCMS\`), PDO database abstraction, and a lightweight, zero-dependency architecture. Favorite Pay's implementation blueprint directly matches the **actual PHP 8.1+ Core**, adhering to its native PluginManager, Database, and Hook architecture.
 
 ---
 
@@ -130,12 +128,12 @@ Inspection of the actual Favorite CMS Core repository (`Favorite-CMS-Universal`)
 ## 9. Database Ownership & Isolation Principles
 
 1. **Table Prefix**: All Favorite Pay tables use the reserved prefix `favorite_pay_*`.
-2. **Strict Isolation**: No other plugin (Digital or Shop) may query or modify `favorite_pay_*` tables directly via SQL. All interaction must pass through public Python service contracts or HTTP/REST APIs.
-3. **Transaction Safety**: All multi-step operations (such as balance debits and transaction status updates) execute inside explicit SQLAlchemy transactions:
-   ```python
-   with database_engine.session() as session:
-       # atomic operations
-       session.commit()
+2. **Strict Isolation**: No other plugin (Digital or Shop) may query or modify `favorite_pay_*` tables directly via SQL. All interaction must pass through public PHP service contracts or HTTP/REST APIs.
+3. **Transaction Safety**: All multi-step operations (such as balance debits and transaction status updates) execute inside explicit Core Database transactions:
+   ```php
+   $db->transaction(function (Database $db) {
+       // atomic operations
+   });
    ```
 
 ---
@@ -539,13 +537,13 @@ All events are dispatched through the Core `EventEngine` adhering to the require
 
 | Event Name | Producer | Payload Fields | Consumer Usage |
 |---|---|---|---|
-| `favorite.pay.payment.created` | `favorite.plugin.pay` | `transaction_id`, `source_plugin`, `amount_bdt` | Audit, analytics |
-| `favorite.pay.payment.pending` | `favorite.plugin.pay` | `transaction_id`, `gateway_id`, `attempt_id` | Customer checkout polling |
-| `favorite.pay.payment.succeeded` | `favorite.plugin.pay` | `transaction_id`, `source_plugin`, `source_reference`, `amount_bdt`, `currency_pay`, `settled_at` | **Digital**: grant download/membership.<br>**Shop**: mark order paid & dispatch. |
-| `favorite.pay.payment.failed` | `favorite.plugin.pay` | `transaction_id`, `source_plugin`, `source_reference`, `reason` | **Digital/Shop**: notify customer to retry. |
-| `favorite.pay.payment.refunded` | `favorite.plugin.pay` | `transaction_id`, `refund_id`, `amount_bdt`, `source_reference` | **Digital**: revoke license.<br>**Shop**: trigger restock. |
-| `favorite.pay.wallet.credited` | `favorite.plugin.pay` | `user_id`, `amount_bdt`, `new_balance` | Customer email/SMS notification |
-| `favorite.pay.wallet.debited` | `favorite.plugin.pay` | `user_id`, `amount_bdt`, `new_balance`, `reference` | Customer receipt dispatch |
+| `favorite.pay.payment.created` | `favorite-pay` | `transaction_id`, `source_plugin`, `amount_bdt` | Audit, analytics |
+| `favorite.pay.payment.pending` | `favorite-pay` | `transaction_id`, `gateway_id`, `attempt_id` | Customer checkout polling |
+| `favorite.pay.payment.succeeded` | `favorite-pay` | `transaction_id`, `source_plugin`, `source_reference`, `amount_bdt`, `currency_pay`, `settled_at` | **Digital**: grant download/membership.<br>**Shop**: mark order paid & dispatch. |
+| `favorite.pay.payment.failed` | `favorite-pay` | `transaction_id`, `source_plugin`, `source_reference`, `reason` | **Digital/Shop**: notify customer to retry. |
+| `favorite.pay.payment.refunded` | `favorite-pay` | `transaction_id`, `refund_id`, `amount_bdt`, `source_reference` | **Digital**: revoke license.<br>**Shop**: trigger restock. |
+| `favorite.pay.wallet.credited` | `favorite-pay` | `user_id`, `amount_bdt`, `new_balance` | Customer email/SMS notification |
+| `favorite.pay.wallet.debited` | `favorite-pay` | `user_id`, `amount_bdt`, `new_balance`, `reference` | Customer receipt dispatch |
 
 ---
 
@@ -620,13 +618,10 @@ Favorite Pay exposes standardized presentation models for the **Favorite Web The
 
 ## 25. Database Migration Strategy
 
-- Migrations follow Core `DatabaseMigrationEngine` standards.
-- Stored under `plugins/favorite.plugin.pay/migrations/`.
-- Each migration defines an explicit `Upgrade = Callable[[Connection], None]` function using SQLAlchemy DDL.
-- Migrations are strictly executed via operator CLI command:
-  ```powershell
-  favorite-cms migrate
-  ```
+- Migrations follow Core `Migrator` standards.
+- Stored under `plugins/favorite-pay/database/migrations/`.
+- Each migration defines an explicit class with `up()` and `down()` methods receiving `FavoriteCMS\Core\Database`.
+- Migrations are executed on plugin activation and via the Core migration runner.
 - Normal application startup never executes DDL.
 
 ---
@@ -637,7 +632,7 @@ Favorite Pay exposes standardized presentation models for the **Favorite Web The
 |---|---|---|
 | **Unit Tests** | Monetary arithmetic | Test integer minor-unit conversions across odd amounts and fractional rates (e.g. ৳120 to USD cents). Verify zero rounding leakage. |
 | **Idempotency** | Webhooks & Settlements | Inject duplicate webhook events with identical TrxIDs. Verify transaction is credited exactly once. |
-| **Race Conditions** | Wallet debits | Concurrently simulate multiple debits against a single wallet balance using threading/multiprocessing. Verify no overdraft. |
+| **Race Conditions** | Wallet debits | Concurrently simulate multiple debits against a single wallet balance. Verify no overdraft. |
 | **Gateway Mocks** | Provider adapters | Mock HTTP responses for Binance, Card, and MFS. Test timeout handling, connection resets, and invalid signature rejection. |
 | **Ecosystem Contract** | Digital/Shop Handshake | End-to-end simulation of Digital purchasing flow: `create_intent` → `mock_payment` → `event_dispatch` → `entitlement_granted`. |
 
@@ -645,9 +640,9 @@ Favorite Pay exposes standardized presentation models for the **Favorite Web The
 
 ## 27. Performance Considerations & Shared Hosting Compatibility
 
-1. **Lightweight Python Footprint**: Pure Python standard library math and standard SQLAlchemy queries. No separate Celery daemon or Redis requirement for base operations.
+1. **Lightweight PHP 8.1+ Footprint**: Strict types, zero external heavy dependencies, native PDO prepared statements.
 2. **Indexed Queries**: Every foreign key and lookup column (`transaction_id`, `source_reference`, `user_id`, `status`) is indexed.
-3. **Database Connection Reuse**: Leverages Core SQLAlchemy connection pooling (`pool_pre_ping=True`) to minimize connection overhead on shared databases.
+3. **Database Connection Reuse**: Leverages Core PDO instance from Application container to minimize connection overhead on shared databases.
 
 ---
 
@@ -666,15 +661,15 @@ To maintain exceptional code quality and prevent architectural regressions, impl
 
 ```text
 Phase 1:  Plugin Manifest & Core Service Contracts
-Phase 2:  SQLAlchemy Models & Database Migrations
+Phase 2:  Database Schema & Core Migrations
 Phase 3:  Transaction State Machine & Intent Engine
 Phase 4:  Currency Engine, Rate Tables & Conversion Snapshot Locking
 Phase 5:  Manual Bangladesh Payment Gateway Driver (bKash, Nagad, Bank)
-Phase 6:  Double-Entry Wallet System & Customer Balance Ledger
+Phase 6:  Append-Only Wallet System & Customer Balance Ledger
 Phase 7:  Credit/Debit Card Gateway Driver (Hosted Tokenized Provider)
 Phase 8:  Binance Pay / USDT Crypto Gateway Driver
 Phase 9:  Refunds, Reversals & Dispute Management Engine
-Phase 10: Next.js Admin Management Console & Manual Approval Queue
+Phase 10: Admin Management Console & Manual Approval Queue
 Phase 11: Public Consumer SDK & Event Handshakes (Digital, Shop, Web)
 Phase 12: End-to-End Integration, Idempotency & Concurrency Test Suite
 ```
@@ -698,7 +693,7 @@ The following four specific decisions require explicit operator review and confi
 - **Option B**: **API Auto-Reconciliation**. Direct automated verification via official bKash Merchant Checkout API / Nagad PG API (requires formal corporate merchant contracts).
 
 ### Decision Point 4: Technology Stack Alignment
-- **Confirmation**: Acknowledge that Favorite Pay will be developed as a **Python 3.12+ (FastAPI / SQLAlchemy)** plugin matching the actual Favorite CMS Core codebase, with a **Next.js / TypeScript** Admin UI, rather than a legacy PHP implementation.
+- **Confirmation**: Acknowledge that Favorite Pay is developed as a native **PHP 8.1+** plugin matching the actual Favorite CMS Core codebase (`Favorite-CMS-Universal`), using Composer PSR-4, PDO database abstraction, and the Core PluginManager.
 
 ---
 *End of Architectural Specification.*
