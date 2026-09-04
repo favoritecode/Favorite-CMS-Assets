@@ -28,3 +28,9 @@ Thumbs.db
 *.bak
 *.log
 .cache/
+
+# Distribution & Build Archives (Releases belong on GitHub Releases)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
