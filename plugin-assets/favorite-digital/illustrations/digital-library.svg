@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="lib_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="lib_sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="lib_emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="shelf_bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F8FAFC"/>
+    </linearGradient>
+    <filter id="lib_shadow" x="-10%" y="-10%" width="125%" height="125%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Ambient Backdrop Circles -->
+  <circle cx="200" cy="150" r="110" fill="#0EA5E9" fill-opacity="0.04"/>
+  <circle cx="200" cy="150" r="80" fill="#2563EB" fill-opacity="0.03"/>
+
+  <!-- Library Device / Vault Container Frame -->
+  <g transform="translate(60, 45)" filter="url(#lib_shadow)">
+    <rect x="0" y="0" width="280" height="200" rx="14" fill="url(#shelf_bg)" stroke="#E2E8F0" stroke-width="1.5"/>
+    <!-- Top Header Bar -->
+    <rect x="0" y="0" width="280" height="34" rx="14" fill="#0F172A"/>
+    <rect x="0" y="20" width="280" height="14" fill="#0F172A"/>
+    <circle cx="18" cy="17" r="4" fill="#EF4444" fill-opacity="0.7"/>
+    <circle cx="30" cy="17" r="4" fill="#F59E0B" fill-opacity="0.7"/>
+    <circle cx="42" cy="17" r="4" fill="#10B981" fill-opacity="0.7"/>
+    <!-- Search / Filter Pill -->
+    <rect x="180" y="9" width="86" height="16" rx="8" fill="#1E293B"/>
+    <line x1="190" y1="17" x2="230" y2="17" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Digital Asset Shelf 1 -->
+    <!-- Card 1: Software / Theme Package -->
+    <g transform="translate(20, 52)" filter="url(#lib_shadow)">
+      <rect x="0" y="0" width="68" height="95" rx="6" fill="url(#lib_blue)"/>
+      <rect x="8" y="12" width="28" height="6" rx="2" fill="#FFFFFF" fill-opacity="0.6"/>
+      <rect x="8" y="24" width="52" height="32" rx="4" fill="#1E40AF" fill-opacity="0.5"/>
+      <circle cx="34" cy="40" r="8" fill="#38BDF8"/>
+      <rect x="8" y="66" width="38" height="5" rx="2" fill="#FFFFFF" fill-opacity="0.5"/>
+      <rect x="8" y="76" width="24" height="5" rx="2" fill="#93C5FD"/>
+    </g>
+
+    <!-- Card 2: Digital Audio / Video Media Pack -->
+    <g transform="translate(106, 52)" filter="url(#lib_shadow)">
+      <rect x="0" y="0" width="68" height="95" rx="6" fill="url(#lib_sky)"/>
+      <rect x="8" y="12" width="32" height="6" rx="2" fill="#FFFFFF" fill-opacity="0.6"/>
+      <rect x="8" y="24" width="52" height="32" rx="4" fill="#0284C7" fill-opacity="0.5"/>
+      <polygon points="31,34 31,46 41,40" fill="#FFFFFF"/>
+      <rect x="8" y="66" width="44" height="5" rx="2" fill="#FFFFFF" fill-opacity="0.5"/>
+      <rect x="8" y="76" width="20" height="5" rx="2" fill="#E0F2FE"/>
+    </g>
+
+    <!-- Card 3: Digital E-Book / Publication -->
+    <g transform="translate(192, 52)" filter="url(#lib_shadow)">
+      <rect x="0" y="0" width="68" height="95" rx="6" fill="url(#lib_emerald)"/>
+      <rect x="8" y="12" width="24" height="6" rx="2" fill="#FFFFFF" fill-opacity="0.6"/>
+      <rect x="8" y="24" width="52" height="32" rx="4" fill="#047857" fill-opacity="0.5"/>
+      <line x1="16" y1="36" x2="52" y2="36" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+      <line x1="16" y1="44" x2="42" y2="44" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+      <rect x="8" y="66" width="36" height="5" rx="2" fill="#FFFFFF" fill-opacity="0.5"/>
+      <rect x="8" y="76" width="28" height="5" rx="2" fill="#A7F3D0"/>
+    </g>
+
+    <!-- Shelf Base Line -->
+    <line x1="16" y1="156" x2="264" y2="156" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Bottom Status Bar -->
+    <rect x="20" y="168" width="80" height="12" rx="6" fill="#F1F5F9"/>
+    <circle cx="26" cy="174" r="3" fill="#10B981"/>
+    <rect x="34" y="171" width="48" height="6" rx="2" fill="#94A3B8"/>
+  </g>
+</svg>
