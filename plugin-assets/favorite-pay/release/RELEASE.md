@@ -8,14 +8,15 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Package File** | \Favorite-Pay.zip\ |
-| **Package Size** | 112,489 bytes |
-| **SHA-256 Checksum** | .c294a56d0f878108f9adbf5e1768e4b66f5f9be1c8479f83f8c1fa6c0bdcd6\ |
-| **Source Repository** | \avoritecode/Favorite-CMS-Universal\ |
-| **Locked Source Commit** | \b27754341a93a2f31dbbe02f6bcb0281e958d58\ |
-| **Test Suite Verification** | 298 tests, 1,219 assertions (0 failures, 0 errors) |
-| **Target Platform** | Favorite CMS Core (\Favorite-CMS-Universal\) |
-| **Plugin Identifier** | \avorite-pay\ |
+| **Release Version** | `v1.0.3` |
+| **Package File** | `Favorite-Pay.zip` |
+| **Package Size** | 116,065 bytes |
+| **SHA-256 Checksum** | `94cfdb8db94f9744df955f69d2dbd3e0d1884854d37904fa06c525dee9351f1f` |
+| **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
+| **Locked Source Commit** | `46b2ffc2302388ca458e395ff48730fba9cc5c18` |
+| **Test Suite Verification** | Favorite Pay: 308 tests, 1,304 assertions (0 failures, 0 errors) / Full Suite: 499 tests, 2,315 assertions |
+| **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
+| **Plugin Identifier** | `favorite-pay` |
 
 ---
 
