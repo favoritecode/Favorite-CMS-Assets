@@ -29,8 +29,11 @@ Thumbs.db
 *.log
 .cache/
 
-# Distribution & Build Archives (Releases belong on GitHub Releases)
+# Distribution & Build Archives
 *.zip
 *.tar.gz
 *.tgz
 *.rar
+
+# Allow verified plugin release packages
+!plugin-assets/favorite-pay/release/*.zip

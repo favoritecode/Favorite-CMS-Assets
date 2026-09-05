@@ -50,8 +50,12 @@ plugin-assets/favorite-pay/
 │   └── secure-payment.svg     # Trust shield, encrypted transmission, verification
 ├── payment-methods/           # Third-party gateway branding policies
 │   └── README.md              # Ingestion rules (no unauthorized provider logos)
-└── placeholders/              # Media and screenshot guidelines
-    └── README.md              # Sizing specs (no fake payment data or PII)
+├── placeholders/              # Media and screenshot guidelines
+│   └── README.md              # Sizing specs (no fake payment data or PII)
+└── release/                   # Verified production release package and checksums
+    ├── Favorite-Pay.zip       # Locked release archive (SHA-256 verified)
+    ├── RELEASE.md             # Release metadata, verification stats, gateway list
+    └── checksums.sha256       # Cryptographic checksum file
 ```
 
 ---
