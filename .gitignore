@@ -37,3 +37,4 @@ Thumbs.db
 
 # Allow verified plugin release packages
 !plugin-assets/favorite-pay/release/*.zip
+!plugin-assets/favorite-multimedia/release/*.zip
