@@ -8,14 +8,30 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.3` |
+| **Release Version** | `v1.0.4` |
 | **Package File** | `favorite-multimedia.zip` |
-| **Package Size** | 358,148 bytes |
-| **SHA-256 Checksum** | `d63c32e0152280fc596ad3722d114c1769d2342997ea2be925ceee80216385fb` |
+| **Package Size** | 359,683 bytes |
+| **SHA-256 Checksum** | `8ecef132a3f525848f7f6aedbebd1a3db94b3501a8e4561e0d4386de5a289e23` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Test Suite Verification** | 290 tests, 1,834 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 312 tests, 1,893 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.4 — Final Hardening & Publishing Reliability
+
+This official release hardens media URL resolution, SSRF boundaries, and publishing workflows while cleaning up admin navigation:
+
+### Highlights
+
+- **Deterministic Media Source Resolution**: Enforces strict URL precedence: YouTube -> Vimeo -> HLS (`.m3u8`) -> Direct Video -> Direct Audio -> Trusted External Embed -> Unknown.
+- **MIME & Fallback Integrity**: Eliminates arbitrary MIME fabrication for unknown streams; preserves clean empty MIME when undetermined, and prevents unvalidated URLs from defaulting to embed.
+- **SSRF Network Boundaries Preserved**: Admin-entered URLs avoid blocking live DNS lookups on form submission, while server-side network execution (`MediaDeliveryService` downloads and subtitle fetching) retains full DNS rebinding and loopback/private IP protection.
+- **Configured vs. Playable Source Separation**: Distinguishes between configured sources (`MediaSource::isConfigured()`) and active playable sources (`MediaSource::isPlayable()`, `MediaSource::getPlayableForContent()`). Inactive or disabled sources count as configured to prevent accidental draft demotion on metadata updates, while publication readiness strictly requires at least one active, playable source matching the content mode.
+- **Accurate Admin Media Statuses**: Introduces distinct statuses: `Ready` (active playable source), `Not Ready` / `Failed` (configured source inactive/failed), `Processing` (transcoding in progress), and `Check Failed` (exception/error containment).
+- **Admin Navigation Cleanup**: Removed duplicate `Multimedia` child submenu under the top-level Multimedia menu. Top-level link routes cleanly to the canonical Dashboard without redundant child links.
+- **Fail-Closed Access Boundaries**: Complete security isolation maintained with Favorite Digital (membership/licensing) and Favorite Pay (gateways). Zero core modifications to Favorite CMS.
 
 ---
 
