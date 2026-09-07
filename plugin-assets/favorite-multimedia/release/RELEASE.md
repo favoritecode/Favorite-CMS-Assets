@@ -8,15 +8,27 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.1` |
+| **Release Version** | `v1.0.2` |
 | **Package File** | `favorite-multimedia.zip` |
-| **Package Size** | 332,242 bytes |
-| **SHA-256 Checksum** | `9c43260b5ac15c7d97c6e2dedef3af8c4547f00129e40b081b74976ddc7ce72b` |
+| **Package Size** | 334,474 bytes |
+| **SHA-256 Checksum** | `96e24f3e27b8754f9e0f6f54029e903ef5d11281d504d7bdb7adb951688e408d` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Locked Source Commit** | `c7f89bc920f3bee77cc268b0c6a799f75ac938e7` |
-| **Test Suite Verification** | 261 tests, 1,669 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 266 tests, 1,695 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.2 — Critical Runtime Fix (Null-Safety & View Isolation)
+
+This critical patch addresses production runtime errors on Edit Movie, Episode, and Song screens:
+
+- **Eliminated Inline Binary Execution**: Moved `FFmpegService::isAvailable()` binary execution out of view templates (`movies.php`, `episodes.php`, `songs.php`) into safe controller pre-evaluation.
+- **Hardened FFmpeg Detection**: `FFmpegService` now defensively checks `function_exists('exec')` and traps disabled functions with complete exception containment.
+- **PHP 8.5 Null-Safety**: Fixed all `strtoupper()` and `htmlspecialchars()` calls across admin views to handle null or missing `source_type` and `label` without deprecations or TypeError crashes.
+- **Resilient Default Source Resolution**: `MediaSource::getDefault()` now gracefully falls back to non-active sources (processing, pending, legacy) when editing content.
+- **Safe Model Accessors**: Added `getSourceType()`, `getSourceLabel()`, `getUrlOrPath()`, and `getStatus()` on `MediaSource`.
+- **Fail-Safe View Isolation**: The `Video / Media Stream` and `Audio Source & Media` form sections are now wrapped in local error containment, displaying an inline guidance notice (`"Media source could not be loaded. Please edit or replace the source."`) instead of crashing the entire CMS admin into a 500 error.
 
 ---
 
