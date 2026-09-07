@@ -8,14 +8,42 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.2` |
+| **Release Version** | `v1.0.3` |
 | **Package File** | `favorite-multimedia.zip` |
-| **Package Size** | 334,474 bytes |
-| **SHA-256 Checksum** | `96e24f3e27b8754f9e0f6f54029e903ef5d11281d504d7bdb7adb951688e408d` |
+| **Package Size** | 358,148 bytes |
+| **SHA-256 Checksum** | `d63c32e0152280fc596ad3722d114c1769d2342997ea2be925ceee80216385fb` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Test Suite Verification** | 266 tests, 1,695 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 290 tests, 1,834 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.3 — Playback Reliability, Multi-Source & Song Video Support
+
+This major release brings robust external embed playback, multiple playback sources with failover, viewer source switching, and **100% video publishing parity for Songs** (Audio, Video, and Dual-Mode) to Favorite Multimedia:
+
+### Highlights
+
+- **Fixed YouTube & Vimeo Playback Normalization**: Eliminates player breakdowns by normalizing raw watch/share URLs to privacy-enhanced embed endpoints with strict hostname and parameter validation.
+- **Generic External Embed with Domain Allowlist**: Added support for trusted third-party video players and external iframe embeds with admin-configurable domain allowlist, sandbox attributes, and private IP/loopback SSRF rejection.
+- **Multiple Playback Sources per Content**: Attach multiple video/embed sources to Movies, Episodes, and Songs with custom labels, active/inactive toggling, drag/reorder controls, and automatic single-default enforcement (`MediaSource::enforceSingleDefault()`).
+- **Manual Source Switching**: Frontend player dropdown rendered seamlessly when multiple active sources exist ($N \ge 2$), preserving playback position (`currentTime`) during transitions.
+- **Automatic Playback Failover**: Intercepts fatal HTML5 errors (error codes 2, 3, 4) and HLS fatal errors with automatic, non-blocking failover to the next available source, complete with cycle loop protection.
+- **Source Selector Auto-Hiding**: Fully hidden and omitted when only one source exists ($N \le 1$) for complete backward compatibility.
+- **Song Multi-Mode Support**: Every Song can be Audio-only, Video-only (Music Video), or Audio + Video (Dual Mode), while maintaining a single canonical database record and slug.
+- **Song Video Full Parity**: Song video supports all 6 ingestion options: Upload Video File (with FFmpeg auto-transcode), Direct Video URL, HLS Stream, YouTube, Vimeo, and External Embed.
+- **Fail-Closed Access Protection**: Centralized in `MediaSourcePlaybackService` and enforced via `MultimediaAccessService::checkAccess()` (PUBLIC, LOGIN, PREMIUM). Unauthorized visitors receive zero stream or embed URLs.
+- **Favorite Digital & Favorite Pay Boundaries Preserved**: Premium access remains exclusively evaluated and enforced through Favorite Digital; Favorite Pay remains payment provider only.
+
+This update brings robust external embed playback, multi-source failover, and viewer switching to Favorite Multimedia:
+
+- **YouTube & Vimeo Playback Normalization**: Fixed playback breakdown caused by raw watch/share URLs (`youtube.com/watch?v=...`, `youtu.be/...`, `vimeo.com/...`) by normalizing them to secure privacy-enhanced embed endpoints (`youtube-nocookie.com/embed/{id}` and `player.vimeo.com/video/{id}`) with strict hostname validation.
+- **Generic External Embed with Domain Allowlist**: Added support for trusted third-party video players and external iframe embeds. Includes an admin-configurable `trusted_embed_domains` setting with wildcard matching (e.g. `*.example.com`), sandboxed iframe attributes, and loopback/private IP SSRF rejection.
+- **Multiple Playback Sources per Content**: Attach multiple video/embed sources to Movies and Episodes with custom labels, active/inactive toggling, drag/reorder controls, and automatic single-default enforcement (`MediaSource::enforceSingleDefault()`).
+- **Automatic Playback Failover**: Intercepts fatal HTML5 errors (error codes 2, 3, 4) and HLS fatal errors with automatic, non-blocking failover to the next available playback source, complete with cycle loop protection and toast feedback.
+- **Viewer Source Switcher**: Frontend player dropdown rendered seamlessly when multiple active sources exist ($N \ge 2$), preserving playback position (`currentTime`) during transitions. Fully hidden and omitted when only 1 source exists for complete backward compatibility.
+- **Centralized Playback Service (`MediaSourcePlaybackService`)**: Fail-closed access control enforcing `MultimediaAccessService::checkAccess()` (PUBLIC, LOGIN, PREMIUM).
 
 ---
 
@@ -98,7 +126,7 @@ favorite-multimedia.zip: OK
 
 ### Installation into Favorite CMS
 1. Download `favorite-multimedia.zip` from this release.
-2. Verify package integrity against SHA-256: `9c43260b5ac15c7d97c6e2dedef3af8c4547f00129e40b081b74976ddc7ce72b`.
+2. Verify package integrity against SHA-256: `d63c32e0152280fc596ad3722d114c1769d2342997ea2be925ceee80216385fb`.
 3. Extract `favorite-multimedia.zip` directly into the `plugins/` directory of your Favorite CMS installation:
    - Resulting path: `plugins/favorite-multimedia/`
 4. In the CMS Admin Panel, navigate to **Plugins** and click **Activate** on **Favorite Multimedia**.
