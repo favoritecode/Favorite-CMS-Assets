@@ -8,15 +8,30 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.0` |
+| **Release Version** | `v1.0.1` |
 | **Package File** | `favorite-multimedia.zip` |
-| **Package Size** | 321,867 bytes |
-| **SHA-256 Checksum** | `74f39102b3ab1fd8f41dc4c4478e117921d48cb846945d7e0786b4b3e65c8cdb` |
+| **Package Size** | 332,242 bytes |
+| **SHA-256 Checksum** | `9c43260b5ac15c7d97c6e2dedef3af8c4547f00129e40b081b74976ddc7ce72b` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
 | **Locked Source Commit** | `c7f89bc920f3bee77cc268b0c6a799f75ac938e7` |
-| **Test Suite Verification** | 252 tests, 1,610 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 261 tests, 1,669 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.1 — Simple Media Publishing UX
+
+This usability release makes everyday publishing simple and fast for Favorite CMS administrators directly from content forms:
+
+- **Direct Video Upload & Stream Selector**: Upload video files (MP4, WebM, MKV, MOV, AVI) or enter direct MP4/WebM, HLS (`.m3u8`), YouTube, or Vimeo links directly in Add/Edit Movie and Add/Edit Episode.
+- **Direct Audio Publishing**: Upload audio tracks (MP3, M4A, FLAC, WAV, AAC, OGG) or enter streaming audio URLs directly in Add/Edit Song.
+- **Direct Artwork & Subtitles**: Upload posters, backdrops, episode thumbnails, song covers, and subtitle tracks (`.vtt`, `.srt`) without navigating away.
+- **Quick Action Workflow**: Immediate `🚀 Publish Now`, `📝 Save Draft`, and `📅 Schedule` buttons.
+- **Auto-Upserting**: Intelligently updates existing default `MediaSource` rows on edits without creating database duplicates.
+- **No-Media Safety Protection**: Prevents accidental publication of titles with 0 media sources by automatically reverting to draft with a clear notification; frontend player views render a clean "Media Coming Soon" placeholder.
+- **Media Status Badges & Empty States**: Color-coded badges (`Ready`, `Processing`, `No Media`, `Failed`) on admin tables, plus friendly empty-state cards across movies, series, episodes, and songs.
+- **Advanced Sources**: Advanced source configuration remains fully accessible via the newly labeled "Advanced Sources" menu.
 
 ---
 
@@ -71,7 +86,7 @@ favorite-multimedia.zip: OK
 
 ### Installation into Favorite CMS
 1. Download `favorite-multimedia.zip` from this release.
-2. Verify package integrity against SHA-256: `74f39102b3ab1fd8f41dc4c4478e117921d48cb846945d7e0786b4b3e65c8cdb`.
+2. Verify package integrity against SHA-256: `9c43260b5ac15c7d97c6e2dedef3af8c4547f00129e40b081b74976ddc7ce72b`.
 3. Extract `favorite-multimedia.zip` directly into the `plugins/` directory of your Favorite CMS installation:
    - Resulting path: `plugins/favorite-multimedia/`
 4. In the CMS Admin Panel, navigate to **Plugins** and click **Activate** on **Favorite Multimedia**.
