@@ -8,14 +8,47 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.5` |
-| **Package File** | `favorite-multimedia.zip` (and `favorite-multimedia-v1.0.5.zip`) |
-| **Package Size** | 361,994 bytes |
-| **SHA-256 Checksum** | `69b164ad55579e27f61c5c0c6a17ab6d33046e4d38f9fc02cf1421eab070d94b` |
+| **Release Version** | `v1.0.6` |
+| **Package File** | `favorite-multimedia.zip` (and `favorite-multimedia-v1.0.6.zip`) |
+| **Package Size** | 392,548 bytes |
+| **SHA-256 Checksum** | `b5b04afd0f2936540899589d44c83720c2e185b56e556d8a59062e4d1324ff3b` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Test Suite Verification** | 335 tests, 2,048 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 413 tests, 2,389 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.6 — Multiple Download Links & Auto Next Play
+
+This targeted feature release introduces two major enhancements before release: **Multiple Download Links** and **Auto Next Play for Playlists & Episodes**:
+
+### 1. Multiple Download Links Architecture & Experience
+
+- **Scalable Relational Model (`multimedia_download_sources`)**: Full relational schema supporting multiple manual download links per content item (`movie`, `episode`, `song`) with fields for `label`, `url`, `quality`, `format`, `provider`, `sort_order`, and `is_active`.
+- **Zero-Loss Migration (012)**: Seamlessly migrates existing single `download_url` records into the new table on upgrade, preserving existing links with zero data loss.
+- **Unified Download Resolution Pipeline (`DownloadSourceService`)**:
+  1. Priority 1: Active manual download sources ordered by `sort_order ASC, id ASC`.
+  2. Priority 2: Legacy `download_url` fallback for un-migrated content items.
+  3. Priority 3 & 4: Uploaded or direct playable media sources (strictly excludes embeds, YouTube, Vimeo, and HLS `.m3u8` streams).
+  4. Deduplication: Eliminates identical normalized URLs across sources.
+- **Fail-Closed Access Boundaries**: Fully integrated with Favorite Digital subscription entitlement evaluation (`MultimediaAccessService::checkAccess()`). Unauthorized visitors/users cannot download protected content or leak raw download URLs (`options = []`, `download_url = null`).
+- **Controlled Route `/multimedia/download-source/{id}`**: Secure streaming/redirect controller with full publication verification, access enforcement, and SSRF/URL security validation (rejects `javascript:`, `data:`, `file:`, control chars, and private IP/localhost SSRF).
+- **Adaptive Frontend Detail UI**: Automatically renders a single clean `Download` button when only 1 option is available (100% backward compatible UI). When multiple options exist, renders an accessible styled dropdown selector displaying quality, format, and provider badges.
+- **Intuitive Admin Management**: Dynamic table in Movie, Episode, and Song admin edit views allowing administrators to add, edit, reorder, toggle, or delete download links without nested form collision. Metadata-only edits safely preserve existing download links.
+
+### 2. Auto Next Play for Playlists & Episodes
+
+- **Playlist Auto-Advance & Cycle Control**: Automatic sequential playback of playlist items with order preservation, repeat mode cycling, shuffle mode, safe skipping of unplayable/sourceless items, and clean termination at the end of the playlist (renders "Playlist completed" state; never loops infinitely unless repeat is active).
+- **Cross-Season Episode Auto-Advance**: Seamlessly advances through episodes within the current season, and smoothly transitions from the final episode of one season to Episode 1 of the subsequent season. Safely skips draft, scheduled, or sourceless episodes with cycle loop protection (visited ID set + safety caps).
+- **Fail-Closed Access Protection**: Fully integrated with Favorite Digital subscription entitlement evaluation via `MultimediaAccessService::checkAccess()`. Unauthorized visitors/users attempting to fetch the next premium episode or playlist track are blocked from receiving playable stream URLs (`player_url = null, sources = []`), with clear `LOGIN_REQUIRED` or `PREMIUM_REQUIRED` error codes.
+- **Next Up Countdown Overlay**: Visual overlay displaying the upcoming episode/track thumbnail, title, season/episode badge, configurable countdown timer (3-30 seconds, or immediate), and instant `Play Now` and `Cancel` controls.
+- **Browser Autoplay Rejection Handling (`safePlay`)**: Gracefully catches browser autoplay policy rejections (`NotAllowedError`) without triggering misleading source failovers, rendering a clean "Click to Play" overlay for explicit user gesture activation.
+- **Admin Configuration**: New settings in Multimedia Settings to toggle Auto-Play Next (`auto_play_next`) and adjust countdown duration (`auto_next_countdown`).
+- **Comprehensive Verification**: Validated with a dedicated 20-test automated suite covering all resolution pathways, authorization boundaries, loop prevention, and playback controllers. The full plugin test suite passes with 386 tests, 2,315 assertions (0 failures, 0 errors).
+- **Zero Core Modifications**: ZERO changes made to Favorite CMS core (`app/`, `resources/`, `database/`), Favorite Digital, or Favorite Pay.
+
+---
 
 ---
 
@@ -154,7 +187,7 @@ favorite-multimedia.zip: OK
 
 ### Installation into Favorite CMS
 1. Download `favorite-multimedia.zip` from this release.
-2. Verify package integrity against SHA-256: `69b164ad55579e27f61c5c0c6a17ab6d33046e4d38f9fc02cf1421eab070d94b`.
+2. Verify package integrity against SHA-256: `46e52733ee8d59ee448ac1564871551fa3bb97264a7d881de8fcfcf90b2872ed`.
 3. Extract `favorite-multimedia.zip` directly into the `plugins/` directory of your Favorite CMS installation:
    - Resulting path: `plugins/favorite-multimedia/`
 4. In the CMS Admin Panel, navigate to **Plugins** and click **Activate** on **Favorite Multimedia**.
