@@ -8,18 +8,30 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.4` |
-| **Package File** | `favorite-multimedia.zip` |
-| **Package Size** | 359,683 bytes |
-| **SHA-256 Checksum** | `8ecef132a3f525848f7f6aedbebd1a3db94b3501a8e4561e0d4386de5a289e23` |
+| **Release Version** | `v1.0.5` |
+| **Package File** | `favorite-multimedia.zip` (and `favorite-multimedia-v1.0.5.zip`) |
+| **Package Size** | 361,994 bytes |
+| **SHA-256 Checksum** | `69b164ad55579e27f61c5c0c6a17ab6d33046e4d38f9fc02cf1421eab070d94b` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Test Suite Verification** | 312 tests, 1,893 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 335 tests, 2,048 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
 
 ---
 
-## What's New in v1.0.4 — Final Hardening & Publishing Reliability
+## What's New in v1.0.5 — Main Form Publishing, Inline External Embed & Edit Workflow Fix
+
+This critical release fixes the production admin publishing, embed persistence, and edit lifecycle on the main Movie, Episode, and Song Add/Edit forms:
+
+### Highlights
+
+- **Eliminated Nested HTML Forms**: Removed inner auxiliary action forms and Add Source subforms from inside `<form id="fav_movie_form">` and the episode form. This prevents HTML5 parser pointer reset from detaching `Publish Now`, `Save Draft`, `Schedule`, `access_mode`, and subsequent fields.
+- **Fixed Subform Field Overwrite Collision**: Eliminated empty `<input type="text" name="video_url">` collisions where empty subform inputs overwrote entered media URLs on form submission.
+- **Full Inline External Embed & Iframe Support**: `MediaSourceResolver::extractIframeUrl()` extracts clean embed URLs from pasted `<iframe>` snippets, decodes HTML entities, and normalizes protocol-relative URLs (`//`).
+- **Expanded Known Embed Providers**: Cloudflare Stream (`iframe.videodelivery.net`), Twitch, Facebook, Wistia, Rumble, Streamtape, BunnyCDN (`iframe.mediadelivery.net`), Mux, Loom, Spotify, Google Drive, and Archive.org are recognized by default with subdomain wildcard support.
+- **Actionable Flash Error Reporting**: Controller now sets actionable error notices directly in `$_SESSION['flash_error']` and unsets `$_SESSION['flash_success']` if content is demoted to draft.
+- **Restored Canonical Dashboard Submenu**: Registered `multimedia-dashboard` as canonical first submenu under `multimedia`, hiding only the duplicate `Multimedia` child link.
+- **Fail-Closed Access Boundaries Preserved**: ZERO modifications to Favorite CMS core, Favorite Digital, or Favorite Pay. Complete test suite passes with 335 tests, 2,048 assertions (0 failures, 0 errors).
 
 This official release hardens media URL resolution, SSRF boundaries, and publishing workflows while cleaning up admin navigation:
 
@@ -142,7 +154,7 @@ favorite-multimedia.zip: OK
 
 ### Installation into Favorite CMS
 1. Download `favorite-multimedia.zip` from this release.
-2. Verify package integrity against SHA-256: `d63c32e0152280fc596ad3722d114c1769d2342997ea2be925ceee80216385fb`.
+2. Verify package integrity against SHA-256: `69b164ad55579e27f61c5c0c6a17ab6d33046e4d38f9fc02cf1421eab070d94b`.
 3. Extract `favorite-multimedia.zip` directly into the `plugins/` directory of your Favorite CMS installation:
    - Resulting path: `plugins/favorite-multimedia/`
 4. In the CMS Admin Panel, navigate to **Plugins** and click **Activate** on **Favorite Multimedia**.
