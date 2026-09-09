@@ -39,12 +39,17 @@ Favorite Pay is an integral part of the Favorite ecosystem:
 plugin-assets/favorite-pay/
 ├── README.md                  # This foundational guide
 ├── icons/                     # Domain-specific payment & wallet icons (24×24 SVG)
+│   ├── notification.svg       # Transactional & activity notification bell
 │   ├── payment-confirmed.svg  # Settled payment with verified badge
 │   ├── payment-failed.svg     # Rejected/declined payment card indicator
+│   ├── payment-history.svg    # Payment receipt & customer invoice statement
 │   ├── payment-processing.svg # In-flight transaction card with cycle arc
+│   ├── recharge.svg           # Balance top-up / recharge circular plus
 │   ├── refund.svg             # Financial reversal return arrow with coin
 │   ├── transaction.svg        # Dual bidirectional transfer/ledger arrows
-│   └── wallet-balance.svg     # Digital wallet with emerging value token
+│   ├── wallet-balance.svg     # Digital wallet with emerging value token
+│   ├── wallet.svg             # Customer digital wallet container
+│   └── withdraw.svg           # Customer funds payout & withdrawal indicator
 ├── illustrations/             # Conceptual spot artwork (400×300 SVG)
 │   ├── digital-wallet.svg     # Digital store of value, multi-channel balances
 │   └── secure-payment.svg     # Trust shield, encrypted transmission, verification
