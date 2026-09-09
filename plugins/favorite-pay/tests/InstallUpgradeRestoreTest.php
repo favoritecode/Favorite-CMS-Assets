@@ -133,7 +133,7 @@ class InstallUpgradeRestoreTest extends TestCase
 
         // Run migrations
         $migrator = new Migrator($db);
-        $applied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         $this->assertCount(7, $applied, 'Expected 7 migrations applied on fresh install');
 
@@ -165,7 +165,7 @@ class InstallUpgradeRestoreTest extends TestCase
         }
 
         // Idempotent migration rerun
-        $secondApplied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $secondApplied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
         $this->assertCount(0, $secondApplied, 'No migrations should be re-applied on subsequent run');
     }
 
@@ -205,7 +205,7 @@ class InstallUpgradeRestoreTest extends TestCase
 
             // Run Pay migrations
             $migrator = new Migrator($db);
-            $applied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+            $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
             $this->assertCount(7, $applied);
 
             // Verify all 10 tables exist in MySQL
@@ -223,7 +223,7 @@ class InstallUpgradeRestoreTest extends TestCase
             $this->assertStringStartsWith('utf8mb4', $status['Collation']);
 
             // Idempotent rerun
-            $secondApplied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+            $secondApplied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
             $this->assertCount(0, $secondApplied);
         } finally {
             $pdo->exec("DROP DATABASE IF EXISTS `{$this->mysqlDbName}`");
@@ -253,7 +253,7 @@ class InstallUpgradeRestoreTest extends TestCase
 
         // Run migrations with prefix
         $migrator = new Migrator($db);
-        $applied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
         $this->assertCount(7, $applied);
 
         // Verify that underlying SQLite master has tables with the custom prefix
@@ -604,7 +604,7 @@ class InstallUpgradeRestoreTest extends TestCase
 
         // 4. Run Upgrade Migrations (005, 006, 007)
         $migrator = new Migrator($db);
-        $applied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         $this->assertCount(3, $applied, 'Expected exactly 3 migrations (005, 006, 007) applied on upgrade');
         $this->assertContains('005_add_audit_trail_to_favorite_pay_withdrawals', $applied);
@@ -692,7 +692,7 @@ class InstallUpgradeRestoreTest extends TestCase
         $this->app->singleton(Database::class, fn() => $db);
 
         $migrator = new Migrator($db);
-        $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         // Seed wallet and transaction
         $db->insert('favorite_pay_wallets', [
@@ -766,7 +766,7 @@ class InstallUpgradeRestoreTest extends TestCase
         $this->app->singleton(Database::class, fn() => $db);
 
         $migrator = new Migrator($db);
-        $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         $plugin = FavoritePayPlugin::bootstrap($this->app);
 
@@ -796,7 +796,7 @@ class InstallUpgradeRestoreTest extends TestCase
         ]);
 
         $migrator = new Migrator($sourceDb);
-        $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         // Seed comprehensive data in source
         $sourceDb->insert('favorite_pay_gateways', [
@@ -892,7 +892,7 @@ class InstallUpgradeRestoreTest extends TestCase
 
         // Run migrations on destination to establish identical schema
         $destMigrator = new Migrator($destDb);
-        $destMigrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $destMigrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         // Clear migration records and restore dumped rows
         $destDb->execute("DELETE FROM `cms_migrations`");
@@ -934,7 +934,7 @@ class InstallUpgradeRestoreTest extends TestCase
         $this->app->singleton(Database::class, fn() => $db);
 
         $migrator = new Migrator($db);
-        $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         // Create users and roles
         $pdo = $db->getPdo();

@@ -90,7 +90,7 @@ class BinancePayGatewayTest extends TestCase
         require_once APP_ROOT . '/database/migrations/009_create_settings_table.php';
         (new CreateSettingsTable($this->db))->up();
 
-        require_once APP_ROOT . '/plugins/favorite-pay/database/migrations/001_create_favorite_pay_tables.php';
+        require_once (is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations/001_create_favorite_pay_tables.php';
         (new CreateFavoritePayTables($this->db))->up();
 
         // Default primary currency for tests

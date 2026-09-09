@@ -128,7 +128,7 @@ class ProductionSmokeAndSecurityTest extends TestCase
 
         // Run migrations to ensure full 10 tables schema
         $migrator = new Migrator($this->db);
-        $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         $this->currencyService = new CurrencyService();
         $this->registry = new GatewayRegistry();

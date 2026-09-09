@@ -33,7 +33,7 @@ class DatabaseSchemaTest extends TestCase
             }
         };
 
-        require_once APP_ROOT . '/plugins/favorite-pay/database/migrations/001_create_favorite_pay_tables.php';
+        require_once (is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations/001_create_favorite_pay_tables.php';
     }
 
     public function testMigrationUpCreatesAllSevenTables(): void
@@ -247,13 +247,13 @@ class DatabaseSchemaTest extends TestCase
     public function testMigratorCanRunAndRecordPluginMigration(): void
     {
         $migrator = new Migrator($this->db);
-        $applied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
         $this->assertContains('001_create_favorite_pay_tables', $applied);
         $this->assertTrue($migrator->hasRun('001_create_favorite_pay_tables'));
 
         // Running again should do nothing (idempotent)
-        $reapplied = $migrator->migrate(APP_ROOT . '/plugins/favorite-pay/database/migrations');
+        $reapplied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
         $this->assertEmpty($reapplied);
     }
 

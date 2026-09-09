@@ -52,7 +52,7 @@ class WalletSettlementTest extends TestCase
         };
 
         // Run migrations
-        require_once APP_ROOT . '/plugins/favorite-pay/database/migrations/001_create_favorite_pay_tables.php';
+        require_once (is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations/001_create_favorite_pay_tables.php';
         $migration = new CreateFavoritePayTables($this->db);
         $migration->up();
 

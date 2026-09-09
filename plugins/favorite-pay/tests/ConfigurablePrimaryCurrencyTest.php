@@ -65,7 +65,7 @@ class ConfigurablePrimaryCurrencyTest extends TestCase
         $coreMigration->up();
 
         // Run Favorite Pay tables migration
-        require_once APP_ROOT . '/plugins/favorite-pay/database/migrations/001_create_favorite_pay_tables.php';
+        require_once (is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations/001_create_favorite_pay_tables.php';
         $payMigration = new CreateFavoritePayTables($this->db);
         $payMigration->up();
 
