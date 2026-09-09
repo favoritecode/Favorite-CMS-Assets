@@ -39,3 +39,7 @@ Thumbs.db
 !plugin-assets/favorite-pay/release/*.zip
 !plugin-assets/favorite-multimedia/release/*.zip
 !plugin-assets/favorite-digital/release/*.zip
+
+# Allow verified theme release packages
+!theme-assets/favorite-multimedia/release/*.zip
+
