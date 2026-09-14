@@ -8,32 +8,37 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.9` |
-| **Package File** | `Favorite-Pay.zip` |
-| **Package Size** | 245,621 bytes |
-| **SHA-256 Checksum** | `8c4a26ef39e7e1a8baadc126a89f845cf3e5ead1968265d70639bcbc8963c910` |
+| **Release Version** | `v1.0.11` |
+| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.11.zip` |
+| **Package Size** | 249,251 bytes |
+| **SHA-256 Checksum** | `4e31ec324d81c34463520f9a95ea7a01cf5f195bc49c38aec322100f0bf02f43` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-pay` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
-| **Test Suite Verification** | 523 tests, 2,684 assertions (0 failures, 0 errors, 0 skipped) |
+| **Entries** | 127 entries |
 
 ---
 
-## What's New in v1.0.9
+## What's New in v1.0.11
 
-1. **Self-Contained Vector SVG Icons**:
-   - Replaced legacy Font Awesome string class literals with inline vector SVG rendering via `FavoriteCMS\Pay\Support\PaymentIcon`.
-   - Eliminates visible fallback text (`fas`, `fa-wallet`, `fa-receipt`, `fa-bell`, `fa-exchange-alt`, `fa-credit-card`) across all themes and shared hosting environments.
-   - Zero external CDN dependencies (no Font Awesome kit, no Cloudflare, no Google Fonts).
-2. **Dedicated Icon Asset Foundation**:
-   - Synchronized pure 24×24 SVG vector assets in `plugin-assets/favorite-pay/icons/` and plugin runtime package `assets/icons/`.
-3. **Repository Architecture Separation**:
-   - Official release home relocated to `favoritecode/Favorite-CMS-Assets`.
-   - Core CMS repository (`Favorite-CMS-Universal`) remains pure, fresh, and plugin-independent.
-4. **Security & Accessibility Hardening**:
-   - Inline SVG attributes sanitized against event-handler injection (`on*`) and protocol exploits (`javascript:`).
-   - Non-interactive icons properly labeled with `aria-hidden="true"`.
+1. **[Recharge] Gateway Availability & Configuration Filtering**:
+   - Replaced unconstrained gateway enumeration in `CustomerAccountController::getAvailableGateways()` with authoritative `GatewayRegistry::available($currency)` filtering.
+   - Shows **only** gateways that are both enabled and configured (`isConfigured() === true`, e.g. account numbers or credentials saved by administrator) for the wallet currency.
+   - Automatically excludes unconfigured gateways (e.g. Nagad, Rocket, Bank Transfer when not set up by admin) server-side without hardcoding.
+   - Validates POST submissions in `handleRechargeSubmit()` against available gateways to reject unconfigured or unavailable gateway selections.
+   - Retains concrete gateway IDs (`manual_bkash`, `manual_nagad`, `manual_rocket`, `manual_bank`), ensuring configured bKash displays its specific merchant details.
+   - Generic `manual_bd` and `wallet` balance remain strictly excluded from recharge methods.
+
+2. **[Payment History & Transactions] 500 Internal Server Error Resolution**:
+   - Isolated customer pagination `$page` variable in `views/customer/layout.php` before loading the theme header.
+   - Provided `currentPage` in view data alongside `page` for backwards compatibility.
+   - Made `fpay_format_money()` type-resilient (`int|float|string`) to avoid strict float/string minor-unit type errors.
+
+3. **[Packaging] Standardized Production ZIP**:
+   - Clean 127 entries under `favorite-pay/` root prefix.
+   - POSIX/Unix attributes (0755 for directories, 0644 for files).
+   - Strict exclusions of tests, git, dev tools, and temporary files.
 
 ---
 
@@ -60,7 +65,8 @@ To verify archive integrity:
 sha256sum -c checksums.sha256
 ```
 
-To install into Favorite CMS:
-1. Extract `Favorite-Pay.zip` directly into the `plugins/` directory of your Favorite CMS installation.
-2. The folder structure should be `plugins/favorite-pay/`.
-3. Activate the plugin from the Favorite CMS Admin Panel (**Plugins** &rarr; **Favorite Pay**).
+To install or update in Favorite CMS:
+1. Log in to your Favorite CMS Admin Dashboard.
+2. Navigate to **Plugins** &rarr; **Add New / Upload**.
+3. Upload `Favorite-Pay.zip` and click **Install Now**.
+4. Activate the plugin.

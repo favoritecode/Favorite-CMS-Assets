@@ -166,14 +166,14 @@ class PaymentIconAndMenuRenderingTest extends TestCase
 
         // Must contain valid inline SVGs for all registered items
         $this->assertStringContainsString('cms-account-item-pay_balance', $html);
-        $this->assertStringContainsString('cms-account-item-pay_recharge', $html);
+        $this->assertStringNotContainsString('cms-account-item-pay_recharge', $html, 'Standalone Recharge item must not appear in account menu');
         $this->assertStringContainsString('cms-account-item-pay_payments', $html);
         $this->assertStringContainsString('cms-account-item-pay_notifications', $html);
         $this->assertStringContainsString('cms-account-item-pay_transactions', $html);
 
         // Count <svg occurrences inside the list
         $svgCount = substr_count($html, '<svg');
-        $this->assertGreaterThanOrEqual(7, $svgCount);
+        $this->assertGreaterThanOrEqual(6, $svgCount);
     }
 
     public function testAccountMenuPreservesOrderAndLinks(): void
@@ -188,7 +188,6 @@ class PaymentIconAndMenuRenderingTest extends TestCase
         $expectedOrder = [
             'profile',           // 10 (Core)
             'pay_balance',       // 14 (Pay)
-            'pay_recharge',      // 16 (Pay)
             'pay_payments',      // 20 (Pay)
             'pay_notifications', // 22 (Pay)
             'pay_transactions',  // 24 (Pay)
@@ -198,9 +197,10 @@ class PaymentIconAndMenuRenderingTest extends TestCase
 
         $this->assertSame($expectedOrder, $keys);
 
-        // Verify URL paths
+        // Verify URL paths and labels
         $this->assertSame('/account/wallet', $items['pay_balance']['url']);
-        $this->assertSame('/account/recharge', $items['pay_recharge']['url']);
+        $this->assertSame('Wallet & Balance', $items['pay_balance']['label']);
+        $this->assertArrayNotHasKey('pay_recharge', $items);
         $this->assertSame('/account/payments', $items['pay_payments']['url']);
         $this->assertSame('/account/notifications', $items['pay_notifications']['url']);
         $this->assertSame('/account/transactions', $items['pay_transactions']['url']);

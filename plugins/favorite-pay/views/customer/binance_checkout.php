@@ -18,8 +18,8 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
 <div style="max-width: 580px; margin: 0 auto;">
     <!-- Breadcrumb -->
     <div style="margin-bottom: 18px;">
-        <a href="/account/recharge" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-            &larr; Back to Recharge Options
+        <a href="/account/wallet#recharge-wallet" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+            &larr; Back to Wallet &amp; Balance
         </a>
     </div>
 
@@ -94,8 +94,8 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
                 This payment was cancelled, failed, or expired. No funds were credited to your wallet.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                <a href="/account/recharge" class="fpay-btn fpay-btn-primary">
-                    Back to Recharge
+                <a href="/account/wallet#recharge-wallet" class="fpay-btn fpay-btn-primary">
+                    Back to Wallet
                 </a>
                 <a href="/account/payments/<?php echo urlencode($paymentId); ?>" class="fpay-btn fpay-btn-secondary">
                     View Details

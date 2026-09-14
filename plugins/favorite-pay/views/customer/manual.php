@@ -11,6 +11,15 @@ $accountType = $gatewayConfig['account_type'] ?? '';
 $bankName = $gatewayConfig['bank_name'] ?? '';
 $branchName = $gatewayConfig['branch_name'] ?? '';
 $routingNo = $gatewayConfig['routing_no'] ?? '';
+
+$gwId = $gateway ? $gateway->getId() : '';
+$senderPlaceholder = match ($gwId) {
+    'manual_bkash' => 'e.g. 017XXXXXXXX',
+    'manual_nagad' => 'e.g. 018XXXXXXXX',
+    'manual_rocket' => 'e.g. 019XXXXXXXX',
+    'manual_bank' => 'e.g. Bank Account No / IBAN',
+    default => 'e.g. 017XXXXXXXX or Account Number',
+};
 ?>
 
 <div style="max-width: 680px; margin: 0 auto;">
@@ -76,9 +85,10 @@ $routingNo = $gatewayConfig['routing_no'] ?? '';
         </div>
 
         <!-- Submission Form -->
-        <form action="/account/recharge/manual" method="POST">
+        <form action="/account/recharge/manual" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="intent_id" value="<?php echo htmlspecialchars($intent->getId(), ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="intent" value="<?php echo htmlspecialchars($intent->getId(), ENT_QUOTES, 'UTF-8'); ?>">
 
             <div style="margin-bottom: 20px;">
                 <label for="trx_id" style="display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #0f172a;">
@@ -96,23 +106,52 @@ $routingNo = $gatewayConfig['routing_no'] ?? '';
                 </small>
             </div>
 
-            <div style="margin-bottom: 24px;">
+            <div style="margin-bottom: 20px;">
                 <label for="sender_number" style="display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #0f172a;">
-                    Sender Mobile / Account Number (Optional)
+                    Sender Mobile / Account Number <span style="color: #dc2626;">*</span>
                 </label>
                 <input type="text" 
                        name="sender_number" 
                        id="sender_number" 
-                       placeholder="e.g. 017XXXXXXXX" 
+                       required 
+                       placeholder="<?php echo htmlspecialchars($senderPlaceholder, ENT_QUOTES, 'UTF-8'); ?>" 
                        style="width: 100%; padding: 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"
                        autocomplete="off">
+                <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">
+                    Enter the mobile or bank account number used to make this transfer.
+                </small>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="payment_proof" style="display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #0f172a;">
+                    Payment Proof / Attached Document (Optional)
+                </label>
+                <input type="file" 
+                       name="payment_proof" 
+                       id="payment_proof" 
+                       accept=".jpg,.jpeg,.png,.webp,.pdf" 
+                       style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; background: #fff;">
+                <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">
+                    Supported formats: JPG, PNG, WEBP, PDF (Max 10MB). Upload payment screenshot or deposit slip.
+                </small>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label for="notes" style="display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #0f172a;">
+                    Additional Notes / Remarks (Optional)
+                </label>
+                <textarea name="notes" 
+                          id="notes" 
+                          rows="2" 
+                          placeholder="Any extra information regarding this payment..." 
+                          style="width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;"></textarea>
             </div>
 
             <div style="display: flex; gap: 12px;">
                 <button type="submit" class="fpay-btn fpay-btn-primary" style="flex: 1; justify-content: center; padding: 12px;">
                     Submit for Verification &rarr;
                 </button>
-                <a href="/account/recharge" class="fpay-btn fpay-btn-secondary" style="padding: 12px;">
+                <a href="/account/wallet" class="fpay-btn fpay-btn-secondary" style="padding: 12px;">
                     Cancel
                 </a>
             </div>

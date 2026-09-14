@@ -2,6 +2,7 @@
 /**
  * Customer Payment History View
  */
+$page = (int)($page ?? ($currentPage ?? 1));
 $queryParams = array_filter($filters ?? [], function($v) {
     return $v !== null && $v !== '';
 });
@@ -76,7 +77,7 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                 <tbody>
                     <?php foreach ($payments as $p): 
                         $txId = $p['transaction_id'] ?? '';
-                        $amount = (float)($p['base_amount'] ?? 0);
+                        $amount = (int)($p['base_amount'] ?? 0);
                         $currency = $p['base_currency'] ?? 'BDT';
                         $status = strtolower($p['status'] ?? 'pending');
                         $gw = $p['gateway_id'] ?? $p['payment_method_type'] ?? 'Payment';

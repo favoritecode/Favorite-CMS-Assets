@@ -161,17 +161,13 @@ class CustomerAccountAndWalletTest extends TestCase
 
         $balanceItem = AccountMenu::getItem('pay_balance');
         $this->assertNotNull($balanceItem);
-        $this->assertSame('Balance', $balanceItem['label']);
+        $this->assertSame('Wallet & Balance', $balanceItem['label']);
         $this->assertSame('/account/wallet', $balanceItem['url']);
         $this->assertSame(14, $balanceItem['order']);
         $this->assertSame('favorite-pay', $balanceItem['plugin']);
 
         $rechargeItem = AccountMenu::getItem('pay_recharge');
-        $this->assertNotNull($rechargeItem);
-        $this->assertSame('Recharge', $rechargeItem['label']);
-        $this->assertSame('/account/recharge', $rechargeItem['url']);
-        $this->assertSame(16, $rechargeItem['order']);
-        $this->assertSame('favorite-pay', $rechargeItem['plugin']);
+        $this->assertNull($rechargeItem, 'Standalone pay_recharge menu item must be removed');
 
         $paymentsItem = AccountMenu::getItem('pay_payments');
         $this->assertNotNull($paymentsItem);
@@ -201,19 +197,17 @@ class CustomerAccountAndWalletTest extends TestCase
         // Core Profile (10) must come before Pay Balance (14)
         $this->assertContains('profile', $orderKeys);
         $this->assertContains('pay_balance', $orderKeys);
-        $this->assertContains('pay_recharge', $orderKeys);
+        $this->assertNotContains('pay_recharge', $orderKeys, 'pay_recharge must not be in account menu');
         $this->assertContains('pay_payments', $orderKeys);
         $this->assertContains('pay_transactions', $orderKeys);
 
         $profilePos = array_search('profile', $orderKeys, true);
         $balancePos = array_search('pay_balance', $orderKeys, true);
-        $rechargePos = array_search('pay_recharge', $orderKeys, true);
         $paymentsPos = array_search('pay_payments', $orderKeys, true);
         $transactionsPos = array_search('pay_transactions', $orderKeys, true);
 
-        $this->assertLessThan($balancePos, $profilePos, 'Profile (10) must come before Balance (14)');
-        $this->assertLessThan($rechargePos, $balancePos, 'Balance (14) must come before Recharge (16)');
-        $this->assertLessThan($paymentsPos, $rechargePos, 'Recharge (16) must come before Payments (20)');
+        $this->assertLessThan($balancePos, $profilePos, 'Profile (10) must come before Wallet & Balance (14)');
+        $this->assertLessThan($paymentsPos, $balancePos, 'Wallet & Balance (14) must come before Payments (20)');
         $this->assertLessThan($transactionsPos, $paymentsPos, 'Payments (20) must come before Transactions (24)');
     }
 
@@ -223,7 +217,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $this->plugin->registerAccountMenuItems();
 
         $this->assertTrue(AccountMenu::hasItem('pay_balance'));
-        $this->assertTrue(AccountMenu::hasItem('pay_recharge'));
+        $this->assertFalse(AccountMenu::hasItem('pay_recharge'));
 
         // Deactivate plugin
         $this->plugin->onDeactivate();
@@ -290,7 +284,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         // Wallet should be rendered for user 5, not user 999
         $content = $response->getContent();
-        $this->assertStringContainsString('My Wallet', $content);
+        $this->assertStringContainsString('Wallet &amp; Balance', $content);
     }
 
     // =========================================================================
@@ -302,10 +296,15 @@ class CustomerAccountAndWalletTest extends TestCase
         $this->setLoggedInUser(1, 'active');
 
         $reqWallet = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/wallet']);
-        $this->assertSame(200, $this->controller->wallet($reqWallet)->getStatusCode());
+        $respWallet = $this->controller->wallet($reqWallet);
+        $this->assertSame(200, $respWallet->getStatusCode());
+        $this->assertStringContainsString('id="recharge-wallet"', (string)$respWallet->getContent());
+        $this->assertStringContainsString('Recharge Wallet', (string)$respWallet->getContent());
 
         $reqRecharge = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
-        $this->assertSame(200, $this->controller->recharge($reqRecharge)->getStatusCode());
+        $respRecharge = $this->controller->recharge($reqRecharge);
+        $this->assertSame(302, $respRecharge->getStatusCode());
+        $this->assertSame('/account/wallet', $respRecharge->getHeaders()['Location'] ?? '');
 
         $reqPayments = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/payments']);
         $this->assertSame(200, $this->controller->payments($reqPayments)->getStatusCode());
@@ -332,16 +331,21 @@ class CustomerAccountAndWalletTest extends TestCase
         $reqTransactions = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/transactions']);
         $this->assertSame(200, $this->controller->transactions($reqTransactions)->getStatusCode());
 
-        // CANNOT view recharge form (403 Forbidden)
+        // GET /account/recharge redirects to /account/wallet (where recharge form is disabled with suspended notice)
         $reqRechargeGet = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRechargeGet = $this->controller->recharge($reqRechargeGet);
-        $this->assertSame(403, $respRechargeGet->getStatusCode());
-        $this->assertStringContainsString('suspended', strtolower($respRechargeGet->getContent()));
+        $this->assertSame(302, $respRechargeGet->getStatusCode());
+        $this->assertSame('/account/wallet', $respRechargeGet->getHeaders()['Location'] ?? '');
 
-        // CANNOT submit recharge (403 Forbidden)
+        // CANNOT submit recharge via /account/recharge (403 Forbidden)
         $reqRechargePost = new Request([], ['amount' => '100', 'gateway' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/recharge']);
         $respRechargePost = $this->controller->recharge($reqRechargePost);
         $this->assertSame(403, $respRechargePost->getStatusCode());
+
+        // CANNOT submit recharge via /account/wallet (403 Forbidden)
+        $reqWalletPost = new Request([], ['amount' => '100', 'gateway' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/wallet']);
+        $respWalletPost = $this->controller->wallet($reqWalletPost);
+        $this->assertSame(403, $respWalletPost->getStatusCode());
 
         // CANNOT view manual recharge
         $reqManualGet = new Request(['intent' => 'pi_test'], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge/manual']);
@@ -405,7 +409,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/recharge', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
         $this->assertStringContainsString('Invalid or expired security token', $_SESSION['flash_error'] ?? '');
     }
 
@@ -422,7 +426,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/recharge', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
         $this->assertStringContainsString('Please enter a valid positive recharge amount', $_SESSION['flash_error'] ?? '');
     }
 
@@ -439,7 +443,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/recharge', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
         $this->assertStringContainsString('The selected payment method is not recognized', $_SESSION['flash_error'] ?? '');
     }
 
@@ -951,13 +955,13 @@ class CustomerAccountAndWalletTest extends TestCase
         $intents[$intent->getId()] = $intent->withStatus(PaymentStatus::SUCCEEDED);
         $prop->setValue($this->paymentService, $intents);
 
-        $req = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
-        $resp = $this->controller->recharge($req);
+        $req = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/wallet']);
+        $resp = $this->controller->wallet($req);
 
         $this->assertSame(200, $resp->getStatusCode());
         $content = $resp->getContent();
 
-        // Must display the recent recharge section
+        // Must display the recent recharge section on wallet page
         $this->assertStringContainsString('Recent Recharge Activity', $content);
         $this->assertStringContainsString($intent->getId(), $content);
     }
@@ -1007,16 +1011,20 @@ class CustomerAccountAndWalletTest extends TestCase
         $respTx = $this->controller->transactions($reqTx);
         $this->assertSame(200, $respTx->getStatusCode());
 
-        // Suspended customer viewing recharge -> 403 Forbidden (recharging is blocked)
+        // Suspended customer viewing recharge -> redirects to /account/wallet (where recharge form is disabled)
         $reqRecharge = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRecharge = $this->controller->recharge($reqRecharge);
-        $this->assertSame(403, $respRecharge->getStatusCode());
-        $this->assertStringContainsString('suspended', strtolower($respRecharge->getContent()));
+        $this->assertSame(302, $respRecharge->getStatusCode());
+        $this->assertSame('/account/wallet', $respRecharge->getHeaders()['Location'] ?? '');
 
         // Suspended customer submitting recharge -> blocked 403
         $reqRechargePost = new Request([], ['amount' => 100, 'gateway_id' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/recharge']);
         $respRechargePost = $this->controller->recharge($reqRechargePost);
         $this->assertSame(403, $respRechargePost->getStatusCode());
+
+        $reqWalletPost = new Request([], ['amount' => 100, 'gateway_id' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/wallet']);
+        $respWalletPost = $this->controller->wallet($reqWalletPost);
+        $this->assertSame(403, $respWalletPost->getStatusCode());
     }
 
     public function testBannedCustomerIsBlockedFromAllAccountPages(): void
@@ -1041,4 +1049,67 @@ class CustomerAccountAndWalletTest extends TestCase
         $this->assertSame(403, $respRecharge->getStatusCode());
     }
 
+    public function testWalletPageRendersRechargeFormAndLayoutExcludesStandaloneRechargeTab(): void
+    {
+        $this->setLoggedInUser(75, 'active', 'user75');
+
+        $req = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/wallet']);
+        $resp = $this->controller->wallet($req);
+
+        $this->assertSame(200, $resp->getStatusCode());
+        $html = (string)$resp->getContent();
+
+        // Must render the recharge form card on /account/wallet
+        $this->assertStringContainsString('id="recharge-wallet"', $html);
+        $this->assertStringContainsString('action="/account/wallet"', $html);
+        $this->assertStringContainsString('name="amount"', $html);
+        $this->assertStringContainsString('Recharge Wallet', $html);
+
+        // Standalone Recharge tab/link must NOT exist in layout navigation
+        $this->assertStringNotContainsString('href="/account/recharge"', $html);
+    }
+
+    public function testDirectPostToWalletProcessesRechargeCorrectly(): void
+    {
+        $this->setLoggedInUser(76, 'active', 'user76');
+
+        $csrf = (string)($_SESSION['_token'] ?? $_SESSION['_csrf_token'] ?? 'valid-test-csrf-token');
+        $postData = [
+            'amount'      => '350.00',
+            'gateway_id'  => 'manual_bkash',
+            '_csrf_token' => $csrf,
+            '_token'      => $csrf,
+        ];
+
+        $req = new Request([], $postData, ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/wallet']);
+        $resp = $this->controller->wallet($req);
+
+        $this->assertSame(302, $resp->getStatusCode());
+        $location = $resp->getHeaders()['Location'] ?? '';
+        $this->assertStringStartsWith('/account/recharge/manual?intent=pi_', $location);
+
+        // Wallet balance must remain 0 before verification
+        $this->assertSame(0, $this->walletService->getBalance(76)->getAmount());
+    }
+
+    public function testRechargeGatewaysExcludeManualBdAndWallet(): void
+    {
+        $this->setLoggedInUser(77, 'active', 'user77');
+
+        $gateways = $this->controller->getAvailableGateways('BDT');
+
+        $this->assertArrayNotHasKey('manual_bd', $gateways, 'Generic manual_bd must never appear in customer recharge options');
+        $this->assertArrayNotHasKey('wallet', $gateways, 'Wallet balance must never be a payment option for adding funds');
+    }
+
+    public function testStandaloneRechargeGetRedirectsToWallet(): void
+    {
+        $this->setLoggedInUser(78, 'active', 'user78');
+
+        $req = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
+        $resp = $this->controller->recharge($req);
+
+        $this->assertSame(302, $resp->getStatusCode());
+        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
+    }
 }

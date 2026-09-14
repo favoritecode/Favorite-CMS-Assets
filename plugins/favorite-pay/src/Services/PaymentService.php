@@ -115,6 +115,13 @@ class PaymentService implements PaymentServiceInterface
             $metadata['gateway_id'] = (string)$options['gateway'];
         }
 
+        if ($methodType === null && !empty($metadata['gateway_id'])) {
+            $gw = $this->gatewayRegistry->has($metadata['gateway_id']) ? $this->gatewayRegistry->get($metadata['gateway_id']) : null;
+            if ($gw !== null) {
+                $methodType = $gw->getType();
+            }
+        }
+
         $intent = new PaymentIntent(
             $id,
             $sourcePlugin,
@@ -146,7 +153,7 @@ class PaymentService implements PaymentServiceInterface
                 'rate_scale'          => $snapshot?->getRateScale(),
                 'payment_method_type' => $methodType?->value,
                 'status'              => PaymentStatus::PENDING->value,
-                'metadata'            => !empty($options['metadata']) ? json_encode($options['metadata']) : null,
+                'metadata'            => !empty($metadata) ? json_encode($metadata) : null,
                 'created_at'          => date('Y-m-d H:i:s'),
             ]);
         }
@@ -174,6 +181,29 @@ class PaymentService implements PaymentServiceInterface
             if ($row) {
                 $baseAmount = new Money((int)$row->base_amount, (string)$row->base_currency);
                 $chargeAmount = new Money((int)$row->charge_amount, (string)$row->charge_currency);
+
+                $metadata = [];
+                if (!empty($row->metadata)) {
+                    $decoded = json_decode((string)$row->metadata, true);
+                    if (is_array($decoded)) {
+                        $metadata = $decoded;
+                    }
+                }
+                if (empty($metadata['gateway_id']) && !empty($row->payment_method_type)) {
+                    $metadata['gateway_id'] = (string)$row->payment_method_type;
+                }
+
+                $snapshot = null;
+                if (!empty($row->rate_factor) && !empty($row->rate_scale)) {
+                    $snapshot = new ConversionSnapshot(
+                        (int)$row->rate_factor,
+                        (int)$row->rate_scale,
+                        (string)$row->base_currency,
+                        (string)$row->charge_currency,
+                        (string)($row->exchange_rate ?? '1.0')
+                    );
+                }
+
                 $intent = new PaymentIntent(
                     (string)$row->transaction_id,
                     (string)$row->source_plugin,
@@ -182,7 +212,11 @@ class PaymentService implements PaymentServiceInterface
                     $chargeAmount,
                     PaymentStatus::from((string)$row->status),
                     !empty($row->payment_method_type) ? PaymentMethodType::from((string)$row->payment_method_type) : null,
-                    $row->user_id ? (int)$row->user_id : null
+                    $row->user_id ? (int)$row->user_id : null,
+                    $snapshot,
+                    $metadata,
+                    $row->created_at ?? null,
+                    $row->updated_at ?? null
                 );
                 $this->intents[$intentId] = $intent;
                 return $intent;

@@ -1,8 +1,9 @@
 <?php
 if (!function_exists('fpay_format_money')) {
-    function fpay_format_money(int $minorUnits, string $currency = 'BDT'): string {
+    function fpay_format_money(int|float|string $minorUnits, string $currency = 'BDT'): string {
+        $units = (int)round((float)$minorUnits);
         $decimals = in_array(strtoupper($currency), ['JPY', 'KRW'], true) ? 0 : 2;
-        $major = $minorUnits / (10 ** $decimals);
+        $major = $units / (10 ** $decimals);
         $symbol = match (strtoupper($currency)) {
             'BDT' => '৳',
             'USD', 'USDT', 'USDC' => '$',

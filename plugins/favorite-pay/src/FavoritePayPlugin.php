@@ -757,8 +757,7 @@ final class FavoritePayPlugin
      * Register customer account menu items in Core AccountMenu.
      * Conceptual order:
      * - Profile (10, Core)
-     * - Balance (14, Favorite Pay)
-     * - Recharge (16, Favorite Pay)
+     * - Wallet & Balance (14, Favorite Pay)
      * - Payment History (20, Favorite Pay)
      * - Transactions (24, Favorite Pay)
      * - Administration (30, Core)
@@ -772,19 +771,10 @@ final class FavoritePayPlugin
 
         register_account_menu_item([
             'id'     => 'pay_balance',
-            'label'  => 'Balance',
+            'label'  => 'Wallet & Balance',
             'url'    => '/account/wallet',
             'icon'   => PaymentIcon::render('wallet'),
             'order'  => 14,
-            'plugin' => 'favorite-pay',
-        ]);
-
-        register_account_menu_item([
-            'id'     => 'pay_recharge',
-            'label'  => 'Recharge',
-            'url'    => '/account/recharge',
-            'icon'   => PaymentIcon::render('recharge'),
-            'order'  => 16,
             'plugin' => 'favorite-pay',
         ]);
 
@@ -844,12 +834,12 @@ final class FavoritePayPlugin
         }
 
         // Customer Wallet / Balance
-        add_route(['GET'], '/account/wallet', function (\FavoriteCMS\Core\Request $request) {
+        add_route(['GET', 'POST'], '/account/wallet', function (\FavoriteCMS\Core\Request $request) {
             $controller = $this->app->make(\FavoriteCMS\Pay\Controllers\CustomerAccountController::class);
             return $controller->wallet($request);
         });
 
-        // Customer Recharge
+        // Customer Recharge (Redirect GET to /account/wallet; handle POST for backwards compatibility)
         add_route(['GET', 'POST'], '/account/recharge', function (\FavoriteCMS\Core\Request $request) {
             $controller = $this->app->make(\FavoriteCMS\Pay\Controllers\CustomerAccountController::class);
             return $controller->recharge($request);

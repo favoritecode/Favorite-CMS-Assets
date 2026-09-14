@@ -197,7 +197,7 @@ class WithdrawalTest extends TestCase
         $this->assertNull($withdrawItem, 'Withdraw item must not be registered when feature is disabled');
 
         $this->assertNotNull(AccountMenu::getItem('pay_balance'));
-        $this->assertNotNull(AccountMenu::getItem('pay_recharge'));
+        $this->assertNull(AccountMenu::getItem('pay_recharge'));
         $this->assertNotNull(AccountMenu::getItem('pay_payments'));
         $this->assertNotNull(AccountMenu::getItem('pay_transactions'));
     }

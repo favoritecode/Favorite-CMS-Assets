@@ -257,6 +257,41 @@ class DatabaseSchemaTest extends TestCase
         $this->assertEmpty($reapplied);
     }
 
+    public function testPaymentServiceGetIntentRestoresMetadataFromDatabase(): void
+    {
+        $migrator = new Migrator($this->db);
+        $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
+
+        $registry = new \FavoriteCMS\Pay\Services\GatewayRegistry();
+        $currencyService = new \FavoriteCMS\Pay\Services\CurrencyService();
+        $paymentService = new \FavoriteCMS\Pay\Services\PaymentService($currencyService, $registry, $this->db);
+
+        $intent = $paymentService->createIntent('favorite-pay', 'ref_db_test_1', \FavoriteCMS\Pay\Domain\Money::bdt(15000), [
+            'customer_id' => 42,
+            'gateway_id'  => 'manual_bkash',
+            'metadata'    => [
+                'type'       => 'wallet_recharge',
+                'gateway_id' => 'manual_bkash',
+                'channel'    => 'bkash',
+            ],
+        ]);
+
+        $intentId = $intent->getId();
+
+        // Create a new PaymentService instance connected to the same DB (zero in-memory cache)
+        $freshPaymentService = new \FavoriteCMS\Pay\Services\PaymentService($currencyService, $registry, $this->db);
+        $loadedIntent = $freshPaymentService->getIntent($intentId);
+
+        $this->assertNotNull($loadedIntent);
+        $this->assertSame($intentId, $loadedIntent->getId());
+        $this->assertSame(\FavoriteCMS\Pay\Domain\PaymentMethodType::MANUAL_BKASH, $loadedIntent->getMethodType());
+
+        $metadata = $loadedIntent->getMetadata();
+        $this->assertSame('manual_bkash', $metadata['gateway_id']);
+        $this->assertSame('bkash', $metadata['channel']);
+        $this->assertSame('wallet_recharge', $metadata['type']);
+    }
+
     public function testMigrationDownDropsAllSevenTables(): void
     {
         $migration = new CreateFavoritePayTables($this->db);

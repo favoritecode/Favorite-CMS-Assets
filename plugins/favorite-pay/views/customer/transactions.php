@@ -2,8 +2,9 @@
 /**
  * Customer Wallet Transactions Ledger View
  */
-$balanceAmount = $balance->getAmount();
-$balanceCurrency = $balance->getCurrency();
+$balanceAmount = ($balance instanceof \FavoriteCMS\Pay\Domain\Money) ? $balance->getAmount() : (int)($balance ?? 0);
+$balanceCurrency = ($balance instanceof \FavoriteCMS\Pay\Domain\Money) ? $balance->getCurrency() : ($currency ?? 'BDT');
+$page = (int)($page ?? ($currentPage ?? 1));
 
 $queryParams = array_filter($filters ?? [], function($v) {
     return $v !== null && $v !== '';

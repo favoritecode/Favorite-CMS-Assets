@@ -561,7 +561,9 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
         $controller = new SettingController($this->app);
 
         // 2. Simulate super-admin submitting form with primary_currency = USD
+        $_SESSION['_token'] = 'csrf_token_test_abc';
         $request = new Request([], [
+            '_token'           => 'csrf_token_test_abc',
             'site_name'        => 'My Store',
             'primary_currency' => 'USD',
         ], [], [], [], ['REQUEST_METHOD' => 'POST']);

@@ -200,11 +200,31 @@ class CustomerAccountController
         $user = $auth;
         $userId = (int)$user->id;
 
+        $isSuspended = $this->isUserSuspended($user);
+
+        if ($request->method() === 'POST') {
+            // Security: Suspended accounts cannot perform financial recharge actions
+            if ($isSuspended) {
+                return new Response('Access restricted: Your account is suspended. Wallet and payment history are accessible in read-only mode, but new recharge and payment attempts are blocked.', 403);
+            }
+
+            // Security: CSRF Validation
+            if (!$this->validateCsrf($request)) {
+                $_SESSION['flash_error'] = 'Invalid or expired security token. Please try again.';
+                return Response::redirect('/account/wallet');
+            }
+
+            return $this->handleRechargeSubmit($request, $user);
+        }
+
         $currency = $this->walletService->getWalletCurrency($userId);
+        $primaryCurrency = $this->walletService->getPrimaryCurrency();
+        $gateways = $isSuspended ? [] : $this->getAvailableGateways($primaryCurrency);
         $availableBalance = $this->walletService->getAvailableBalance($userId);
         $heldBalance = $this->walletService->getHeldBalance($userId);
         $totalBalance = $this->walletService->getTotalBalance($userId);
         $recentLedger = $this->walletService->getLedgerHistory($userId, 10, 0);
+        $recentRecharges = $this->getCustomerRecentRecharges($userId, 10);
         $summary = $this->getCustomerWalletSummary($userId, $currency);
 
         // Fetch wallet status from database if available
@@ -217,7 +237,7 @@ class CustomerAccountController
         }
 
         $html = $this->renderView('wallet', [
-            'pageTitle'        => 'My Wallet & Balance',
+            'pageTitle'        => 'Wallet & Balance',
             'activeTab'        => 'wallet',
             'user'             => $user,
             'userId'           => $userId,
@@ -226,10 +246,14 @@ class CustomerAccountController
             'heldBalance'      => $heldBalance,
             'totalBalance'     => $totalBalance,
             'currency'         => $currency,
+            'primaryCurrency'  => $primaryCurrency,
+            'gateways'         => $gateways,
+            'recentRecharges'  => $recentRecharges,
+            'csrfToken'        => $this->getCsrfToken(),
             'walletStatus'     => $walletStatus,
             'recentLedger'     => $recentLedger,
             'summary'          => $summary,
-            'isSuspended'      => $this->isUserSuspended($user),
+            'isSuspended'      => $isSuspended,
         ]);
 
         return Response::make($html, 200);
@@ -345,9 +369,9 @@ class CustomerAccountController
     }
 
     /**
-     * Customer Recharge Page (/account/recharge).
-     * GET: Displays amount input and payment method selection.
-     * POST: Validates input, creates PaymentIntent, delegates to gateway.
+     * Customer Recharge (/account/recharge).
+     * Redundant standalone page is removed and redirects GET to /account/wallet.
+     * POST is handled for backward-compatible submission.
      */
     public function recharge(Request $request): Response
     {
@@ -369,42 +393,14 @@ class CustomerAccountController
             // Security: CSRF Validation
             if (!$this->validateCsrf($request)) {
                 $_SESSION['flash_error'] = 'Invalid or expired security token. Please try again.';
-                return Response::redirect('/account/recharge');
+                return Response::redirect('/account/wallet');
             }
 
             return $this->handleRechargeSubmit($request, $user);
         }
 
-        // Security: Suspended accounts cannot view recharge form
-        if ($isSuspended) {
-            return new Response('Access restricted: Your account is suspended. Wallet and payment history are accessible in read-only mode, but new recharge and payment attempts are blocked.', 403);
-        }
-
-        // GET: Discover active, configured gateways
-        $primaryCurrency = $this->walletService->getPrimaryCurrency();
-        $gateways = $this->getAvailableGateways($primaryCurrency);
-        $balance = $this->walletService->getAvailableBalance($userId);
-        $heldBalance = $this->walletService->getHeldBalance($userId);
-        $totalBalance = $this->walletService->getTotalBalance($userId);
-        $recentRecharges = $this->getCustomerRecentRecharges($userId, 10);
-
-        $html = $this->renderView('recharge', [
-            'pageTitle'        => 'Recharge Wallet Balance',
-            'activeTab'        => 'recharge',
-            'user'             => $user,
-            'userId'           => $userId,
-            'balance'          => $balance,
-            'availableBalance' => $balance,
-            'heldBalance'      => $heldBalance,
-            'totalBalance'     => $totalBalance,
-            'primaryCurrency'  => $primaryCurrency,
-            'gateways'         => $gateways,
-            'recentRecharges'  => $recentRecharges,
-            'csrfToken'        => $this->getCsrfToken(),
-            'isSuspended'      => $isSuspended,
-        ]);
-
-        return Response::make($html, 200);
+        // GET: Standalone /account/recharge is removed; redirect customer to /account/wallet
+        return Response::redirect('/account/wallet');
     }
 
     /**
@@ -421,17 +417,17 @@ class CustomerAccountController
 
         if ($cleanAmount === '' || !is_numeric($cleanAmount) || (float)$cleanAmount <= 0) {
             $_SESSION['flash_error'] = 'Please enter a valid positive recharge amount.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         $numericAmount = (float)$cleanAmount;
         if ($numericAmount < 1.0) {
             $_SESSION['flash_error'] = 'Minimum recharge amount is 1 ' . $primaryCurrency . '.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
         if ($numericAmount > 1000000.0) {
             $_SESSION['flash_error'] = 'Recharge amount exceeds maximum allowed limit.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         // Convert to minor units (integers only)
@@ -439,23 +435,27 @@ class CustomerAccountController
         $baseMoney = new Money($minorUnits, $primaryCurrency);
 
         // 2. Gateway selection & validation
-        $gatewayId = trim((string)$request->post('gateway_id', ''));
         $gatewayId = trim((string)($request->post('gateway_id') ?: $request->post('gateway', '')));
         if ($gatewayId === '') {
             $_SESSION['flash_error'] = 'Please select a payment method.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         if (!$this->gatewayRegistry->has($gatewayId)) {
             $_SESSION['flash_error'] = 'The selected payment method is not recognized.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         $gateway = $this->gatewayRegistry->get($gatewayId);
-        if (!$gateway->isEnabled()) {
+        $canonicalGatewayId = $gateway->getId();
+
+        $availableGateways = $this->getAvailableGateways($primaryCurrency);
+        if (!isset($availableGateways[$canonicalGatewayId])) {
             $_SESSION['flash_error'] = 'The selected payment method is currently unavailable.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
+
+        $gatewayId = $canonicalGatewayId;
 
         // 3. Create payment intent using existing PaymentService
         try {
@@ -466,6 +466,7 @@ class CustomerAccountController
                 [
                     'customer_id' => $userId,
                     'gateway_id'  => $gatewayId,
+                    'method_type' => $gateway->getType(),
                     'metadata'    => [
                         'type'        => 'wallet_recharge',
                         'user_id'     => $userId,
@@ -476,7 +477,7 @@ class CustomerAccountController
             );
         } catch (Throwable $e) {
             $_SESSION['flash_error'] = 'Failed to create payment: ' . $e->getMessage();
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         $intentId = $intent->getId();
@@ -517,7 +518,7 @@ class CustomerAccountController
             $attempt = $this->paymentService->initiatePayment($intentId, $gatewayId, [
                 'terminal_type' => 'WEB',
                 'return_url'    => $this->appUrl('/account/recharge/binance/' . urlencode($intentId)),
-                'cancel_url'    => $this->appUrl('/account/recharge'),
+                'cancel_url'    => $this->appUrl('/account/wallet'),
             ]);
 
             // For Binance Pay, direct to dedicated customer QR checkout screen
@@ -575,8 +576,22 @@ class CustomerAccountController
             return Response::redirect('/account/wallet');
         }
 
-        $gatewayId = $intent->getMetadata()['gateway_id'] ?? 'manual_bd';
+        $metadata = $intent->getMetadata();
+        $gatewayId = $metadata['gateway_id'] ?? null;
+        if (empty($gatewayId) && $intent->getMethodType() !== null) {
+            $gatewayId = $intent->getMethodType()->value;
+        }
+        if (empty($gatewayId) || $gatewayId === 'manual_bd') {
+            $gatewayId = $metadata['gateway'] ?? ($metadata['channel'] ?? 'manual_bkash');
+            if ($gatewayId === 'manual_bd') {
+                $gatewayId = 'manual_bkash';
+            }
+        }
+
         $gateway = $this->gatewayRegistry->has($gatewayId) ? $this->gatewayRegistry->get($gatewayId) : null;
+        if ($gateway === null && $this->gatewayRegistry->has('manual_bkash')) {
+            $gateway = $this->gatewayRegistry->get('manual_bkash');
+        }
         $gatewayConfig = ($gateway instanceof ManualBangladeshGateway) ? $gateway->getConfig() : [];
 
         $html = $this->renderView('manual', [
@@ -613,21 +628,31 @@ class CustomerAccountController
 
         if (!$this->validateCsrf($request)) {
             $_SESSION['flash_error'] = 'Invalid or expired security token. Please try again.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
-        $intentId = trim((string)$request->post('intent_id', ''));
         $intentId = trim((string)($request->post('intent') ?: $request->post('intent_id', '')));
         $trxId = trim((string)$request->post('trx_id', ''));
         $senderNumber = trim((string)$request->post('sender_number', ''));
+        $notes = trim((string)$request->post('notes', ''));
 
         if ($intentId === '') {
             $_SESSION['flash_error'] = 'Payment intent ID is missing.';
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         if ($trxId === '') {
             $_SESSION['flash_error'] = 'Transaction Reference / TrxID is required.';
+            return Response::redirect('/account/recharge/manual?intent_id=' . urlencode($intentId));
+        }
+
+        if ($senderNumber === '') {
+            $_SESSION['flash_error'] = 'Sender Mobile / Account Number is required.';
+            return Response::redirect('/account/recharge/manual?intent_id=' . urlencode($intentId));
+        }
+
+        if (strlen($senderNumber) > 190 || preg_match('/[\x00-\x1F\x7F]/', $senderNumber) === 1) {
+            $_SESSION['flash_error'] = 'Sender Mobile / Account Number is invalid.';
             return Response::redirect('/account/recharge/manual?intent_id=' . urlencode($intentId));
         }
 
@@ -643,12 +668,41 @@ class CustomerAccountController
             return Response::redirect('/account/wallet');
         }
 
-        $gatewayId = $intent->getMetadata()['gateway_id'] ?? 'manual_bd';
+        $metadata = $intent->getMetadata();
+        $gatewayId = $metadata['gateway_id'] ?? null;
+        if (empty($gatewayId) && $intent->getMethodType() !== null) {
+            $gatewayId = $intent->getMethodType()->value;
+        }
+        if (empty($gatewayId) || $gatewayId === 'manual_bd') {
+            $gatewayId = $metadata['gateway'] ?? ($metadata['channel'] ?? 'manual_bkash');
+            if ($gatewayId === 'manual_bd') {
+                $gatewayId = 'manual_bkash';
+            }
+        }
+
+        $details = [
+            'sender_number'  => $senderNumber,
+            'sender_account' => $senderNumber,
+            'notes'          => $notes !== '' ? $notes : null,
+        ];
+
+        $proofFile = $_FILES['payment_proof'] ?? null;
+        if (is_array($proofFile) && (int)($proofFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $storedProof = $this->storeManualPaymentProof($proofFile);
+                $details['proof_path'] = $storedProof['file_path'];
+                $details['proof_name'] = $storedProof['file_name'];
+                $details['proof_hash'] = $storedProof['file_hash'];
+                $details['proof_size'] = $storedProof['file_size'];
+                $details['proof_mime'] = $storedProof['mime_type'];
+            } catch (Throwable $e) {
+                $_SESSION['flash_error'] = 'Payment proof upload failed: ' . $e->getMessage();
+                return Response::redirect('/account/recharge/manual?intent_id=' . urlencode($intentId));
+            }
+        }
 
         try {
-            $this->paymentService->submitManualVerification($intentId, $gatewayId, $trxId, [
-                'sender_number' => $senderNumber,
-            ]);
+            $this->paymentService->submitManualVerification($intentId, $gatewayId, $trxId, $details);
 
             // Operational audit log (non-blocking)
             if ($this->auditService !== null) {
@@ -678,6 +732,35 @@ class CustomerAccountController
             $_SESSION['flash_error'] = 'Submission failed: ' . $e->getMessage();
             return Response::redirect('/account/recharge/manual?intent_id=' . urlencode($intentId));
         }
+    }
+
+    /**
+     * Store an optional manual-payment proof through the existing secure proof service.
+     *
+     * @return array{file_path:string,file_name:string,file_hash:string,file_size:int,mime_type:string}
+     */
+    protected function storeManualPaymentProof(array $file): array
+    {
+        $storageClass = 'FavoriteCMS\\Digital\\Services\\DigitalFileStorageService';
+
+        if (method_exists($this->app, 'has') && $this->app->has($storageClass)) {
+            $storage = $this->app->make($storageClass);
+        } elseif (class_exists($storageClass)) {
+            $storage = new $storageClass();
+        } else {
+            throw new RuntimeException('Secure payment proof storage is unavailable.');
+        }
+
+        if (!is_object($storage) || !method_exists($storage, 'storeProofUpload')) {
+            throw new RuntimeException('Secure payment proof storage is unavailable.');
+        }
+
+        $stored = $storage->storeProofUpload($file);
+        if (!is_array($stored)) {
+            throw new RuntimeException('Secure payment proof storage returned an invalid result.');
+        }
+
+        return $stored;
     }
 
     /**
@@ -712,6 +795,7 @@ class CustomerAccountController
             'payments'     => $paymentsData['items'],
             'total'        => $paymentsData['total'],
             'page'         => $page,
+            'currentPage'  => $page,
             'perPage'      => $perPage,
             'totalPages'   => max(1, (int)ceil($paymentsData['total'] / $perPage)),
             'filters'      => $filters,
@@ -809,6 +893,7 @@ class CustomerAccountController
             'entries'          => $entries,
             'total'            => $total,
             'page'             => $page,
+            'currentPage'      => $page,
             'perPage'          => $perPage,
             'totalPages'       => $totalPages,
             'filters'          => $filters,
@@ -879,28 +964,22 @@ class CustomerAccountController
      */
     public function getAvailableGateways(string $currency): array
     {
-        $all = $this->gatewayRegistry->all();
+        $activeGateways = $this->gatewayRegistry->available($currency);
         $available = [];
 
-        foreach ($all as $id => $gateway) {
-            if (!$gateway->isEnabled()) {
+        foreach ($activeGateways as $gateway) {
+            $gwId = $gateway->getId();
+            // Exclude redundant generic 'manual_bd' ("Manual Bangladesh Payment") and wallet from recharge options
+            if ($gwId === 'manual_bd' || $gwId === 'wallet' || $gwId === 'wallet_balance') {
                 continue;
             }
 
-            // Check if gateway is properly configured
-            if ($id === 'binance_pay' || $id === 'binance') {
-                $config = method_exists($gateway, 'getConfig') ? $gateway->getConfig() : [];
-                if (empty($config['certificate_sn']) || empty($config['api_secret'])) {
-                    continue; // Skip unconfigured Binance
-                }
-            }
-
-            $available[$id] = [
-                'id'          => $gateway->getId(),
+            $available[$gwId] = [
+                'id'          => $gwId,
                 'title'       => $gateway->getTitle(),
                 'type'        => $gateway->getType()->value,
                 'description' => $this->getGatewayDescription($gateway),
-                'is_manual'   => $gateway instanceof ManualBangladeshGateway || str_starts_with($gateway->getId(), 'manual_'),
+                'is_manual'   => $gateway instanceof ManualBangladeshGateway || str_starts_with($gwId, 'manual_'),
             ];
         }
 
@@ -1451,7 +1530,7 @@ class CustomerAccountController
         }
 
         if ($intentId === '') {
-            return Response::redirect('/account/recharge');
+            return Response::redirect('/account/wallet');
         }
 
         $intent = $this->paymentService->getIntent($intentId);
@@ -1499,7 +1578,7 @@ class CustomerAccountController
                     $binanceAttempt = $this->paymentService->initiatePayment($intentId, $gwId, [
                         'terminal_type' => 'WEB',
                         'return_url'    => $this->appUrl('/account/recharge/binance/' . urlencode($intentId)),
-                        'cancel_url'    => $this->appUrl('/account/recharge'),
+                        'cancel_url'    => $this->appUrl('/account/wallet'),
                     ]);
                 } catch (\Throwable) {
                     // Gateway initiation failure caught cleanly

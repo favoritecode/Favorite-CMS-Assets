@@ -17,6 +17,7 @@ enum PaymentMethodType: string
     case CRYPTO = 'crypto';
     case WALLET = 'wallet';
     case OFFLINE = 'offline';
+    case AUTOMATIC = 'automatic';
 
     public function requiresManualVerification(): bool
     {

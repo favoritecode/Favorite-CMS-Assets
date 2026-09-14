@@ -41,8 +41,9 @@
                 Your account is currently suspended. Recharging balance is disabled.
             </div>
         <?php else: ?>
-            <form action="/account/recharge" method="POST" id="fpay-recharge-form">
+            <form action="/account/wallet" method="POST" id="fpay-recharge-form">
                 <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <!-- Amount Input -->
                 <div style="margin-bottom: 24px;">

@@ -25,7 +25,11 @@ if (defined('APP_ROOT') && file_exists(APP_ROOT . '/themes/default/header.php'))
     }
 }
 if ($hasThemeHeader) {
+    // Isolate customer pagination variable so it doesn't collide with Core CMS $page model in FrontendSeoService
+    $fpayCustomerPageVar = $page ?? null;
+    $page = null;
     require APP_ROOT . '/themes/default/header.php';
+    $page = $fpayCustomerPageVar;
 } else {
 ?>
 <!DOCTYPE html>
@@ -244,7 +248,7 @@ if ($hasThemeHeader) {
             <p class="fpay-page-desc">Customer account &amp; wallet management</p>
         </div>
         <div>
-            <a href="/account/recharge" class="fpay-btn fpay-btn-primary">
+            <a href="/account/wallet#recharge-wallet" class="fpay-btn fpay-btn-primary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 Recharge Balance
             </a>
@@ -256,10 +260,6 @@ if ($hasThemeHeader) {
         <a href="/account/wallet" class="fpay-nav-link <?php echo $activeTab === 'wallet' ? 'active' : ''; ?>">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
             Wallet &amp; Balance
-        </a>
-        <a href="/account/recharge" class="fpay-nav-link <?php echo $activeTab === 'recharge' ? 'active' : ''; ?>">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-            Recharge
         </a>
         <?php if (!empty($withdrawEnabled)): ?>
         <a href="/account/withdraw" class="fpay-nav-link <?php echo $activeTab === 'withdraw' ? 'active' : ''; ?>">
