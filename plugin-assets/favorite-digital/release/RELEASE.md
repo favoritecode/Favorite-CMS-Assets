@@ -8,63 +8,58 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.1 |
-| **Package File** | Favorite-Digital-v1.0.1.zip |
-| **Package Size** | 222,009 bytes |
-| **ZIP Entries** | 93 files (Root: avorite-digital/) |
-| **SHA-256 Checksum** | 48284213b87743258d4a16ed6dde8b1f1a6bbb7697d5a736795024ba9a6c91e4 |
-| **Source Repository** | avoritecode/Favorite-CMS-Universal |
-| **Source Commit** | 34fb0139fd130b900c0a2e879384a9c4be1b959 (ix(favorite-digital): improve manual payments and digital resources) |
+| **Release Version** | 1.0.5 |
+| **Package File** | Favorite-Digital-v1.0.5.zip / Favorite-Digital.zip |
+| **Package Size** | 233,950 bytes |
+| **ZIP Entries** | 115 entries (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `674ea2f97462f00dff95f850f7c92732c9010bbc9f013aa072dc01ab391ee604` |
+| **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
-| **Plugin Identifier** | avorite-digital |
+| **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
-| **Test Suite Verification** | 533 tests, 1,839 assertions (532 passed, 1 skipped, 0 failures, 0 errors) |
 
 ---
 
-## Major Capabilities (v1.0.1)
+## What's New in v1.0.5
 
-1. **Manual Bangladesh Payment Flow Improvements**:
-   - Customer checkout displays actual configured manual payment instructions for bKash, Nagad, Rocket, and Bank Transfer.
-   - Dynamic configuration binding: receiver account number, account name, account type, bank branch, routing number, and custom instructions.
-   - Secure customer verification inputs: sender phone/account, transaction reference / TrxID (mandatory), and optional payment proof.
-   - Payment proof file upload with strict MIME verification, randomized filenames, traversal protection, and isolated private storage.
-   - Admin order verification flow showing full manual transaction details and customer-provided payment proofs.
+1. **[Wallet Recharge Fix] CustomerWalletController Request::post() Zero-Argument Resolution**:
+   - Fixed `CustomerWalletController::recharge()` to correctly pass the expected field names: `$amount = (string)$request->post('amount', '')` and `$gatewayId = trim((string)$request->post('gateway_id', ''))`.
+   - Resolves the fatal production error: `Too few arguments to function FavoriteCMS\Core\Request::post(), 0 passed ... on line 147`.
+   - Safely reads manual payment details: `$trxId`, `$senderAccount`, `$notes`.
 
-2. **Digital Resource & Media Assets**:
-   - Product & service cover image support: file upload or direct HTTPS image URL.
-   - Flexible digital product resources: downloadable file, external secured resource URL, or hybrid both.
-   - Secure external URL redirection with customer entitlement enforcement and access logging.
-   - Broad safe digital formats (archives, images, videos, audio, documents, code assets, datasets) with strict blocking of server-side executable scripts.
-   - Public storefront integration with 'View' modal and direct resource delivery.
-
-3. **Core Digital Commerce Platform**:
-   - Digital Products & Downloads with 64-character unguessable cryptographic tokens.
-   - Service & Package Management with isolated entitlement tracking.
-   - Membership Lifecycle & Gated Access (Weekly & Monthly billing with deterministic month-end clamping).
-   - Customer Digital Wallet & Recharge Hub with immutable FX snapshots and minor integer units.
-   - Order Refunds to Wallet with automated entitlement revocation.
-   - Storefront & Account Portal with CSRF protection and IDOR immunity.
+2. **[Recharge Security & Flow]**:
+   - CSRF token validation and session message handling.
+   - Pending state enforcement for manual submissions awaiting administrator verification.
 
 ---
 
-## Technical Specifications & Requirements
+## Major Capabilities (v1.0.4)
 
-- **PHP Version**: 8.1.0 or higher.
-- **PHP Extensions**: pdo, pdo_sqlite or pdo_mysql, cmath, json, ileinfo.
-- **Database**: SQLite 3 or MySQL 5.7+ / MariaDB 10.3+. Full database prefix abstraction support (15 tables, Migration 016 applied).
-- **Dependencies**: Integrates seamlessly with avorite-pay via public API contracts without code duplication. Zero Node.js, Redis, or external worker dependencies.
+1. **Shared Customer Theme Shell**:
+   - Store, product, checkout, order, download, wallet, refund, library, and membership screens use the active theme's shared header and footer when the theme explicitly supports the customer shell.
+   - Existing standalone rendering remains the fallback for themes that do not opt in.
+   - Commerce, settlement, authorization, and customer data behavior are unchanged.
+
+2. **Service Order Lifecycle & Dynamic Progress State**:
+   - When a customer purchases or pays for a digital service (either automatically via wallet/gateway or manually accepted by admin), the initial status is safely set to **Pending** (`⏳ Pending`).
+   - Admin order management screen gives 3 selectable options when confirming or managing service orders: **Pending** (`pending`), **Processing** (`processing`), and **Complete** (`completed`).
+   - The admin's chosen status is dynamically synced to the customer across storefront, digital library, and order receipts.
+
+3. **Automated Order Cancellation & Wallet Refund**:
+   - If an order with confirmed paid funds is cancelled by an administrator (or through lifecycle cancellation), the authoritative paid amount is **automatically refunded 100% to the customer's Favorite Digital Wallet**.
+   - Customer's wallet balance is immediately credited, creating an immutable audit transaction.
 
 ---
 
 ## Installation & Verification
 
 ### Integrity Check:
-\\ash
+```bash
 sha256sum -c checksums.sha256
-\
+```
+
 ### Installation / Upgrade:
-1. Extract Favorite-Digital-v1.0.1.zip into the plugins/ directory of your Favorite CMS installation so that it resides at plugins/favorite-digital/.
-2. Navigate to **Admin Dashboard > Plugins**.
-3. Locate **Favorite Digital** and click **Activate** (or reload if upgrading).
-4. Migration 016 will automatically apply new media and resource fields to products and product details.
+1. Log in to your Favorite CMS Admin Dashboard (`https://cms.canbangla.net/admin` or local).
+2. Navigate to **Plugins** &rarr; **Add New / Upload**.
+3. Upload `Favorite-Digital.zip` and click **Install Now**.
+4. Activate/reload the plugin.
