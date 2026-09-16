@@ -4,7 +4,8 @@
 - **Release Date**: 2026-09-09
 - **Type**: UI/UX Polish — Premium Header + Persistent Global Navigation + Detail Page & Sidebar Finalization
 - **Requires Plugin**: Favorite Multimedia v1.0.6+
-- **SHA-256**: `fc75922477be25d299e123a6dfde152c41846d051c8260c7d5ce624299073d45`
+- **Package Size**: 84,179 bytes
+- **SHA-256**: `2ca93e84c5ff55b236175bbebbe8259ebfe4c2abbf2f4f55d6620ad7c8305c51`
 
 ## Highlights & Improvements
 - **Detail Pages Unified Layout & Theme Tokens**:

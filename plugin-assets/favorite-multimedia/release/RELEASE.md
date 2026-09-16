@@ -8,14 +8,69 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.6` |
-| **Package File** | `favorite-multimedia.zip` (and `favorite-multimedia-v1.0.6.zip`) |
-| **Package Size** | 392,548 bytes |
-| **SHA-256 Checksum** | `b5b04afd0f2936540899589d44c83720c2e185b56e556d8a59062e4d1324ff3b` |
+| **Release Version** | `v1.0.7` |
+| **Package File** | `favorite-multimedia.zip` (and `favorite-multimedia-v1.0.7.zip`) |
+| **Package Size** | 571,649 bytes |
+| **SHA-256 Checksum** | `3512b494c7b807a3c53dc8ce69f640b3b0fb2032bcf94367b7e971c8ef05dc89` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Universal` |
-| **Test Suite Verification** | 413 tests, 2,389 assertions (0 failures, 0 errors) |
+| **Test Suite Verification** | 859 tests, 4,661 assertions (0 failures, 0 errors) |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-multimedia` |
+
+---
+
+## What's New in v1.0.7 — Ratings UX, Comments UX, Bulk Actions, Song 500 Forensic Fix & Unified Playback
+
+This update addresses critical engagement and administrative workflows, resolves a forensic issue on song detail pages, and introduces unified volume memory, persistent background audio, and floating video:
+
+### 1. Interactive Star Rating & Real-Time Aggregation
+- **Zero Browser Popups**: Replaced all native browser `alert()` popups across the rating system with non-intrusive, responsive `FavoriteToast` notifications.
+- **In-Flight Lock Protection**: Added an in-flight submission lock (`isRatingInFlight`) that prevents duplicate or race-condition rating submissions while a request is actively processing.
+- **Dynamic Average & Counter Recalculation**: Submitting a star rating immediately recalculates the visible average rating and total rating count in the DOM without requiring a full page refresh.
+- **Graceful Guest Handling**: Guest visitors attempting to rate receive an informative warning toast ("Please sign in to rate this content.") and are smoothly redirected to `/login` with the return URL preserved.
+- **Hardened API CSRF & Validation**: `/multimedia/api/rate` defensively verifies both `_token` and `csrf_token` session tokens, rejects unauthenticated guests with HTTP 401 JSON, and validates integer rating bounds (1 to 5).
+
+### 2. Discussion & Comment Submission UX
+- **Universal Form Availability**: The `#fmm-post-comment-form` is consistently rendered for both authenticated users and guests, providing clear sign-in prompts and return URL preservation when logged out.
+- **Double-Layered Validation**: Enforces non-empty and 1,000-character limits both client-side and server-side in `MediaPlaybackController::apiSaveComment()`.
+- **In-DOM Dynamic Append**: Successfully posted comments are instantly formatted and appended to `#fmm-comments-container` with animated highlight, empty placeholder removal, and comment counter increment.
+- **Submission State Feedback**: Submit button is disabled with a loading state during flight (`isCommentInFlight`), preventing double-submits.
+
+### 3. Admin Movies & Songs Multi-Select & Bulk Actions
+- **Eliminated HTML5 Form Nesting**: Completely eliminated parser pointer corruption by routing single-row deletes through dedicated external hidden forms (`#fmm-movie-single-delete-form` and `#fmm-song-single-delete-form`), leaving the main table strictly enclosed by `#movies-bulk-form` and `#songs-bulk-form`.
+- **Master Checkbox with Indeterminate State**: Added select-all checkbox with automatic indeterminate state handling (`checkbox.indeterminate = true`) and a live badge indicating the number of selected items.
+- **Robust Bulk Operations**:
+  - `publish`: Strictly verifies media readiness before publishing. Items lacking playable media stay in draft with an informative flash warning, while valid items are published.
+  - `draft`: Reverts selected movies or songs back to draft status.
+  - `delete`: Performs cascading deletion of sources, ratings, comments, favorites, and subtitles, protected by `MultimediaPermission::DELETE`.
+
+### 4. Song 500 Internal Server Error Forensic Fix
+- **Root Cause Resolution**: `MultimediaFrontendController::song()` previously passed an associative array from `MediaSourcePlaybackService::getPlayableSources()` into `MultimediaAccessService::checkDownloadPermission()`, which type-hinted `?MediaSource $source = null`. This caused a fatal `TypeError` (HTTP 500) whenever a song with playable sources was viewed.
+- **Defensive Type Widening & Normalization**:
+  - `MultimediaFrontendController::song()` now explicitly resolves a `MediaSource` model instance before calling `checkDownloadPermission()`.
+  - `MultimediaAccessService::checkDownloadPermission()` and `DownloadSourceService::getDownloadOptions()` widened `$source` / `$selectedSource` parameter typing to `object|array|null` and safely normalize array representations via `MediaSource::find((int)$source['id'])`.
+- **Zero Regressions**: Fully tested and validated across 9 distinct song permission and access scenarios (Audio-only, Video-only, Dual Mode, No Sources, Downloads Enabled/Disabled, Public, Login-required, Premium-required).
+
+### 5. Unified Remembered Volume System (`window.FavoriteMediaVolume`)
+- **Single Source of Truth**: Unified volume management for both audio and video players via `localStorage['fm_media_volume']` (normalized float `0.0` to `1.0`).
+- **Initial First-Play Clamping**: Safe initial volume default clamped to `0.25` (25%) preventing sudden loud playback.
+- **Bi-Directional Real-Time Synchronization**: Audio and video players stay synchronized in real-time across tabs and player elements without feedback loops.
+- **Smart Unmute Memory**: Unmuting restores the user's previously remembered non-zero volume rather than getting stuck at silence.
+
+### 6. Persistent Background Audio & Media Session API
+- **Continuous Playback**: Playback continues uninterrupted when switching tabs, minimizing the browser window, or navigating, safeguarded against unintended `visibilitychange` pauses.
+- **Media Session Integration**: Full OS/browser notification controls and hardware media key bindings (`play`, `pause`, `previoustrack`, `nexttrack`, `seekto`) with active track metadata (title, artist, album, artwork).
+
+### 7. Floating Video & Picture-in-Picture (PiP)
+- **Standard PiP Support**: Added `.fav-btn-pip` button to video controls using the standard HTML5 Picture-in-Picture API (`video.requestPictureInPicture()`).
+- **Mutual Playback Exclusion**: Coordinated events (`fm:audio:play` and `fm:video:play`) ensure video pauses immediately when audio begins, and audio pauses when video starts.
+
+### 8. Legitimate Background Audio Mode
+- **Dual-Source Content Switching**: For songs configured with both video and audio streams, users can toggle "Background Audio" to switch seamlessly from video to audio playback. Strictly utilizes legitimately uploaded/configured audio sources; no third-party audio extraction or scraping.
+
+### 9. Admin Playback Settings
+- **New Playback Panel in Multimedia Settings**: Configurable `default_media_volume` (clamped 5%-50%), `remember_media_volume` (Yes/No), `enable_pip` (Yes/No), and `enable_background_audio` (Yes/No).
+- **Dynamic Configuration Injection**: Injects settings to frontend players via `window.FavoriteMultimediaConfig`.
 
 ---
 
@@ -187,7 +242,7 @@ favorite-multimedia.zip: OK
 
 ### Installation into Favorite CMS
 1. Download `favorite-multimedia.zip` from this release.
-2. Verify package integrity against SHA-256: `46e52733ee8d59ee448ac1564871551fa3bb97264a7d881de8fcfcf90b2872ed`.
+2. Verify package integrity against SHA-256: `3d61c77160b15706c591dd397a3ba4dbe34eb1834d33af34d420e3493328c5e7`.
 3. Extract `favorite-multimedia.zip` directly into the `plugins/` directory of your Favorite CMS installation:
    - Resulting path: `plugins/favorite-multimedia/`
 4. In the CMS Admin Panel, navigate to **Plugins** and click **Activate** on **Favorite Multimedia**.
