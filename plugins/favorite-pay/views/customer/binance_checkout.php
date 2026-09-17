@@ -18,7 +18,7 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
 <div style="max-width: 580px; margin: 0 auto;">
     <!-- Breadcrumb -->
     <div style="margin-bottom: 18px;">
-        <a href="/account/wallet#recharge-wallet" style="color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+        <a href="/account/wallet#recharge-wallet" style="color: var(--accent, #2563eb); text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
             &larr; Back to Wallet &amp; Balance
         </a>
     </div>
@@ -31,43 +31,43 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
                     <path d="M12 2L6.5 7.5L8.6 9.6L12 6.2L15.4 9.6L17.5 7.5L12 2ZM2 12L7.5 6.5L9.6 8.6L6.2 12L9.6 15.4L7.5 17.5L2 12ZM12 22L17.5 16.5L15.4 14.4L12 17.8L8.6 14.4L6.5 16.5L12 22ZM22 12L16.5 17.5L14.4 15.4L17.8 12L14.4 8.6L16.5 6.5L22 12ZM12 9.2L14.8 12L12 14.8L9.2 12L12 9.2Z"/>
                 </svg>
             </div>
-            <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 6px;">
+            <h1 style="font-size: 24px; font-weight: 800; color: var(--heading, #0f172a); margin: 0 0 6px;">
                 Binance Pay
             </h1>
-            <p style="font-size: 14px; color: #64748b; margin: 0;">
+            <p style="font-size: 14px; color: var(--muted, #64748b); margin: 0;">
                 Complete your payment using the Binance App or Web Checkout
             </p>
         </div>
 
         <!-- Payment ID & Amount Block -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; color: #64748b;">
+        <div style="background: var(--surface-muted, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; color: var(--muted, #64748b);">
                 <span>Payment ID</span>
-                <strong style="font-family: monospace; font-size: 14px; color: #0f172a;"><?php echo htmlspecialchars($paymentId, ENT_QUOTES, 'UTF-8'); ?></strong>
+                <strong style="font-family: monospace; font-size: 14px; color: var(--heading, #0f172a);"><?php echo htmlspecialchars($paymentId, ENT_QUOTES, 'UTF-8'); ?></strong>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: #475569;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; color: var(--text, #475569);">
                 <span>Amount (Accounting)</span>
-                <strong style="font-size: 16px; color: #0f172a;"><?php echo htmlspecialchars($baseCurr . ' ' . $baseMajor, ENT_QUOTES, 'UTF-8'); ?></strong>
+                <strong style="font-size: 16px; color: var(--heading, #0f172a);"><?php echo htmlspecialchars($baseCurr . ' ' . $baseMajor, ENT_QUOTES, 'UTF-8'); ?></strong>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 15px;">
-                <span style="font-weight: 600; color: #1e293b;">Binance Payable Amount</span>
-                <strong style="font-size: 20px; font-weight: 800; color: #d97706;"><?php echo htmlspecialchars($chargeMajor . ' ' . $chargeCurr, ENT_QUOTES, 'UTF-8'); ?></strong>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed var(--border-strong, #cbd5e1); font-size: 15px;">
+                <span style="font-weight: 600; color: var(--heading, #1e293b);">Binance Payable Amount</span>
+                <strong style="font-size: 20px; font-weight: 800; color: var(--warning, #d97706);"><?php echo htmlspecialchars($chargeMajor . ' ' . $chargeCurr, ENT_QUOTES, 'UTF-8'); ?></strong>
             </div>
         </div>
 
         <!-- Succeeded State Container -->
         <div id="status-succeeded-view" style="display: <?php echo $isSucceeded ? 'block' : 'none'; ?>; padding: 20px 0;">
-            <div style="width: 64px; height: 64px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <div style="width: 64px; height: 64px; background: var(--success-soft, #dcfce7); color: var(--success, #16a34a); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
             </div>
-            <h2 style="font-size: 22px; font-weight: 800; color: #15803d; margin: 0 0 8px;">
+            <h2 style="font-size: 22px; font-weight: 800; color: var(--success, #15803d); margin: 0 0 8px;">
                 Payment Successful
             </h2>
-            <p style="font-size: 14px; color: #475569; margin: 0 0 20px;">
+            <p style="font-size: 14px; color: var(--text, #475569); margin: 0 0 20px;">
                 Paid: <strong><?php echo htmlspecialchars($chargeMajor . ' ' . $chargeCurr, ENT_QUOTES, 'UTF-8'); ?></strong><br>
-                Wallet credited: <strong style="color: #15803d;"><?php echo htmlspecialchars($baseCurr . ' ' . $baseMajor, ENT_QUOTES, 'UTF-8'); ?></strong>
+                Wallet credited: <strong style="color: var(--success, #15803d);"><?php echo htmlspecialchars($baseCurr . ' ' . $baseMajor, ENT_QUOTES, 'UTF-8'); ?></strong>
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <a href="/account/wallet" class="fpay-btn fpay-btn-primary">
@@ -81,16 +81,16 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
 
         <!-- Terminal Failed / Expired State Container -->
         <div id="status-failed-view" style="display: <?php echo $isTerminalFailed ? 'block' : 'none'; ?>; padding: 20px 0;">
-            <div style="width: 64px; height: 64px; background: #fee2e2; color: #dc2626; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <div style="width: 64px; height: 64px; background: var(--danger-soft, #fee2e2); color: var(--danger, #dc2626); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </div>
-            <h2 id="failed-title" style="font-size: 22px; font-weight: 800; color: #b91c1c; margin: 0 0 8px;">
+            <h2 id="failed-title" style="font-size: 22px; font-weight: 800; color: var(--danger, #b91c1c); margin: 0 0 8px;">
                 <?php echo ($statusVal === 'expired') ? 'Payment Expired' : 'Payment Failed'; ?>
             </h2>
-            <p style="font-size: 14px; color: #64748b; margin: 0 0 20px;">
+            <p style="font-size: 14px; color: var(--muted, #64748b); margin: 0 0 20px;">
                 This payment was cancelled, failed, or expired. No funds were credited to your wallet.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
@@ -106,11 +106,11 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
         <!-- Pending QR & Interactive Checkout Container -->
         <div id="status-pending-view" style="display: <?php echo $isPending ? 'block' : 'none'; ?>;">
             <!-- QR Code Section -->
-            <div style="margin: 0 auto 20px; display: inline-block; padding: 14px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+            <div style="margin: 0 auto 20px; display: inline-block; padding: 14px; background: #ffffff; border: 2px solid var(--border, #e2e8f0); border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
                 <?php if (!empty($qrcodeLink)): ?>
                     <img src="<?php echo htmlspecialchars($qrcodeLink, ENT_QUOTES, 'UTF-8'); ?>" alt="Binance Pay QR Code" style="display: block; width: 220px; height: 220px; object-fit: contain;" />
                 <?php else: ?>
-                    <div style="width: 220px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border-radius: 12px; color: #64748b; padding: 16px; text-align: center; box-sizing: border-box;">
+                    <div style="width: 220px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface-muted, #f8fafc); border-radius: 12px; color: var(--muted, #64748b); padding: 16px; text-align: center; box-sizing: border-box;">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px;">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                             <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -121,7 +121,7 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
                 <?php endif; ?>
             </div>
 
-            <p style="font-size: 14px; font-weight: 600; color: #334155; margin: 0 0 16px;">
+            <p style="font-size: 14px; font-weight: 600; color: var(--heading, #334155); margin: 0 0 16px;">
                 Scan this QR code using the Binance App (Pay)
             </p>
 
@@ -140,11 +140,11 @@ $chargeCurr = $intent->getChargeAmount()->getCurrency();
             <?php endif; ?>
 
             <!-- Status Indicator -->
-            <div style="background: #f1f5f9; border-radius: 10px; padding: 14px 18px; display: inline-flex; align-items: center; gap: 10px; color: #475569; font-size: 14px; margin-bottom: 8px;">
+            <div style="background: var(--surface-muted, #f1f5f9); border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 14px 18px; display: inline-flex; align-items: center; gap: 10px; color: var(--text, #475569); font-size: 14px; margin-bottom: 8px;">
                 <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #eab308; animation: fpay-pulse 1.8s infinite;"></span>
                 <span id="payment-status-label" style="font-weight: 600;">Waiting for payment...</span>
             </div>
-            <div style="font-size: 12px; color: #94a3b8;">
+            <div style="font-size: 12px; color: var(--muted, #94a3b8);">
                 Do not close this page while payment is pending. It will automatically update once confirmed.
             </div>
         </div>

@@ -304,7 +304,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $reqRecharge = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRecharge = $this->controller->recharge($reqRecharge);
         $this->assertSame(302, $respRecharge->getStatusCode());
-        $this->assertSame('/account/wallet', $respRecharge->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $respRecharge->getHeaders()['Location'] ?? '');
 
         $reqPayments = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/payments']);
         $this->assertSame(200, $this->controller->payments($reqPayments)->getStatusCode());
@@ -331,11 +331,11 @@ class CustomerAccountAndWalletTest extends TestCase
         $reqTransactions = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/transactions']);
         $this->assertSame(200, $this->controller->transactions($reqTransactions)->getStatusCode());
 
-        // GET /account/recharge redirects to /account/wallet (where recharge form is disabled with suspended notice)
+        // GET /account/recharge redirects to /account/wallet#recharge-wallet (where recharge form is disabled with suspended notice)
         $reqRechargeGet = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRechargeGet = $this->controller->recharge($reqRechargeGet);
         $this->assertSame(302, $respRechargeGet->getStatusCode());
-        $this->assertSame('/account/wallet', $respRechargeGet->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $respRechargeGet->getHeaders()['Location'] ?? '');
 
         // CANNOT submit recharge via /account/recharge (403 Forbidden)
         $reqRechargePost = new Request([], ['amount' => '100', 'gateway' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/recharge']);
@@ -426,7 +426,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $resp->getHeaders()['Location'] ?? '');
         $this->assertStringContainsString('Please enter a valid positive recharge amount', $_SESSION['flash_error'] ?? '');
     }
 
@@ -443,7 +443,7 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $resp->getHeaders()['Location'] ?? '');
         $this->assertStringContainsString('The selected payment method is not recognized', $_SESSION['flash_error'] ?? '');
     }
 
@@ -1011,11 +1011,11 @@ class CustomerAccountAndWalletTest extends TestCase
         $respTx = $this->controller->transactions($reqTx);
         $this->assertSame(200, $respTx->getStatusCode());
 
-        // Suspended customer viewing recharge -> redirects to /account/wallet (where recharge form is disabled)
+        // Suspended customer viewing recharge -> redirects to /account/wallet#recharge-wallet (where recharge form is disabled)
         $reqRecharge = new Request([], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRecharge = $this->controller->recharge($reqRecharge);
         $this->assertSame(302, $respRecharge->getStatusCode());
-        $this->assertSame('/account/wallet', $respRecharge->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $respRecharge->getHeaders()['Location'] ?? '');
 
         // Suspended customer submitting recharge -> blocked 403
         $reqRechargePost = new Request([], ['amount' => 100, 'gateway_id' => 'manual_bkash', '_csrf_token' => 'valid-test-csrf-token'], ['REQUEST_METHOD' => 'POST', 'REQUEST_URI' => '/account/recharge']);
@@ -1110,6 +1110,6 @@ class CustomerAccountAndWalletTest extends TestCase
         $resp = $this->controller->recharge($req);
 
         $this->assertSame(302, $resp->getStatusCode());
-        $this->assertSame('/account/wallet', $resp->getHeaders()['Location'] ?? '');
+        $this->assertSame('/account/wallet#recharge-wallet', $resp->getHeaders()['Location'] ?? '');
     }
 }

@@ -8,15 +8,29 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.11` |
-| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.11.zip` |
-| **Package Size** | 249,251 bytes |
-| **SHA-256 Checksum** | `4e31ec324d81c34463520f9a95ea7a01cf5f195bc49c38aec322100f0bf02f43` |
+| **Release Version** | `v1.0.12` |
+| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.12.zip` |
+| **Package Size** | 253,598 bytes |
+| **SHA-256 Checksum** | `d4936f5162fbf82a439a179e99744099c654f0063f6bd11d6e920e580d9c3b5b` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-pay` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
-| **Entries** | 127 entries |
+| **Entries** | 129 entries |
+
+---
+
+## What's New in v1.0.12
+
+1. **[Customer Theme Integration & Shell]**:
+   - Integrated `CustomerThemeShell` to automatically render within the active frontend theme's customer shell while retaining standalone fallback.
+   - Clean dark-mode and responsive styling alignment.
+
+2. **[Wallet Recharge Separation & Financial Safety]**:
+   - Strict separation between customer wallet recharge and checkout flows.
+   - Wallet balance remains available for Digital Store checkout while being strictly excluded from wallet recharge payment methods.
+   - Obsolete `manual_bd` gateway permanently removed; clean concrete gateways: `manual_bkash`, `manual_nagad`, `manual_rocket`, `manual_bank`, `bkash_direct`, `binance_pay`.
+   - Mandatory sender account and TrxID validation with payment proof image attachment support.
 
 ---
 

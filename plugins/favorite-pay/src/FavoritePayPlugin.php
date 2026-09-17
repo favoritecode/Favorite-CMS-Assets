@@ -91,17 +91,6 @@ final class FavoritePayPlugin
             $registry = new GatewayRegistry();
 
             // Default Manual Bangladesh Gateways
-            $manualBd = new ManualBangladeshGateway(
-                'manual_bd',
-                'Manual Bangladesh Payment',
-                PaymentMethodType::MANUAL_BD,
-                $this->loadGatewayConfig('favorite_pay_manual_bd', [
-                    'channel'      => 'manual_bd',
-                    'instructions' => 'Please transfer to our merchant account and submit your TrxID below.',
-                ]),
-                $this->loadGatewayEnabled('favorite_pay_manual_bd', true)
-            );
-
             $manualBkash = new ManualBangladeshGateway(
                 'manual_bkash',
                 'bKash Manual Payment',
@@ -160,7 +149,6 @@ final class FavoritePayPlugin
                 $this->loadGatewayEnabled('favorite_pay_manual_bank', true)
             );
 
-            $registry->register($manualBd);
             $registry->register($manualBkash);
             $registry->register($manualNagad);
             $registry->register($manualRocket);

@@ -83,8 +83,8 @@ $statusLabels = [
                     <option value="all">All Gateways</option>
                     <option value="manual_bkash" <?php echo $currentGateway === 'manual_bkash' ? 'selected' : ''; ?>>bKash Manual</option>
                     <option value="manual_nagad" <?php echo $currentGateway === 'manual_nagad' ? 'selected' : ''; ?>>Nagad Manual</option>
+                    <option value="manual_rocket" <?php echo $currentGateway === 'manual_rocket' ? 'selected' : ''; ?>>Rocket Manual</option>
                     <option value="manual_bank" <?php echo $currentGateway === 'manual_bank' ? 'selected' : ''; ?>>Bank Transfer</option>
-                    <option value="manual_bd" <?php echo $currentGateway === 'manual_bd' ? 'selected' : ''; ?>>Manual BD Generic</option>
                 </select>
             </div>
 

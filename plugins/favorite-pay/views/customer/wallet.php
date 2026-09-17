@@ -15,60 +15,62 @@ $baseCurrency = $currency ?? 'BDT';
 <!-- 1. Balance Overview Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 24px;">
     <!-- Card 1: Total Balance -->
-    <div class="fpay-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border: none; padding: 22px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-            <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #bfdbfe;">
-                Total Wallet Balance
-            </span>
-            <span class="fpay-badge" style="background: rgba(255,255,255,0.2); color: #ffffff; font-size: 11px;">
-                <?php echo htmlspecialchars(strtoupper($walletStatus ?? 'active'), ENT_QUOTES, 'UTF-8'); ?>
-            </span>
-        </div>
-        <div style="font-size: 32px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; line-height: 1.2;">
-            <?php echo fpay_format_money($totalAmount, $baseCurrency); ?>
-        </div>
-        <div style="font-size: 12px; color: #dbeafe;">
-            Primary Currency: <strong><?php echo htmlspecialchars($baseCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>
+    <div class="fpay-card" style="padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent, #2563eb);">
+                    Total Wallet Balance
+                </span>
+                <span class="fpay-badge fpay-badge-success" style="font-size: 11px;">
+                    <?php echo htmlspecialchars(strtoupper($walletStatus ?? 'active'), ENT_QUOTES, 'UTF-8'); ?>
+                </span>
+            </div>
+            <div style="font-size: 28px; font-weight: 800; color: var(--heading, #0f172a); letter-spacing: -0.02em; margin-bottom: 6px; line-height: 1.2;">
+                <?php echo fpay_format_money($totalAmount, $baseCurrency); ?>
+            </div>
+            <div style="font-size: 12px; color: var(--muted, #64748b);">
+                Primary Currency: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars($baseCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>
+            </div>
         </div>
     </div>
 
     <!-- Card 2: Spendable / Available Balance -->
-    <div class="fpay-card" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="fpay-card" style="background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
         <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #15803d;">
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--success, #15803d);">
                     Spendable Available Balance
                 </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--success, #16a34a);"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
-            <div style="font-size: 28px; font-weight: 800; color: #15803d; letter-spacing: -0.02em; margin-bottom: 6px;">
+            <div style="font-size: 28px; font-weight: 800; color: var(--success, #15803d); letter-spacing: -0.02em; margin-bottom: 6px;">
                 <?php echo fpay_format_money($availableAmount, $baseCurrency); ?>
             </div>
-            <p style="font-size: 12px; color: #64748b; margin: 0;">
+            <p style="font-size: 12px; color: var(--muted, #64748b); margin: 0;">
                 Funds immediately available for checkout, purchases, or withdrawal requests.
             </p>
         </div>
     </div>
 
     <!-- Card 3: Held in Withdrawals -->
-    <div class="fpay-card" style="background: <?php echo $heldAmount > 0 ? '#fffbeb' : '#ffffff'; ?>; border: 1px solid <?php echo $heldAmount > 0 ? '#fde68a' : '#e2e8f0'; ?>; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
+    <div class="fpay-card" style="background: <?php echo $heldAmount > 0 ? 'rgba(245, 158, 11, 0.12)' : 'var(--surface, #ffffff)'; ?>; border: 1px solid <?php echo $heldAmount > 0 ? 'rgba(245, 158, 11, 0.3)' : 'var(--border, #e2e8f0)'; ?>; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;">
         <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: <?php echo $heldAmount > 0 ? '#b45309' : '#64748b'; ?>;">
+                <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: <?php echo $heldAmount > 0 ? 'var(--warning, #d97706)' : 'var(--muted, #64748b)'; ?>;">
                     Held in Withdrawals
                 </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<?php echo $heldAmount > 0 ? '#d97706' : '#94a3b8'; ?>" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: <?php echo $heldAmount > 0 ? 'var(--warning, #d97706)' : 'var(--muted, #94a3b8)'; ?>;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
-            <div style="font-size: 28px; font-weight: 800; color: <?php echo $heldAmount > 0 ? '#b45309' : '#64748b'; ?>; letter-spacing: -0.02em; margin-bottom: 6px;">
+            <div style="font-size: 28px; font-weight: 800; color: <?php echo $heldAmount > 0 ? 'var(--warning, #d97706)' : 'var(--muted, #64748b)'; ?>; letter-spacing: -0.02em; margin-bottom: 6px;">
                 <?php echo fpay_format_money($heldAmount, $baseCurrency); ?>
             </div>
-            <p style="font-size: 12px; color: <?php echo $heldAmount > 0 ? '#92400e' : '#64748b'; ?>; margin: 0 0 8px;">
+            <p style="font-size: 12px; color: <?php echo $heldAmount > 0 ? 'var(--warning, #d97706)' : 'var(--muted, #64748b)'; ?>; margin: 0 0 8px;">
                 Held funds are temporarily reserved for pending withdrawals.
             </p>
         </div>
         <?php if ($heldAmount > 0 && !empty($withdrawEnabled)): ?>
             <div>
-                <a href="/account/withdraw" style="font-size: 12px; font-weight: 600; color: #b45309; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                <a href="/account/withdraw" style="font-size: 12px; font-weight: 600; color: var(--warning, #d97706); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                     View Pending Withdrawals &rarr;
                 </a>
             </div>
@@ -80,8 +82,8 @@ $baseCurrency = $currency ?? 'BDT';
 <div class="fpay-card" style="margin-bottom: 24px; padding: 18px 24px;">
     <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
         <div>
-            <strong style="font-size: 15px; color: #0f172a; display: block;">Quick Actions</strong>
-            <span style="font-size: 13px; color: #64748b;">Manage your wallet balance and review history</span>
+            <strong style="font-size: 15px; color: var(--heading, #0f172a); display: block;">Quick Actions</strong>
+            <span style="font-size: 13px; color: var(--muted, #64748b);">Manage your wallet balance and review history</span>
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
             <?php if (empty($isSuspended)): ?>
@@ -116,7 +118,7 @@ $baseCurrency = $currency ?? 'BDT';
     <div class="fpay-card-header">
         <div>
             <h2 class="fpay-card-title">Recharge Wallet</h2>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted, #64748b);">
                 Add funds directly to your wallet balance using enabled payment methods.
             </p>
         </div>
@@ -133,11 +135,11 @@ $baseCurrency = $currency ?? 'BDT';
 
             <!-- Amount Input -->
             <div style="margin-bottom: 24px;">
-                <label for="recharge_amount" style="display: block; font-weight: 700; font-size: 15px; margin-bottom: 8px; color: #0f172a;">
+                <label for="recharge_amount" style="display: block; font-weight: 700; font-size: 15px; margin-bottom: 8px; color: var(--heading, #0f172a);">
                     Recharge Amount (<?php echo htmlspecialchars($primaryCurrency ?? $baseCurrency, ENT_QUOTES, 'UTF-8'); ?>)
                 </label>
                 <div style="position: relative; display: flex; align-items: center;">
-                    <span style="position: absolute; left: 16px; font-size: 20px; font-weight: 700; color: #64748b;">
+                    <span style="position: absolute; left: 16px; font-size: 20px; font-weight: 700; color: var(--muted, #64748b);">
                         <?php echo match(strtoupper($primaryCurrency ?? $baseCurrency)) { 'BDT' => '৳', 'USD' => '$', 'EUR' => '€', default => ($primaryCurrency ?? $baseCurrency) }; ?>
                     </span>
                     <input type="number" 
@@ -147,18 +149,18 @@ $baseCurrency = $currency ?? 'BDT';
                            min="1" 
                            required 
                            placeholder="e.g. 500" 
-                           style="width: 100%; padding: 14px 14px 14px 44px; font-size: 20px; font-weight: 700; border: 2px solid #cbd5e1; border-radius: 8px; outline: none; box-sizing: border-box;"
-                           onfocus="this.style.borderColor='#2563eb'"
-                           onblur="this.style.borderColor='#cbd5e1'">
+                           style="width: 100%; padding: 14px 14px 14px 44px; font-size: 20px; font-weight: 700; border: 2px solid var(--border-strong, #cbd5e1); background: var(--surface, #ffffff); color: var(--heading, #0f172a); border-radius: 8px; outline: none; box-sizing: border-box;"
+                           onfocus="this.style.borderColor='var(--accent, #2563eb)'"
+                           onblur="this.style.borderColor='var(--border-strong, #cbd5e1)'">
                 </div>
-                <small style="display: block; margin-top: 6px; color: #64748b; font-size: 13px;">
+                <small style="display: block; margin-top: 6px; color: var(--muted, #64748b); font-size: 13px;">
                     Funds are credited strictly in your wallet's primary accounting currency (<strong><?php echo htmlspecialchars($primaryCurrency ?? $baseCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>).
                 </small>
             </div>
 
             <!-- Payment Method Selection -->
             <div style="margin-bottom: 28px;">
-                <label style="display: block; font-weight: 700; font-size: 15px; margin-bottom: 12px; color: #0f172a;">
+                <label style="display: block; font-weight: 700; font-size: 15px; margin-bottom: 12px; color: var(--heading, #0f172a);">
                     Select Payment Method
                 </label>
 
@@ -169,17 +171,17 @@ $baseCurrency = $currency ?? 'BDT';
                 <?php else: ?>
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <?php $first = true; foreach ($gateways as $id => $gw): ?>
-                            <label style="display: flex; align-items: flex-start; gap: 14px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
+                            <label style="display: flex; align-items: flex-start; gap: 14px; padding: 16px; border: 2px solid var(--border, #e2e8f0); background: var(--surface, #ffffff); border-radius: 10px; cursor: pointer; transition: all 0.15s ease;"
                                    class="fpay-gateway-option"
-                                   onclick="document.querySelectorAll('.fpay-gateway-option').forEach(el => el.style.borderColor='#e2e8f0'); this.style.borderColor='#2563eb';">
+                                   onclick="document.querySelectorAll('.fpay-gateway-option').forEach(el => el.style.borderColor='var(--border, #e2e8f0)'); this.style.borderColor='var(--accent, #2563eb)';">
                                 <input type="radio" 
                                        name="gateway_id" 
                                        value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>"
                                        <?php if ($first) { echo 'checked'; $first = false; } ?>
-                                       style="margin-top: 4px; accent-color: #2563eb;">
+                                       style="margin-top: 4px; accent-color: var(--accent, #2563eb);">
                                 <div style="flex: 1;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                        <strong style="font-size: 15px; color: #0f172a;">
+                                        <strong style="font-size: 15px; color: var(--heading, #0f172a);">
                                              <?php echo htmlspecialchars($gw['title'], ENT_QUOTES, 'UTF-8'); ?>
                                         </strong>
                                         <?php if (!empty($gw['is_manual'])): ?>
@@ -188,7 +190,7 @@ $baseCurrency = $currency ?? 'BDT';
                                             <span class="fpay-badge fpay-badge-success" style="font-size: 11px;">Instant Automated</span>
                                         <?php endif; ?>
                                     </div>
-                                    <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 1.4;">
+                                    <p style="margin: 0; font-size: 13px; color: var(--muted, #64748b); line-height: 1.4;">
                                         <?php echo htmlspecialchars($gw['description'], ENT_QUOTES, 'UTF-8'); ?>
                                     </p>
                                 </div>
@@ -213,7 +215,7 @@ $baseCurrency = $currency ?? 'BDT';
     <div class="fpay-card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h3 class="fpay-card-title" style="font-size: 17px; margin: 0;">Recent Recharge Activity</h3>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted, #64748b);">
                 Your latest wallet recharge requests and gateway transactions.
             </p>
         </div>
@@ -248,24 +250,24 @@ $baseCurrency = $currency ?? 'BDT';
                     $gwLabel = $r['gateway_title'] ?? $r['gateway_name'] ?? $r['gateway_id'] ?? 'Online';
                 ?>
                     <tr>
-                        <td style="font-size: 12px; color: #64748b; white-space: nowrap;">
+                        <td style="font-size: 12px; color: var(--muted, #64748b); white-space: nowrap;">
                             <?php echo htmlspecialchars($r['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
-                            <a href="/account/payments/<?php echo urlencode($txId); ?>" style="font-family: monospace; font-size: 12px; font-weight: 600; color: #2563eb; text-decoration: none;">
+                            <a href="/account/payments/<?php echo urlencode($txId); ?>" style="font-family: monospace; font-size: 12px; font-weight: 600; color: var(--accent, #2563eb); text-decoration: none;">
                                 <?php echo htmlspecialchars($txId, ENT_QUOTES, 'UTF-8'); ?>
                             </a>
                         </td>
-                        <td style="font-size: 12px; color: #334155;">
+                        <td style="font-size: 12px; color: var(--text, #334155);">
                             <?php echo htmlspecialchars($gwLabel, ENT_QUOTES, 'UTF-8'); ?>
                         </td>
-                        <td style="text-align: right; font-weight: 600; font-size: 13px; color: #0f172a; white-space: nowrap;">
+                        <td style="text-align: right; font-weight: 600; font-size: 13px; color: var(--heading, #0f172a); white-space: nowrap;">
                             <?php echo fpay_format_money($amtPaid, $curPaid); ?>
                         </td>
-                        <td style="text-align: right; font-weight: 700; font-size: 13px; color: #15803d; white-space: nowrap;">
+                        <td style="text-align: right; font-weight: 700; font-size: 13px; color: var(--success, #15803d); white-space: nowrap;">
                             <?php echo fpay_format_money($amtAcc, $curAcc); ?>
                             <?php if ($isDiff && $rate > 0): ?>
-                                <div style="font-size: 10px; color: #64748b; font-weight: normal;">
+                                <div style="font-size: 10px; color: var(--muted, #64748b); font-weight: normal;">
                                     @ 1 <?php echo htmlspecialchars($curPaid, ENT_QUOTES, 'UTF-8'); ?> = <?php echo rtrim(rtrim(number_format($rate, 4, '.', ''), '0'), '.'); ?> <?php echo htmlspecialchars($curAcc, ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                             <?php endif; ?>
@@ -300,46 +302,46 @@ $baseCurrency = $currency ?? 'BDT';
     <div class="fpay-card-header">
         <div>
             <h2 class="fpay-card-title">Lifetime Wallet Activity Summary</h2>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted, #64748b);">
                 Historical totals across all completed recharges, payments, and withdrawals.
             </p>
         </div>
-        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 6px;">
+        <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted, #64748b); background: var(--surface-muted, #f1f5f9); padding: 4px 10px; border-radius: 6px;">
             Cumulative
         </span>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding: 6px 0;">
-        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <span style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Total Recharges</span>
-            <strong style="font-size: 18px; color: #15803d; display: block;">
+        <div style="background: var(--surface-muted, #f8fafc); padding: 14px; border-radius: 8px; border: 1px solid var(--border, #e2e8f0);">
+            <span style="display: block; font-size: 12px; color: var(--muted, #64748b); margin-bottom: 4px;">Total Recharges</span>
+            <strong style="font-size: 18px; color: var(--success, #15803d); display: block;">
                 <?php echo fpay_format_money($summary['total_recharge_amount']->getAmount(), $baseCurrency); ?>
             </strong>
-            <span style="font-size: 11px; color: #94a3b8;"><?php echo (int)$summary['successful_recharge_count']; ?> successful payment(s)</span>
+            <span style="font-size: 11px; color: var(--muted, #94a3b8);"><?php echo (int)$summary['successful_recharge_count']; ?> successful payment(s)</span>
         </div>
 
-        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <span style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Total Withdrawals</span>
-            <strong style="font-size: 18px; color: #0f172a; display: block;">
+        <div style="background: var(--surface-muted, #f8fafc); padding: 14px; border-radius: 8px; border: 1px solid var(--border, #e2e8f0);">
+            <span style="display: block; font-size: 12px; color: var(--muted, #64748b); margin-bottom: 4px;">Total Withdrawals</span>
+            <strong style="font-size: 18px; color: var(--heading, #0f172a); display: block;">
                 <?php echo fpay_format_money($summary['total_withdrawal_amount']->getAmount(), $baseCurrency); ?>
             </strong>
-            <span style="font-size: 11px; color: #94a3b8;"><?php echo (int)$summary['total_withdrawal_count']; ?> total request(s)</span>
+            <span style="font-size: 11px; color: var(--muted, #94a3b8);"><?php echo (int)$summary['total_withdrawal_count']; ?> total request(s)</span>
         </div>
 
-        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <span style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Paid Payouts</span>
-            <strong style="font-size: 18px; color: #2563eb; display: block;">
+        <div style="background: var(--surface-muted, #f8fafc); padding: 14px; border-radius: 8px; border: 1px solid var(--border, #e2e8f0);">
+            <span style="display: block; font-size: 12px; color: var(--muted, #64748b); margin-bottom: 4px;">Paid Payouts</span>
+            <strong style="font-size: 18px; color: var(--accent, #2563eb); display: block;">
                 <?php echo fpay_format_money($summary['paid_withdrawal_amount']->getAmount(), $baseCurrency); ?>
             </strong>
-            <span style="font-size: 11px; color: #94a3b8;"><?php echo (int)$summary['paid_withdrawal_count']; ?> completed payout(s)</span>
+            <span style="font-size: 11px; color: var(--muted, #94a3b8);"><?php echo (int)$summary['paid_withdrawal_count']; ?> completed payout(s)</span>
         </div>
 
-        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
-            <span style="display: block; font-size: 12px; color: #64748b; margin-bottom: 4px;">Withdrawal Fees</span>
-            <strong style="font-size: 18px; color: #475569; display: block;">
+        <div style="background: var(--surface-muted, #f8fafc); padding: 14px; border-radius: 8px; border: 1px solid var(--border, #e2e8f0);">
+            <span style="display: block; font-size: 12px; color: var(--muted, #64748b); margin-bottom: 4px;">Withdrawal Fees</span>
+            <strong style="font-size: 18px; color: var(--muted, #475569); display: block;">
                 <?php echo fpay_format_money($summary['total_withdrawal_fee']->getAmount(), $baseCurrency); ?>
             </strong>
-            <span style="font-size: 11px; color: #94a3b8;">Processing fees paid</span>
+            <span style="font-size: 11px; color: var(--muted, #94a3b8);">Processing fees paid</span>
         </div>
     </div>
 </div>
@@ -350,7 +352,7 @@ $baseCurrency = $currency ?? 'BDT';
     <div class="fpay-card-header">
         <div>
             <h2 class="fpay-card-title">Recent Wallet Activity</h2>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted, #64748b);">
                 Latest transactions from your immutable ledger.
             </p>
         </div>
@@ -360,8 +362,8 @@ $baseCurrency = $currency ?? 'BDT';
     </div>
 
     <?php if (empty($recentLedger)): ?>
-        <div style="text-align: center; padding: 48px 20px; color: #64748b;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <div style="text-align: center; padding: 48px 20px; color: var(--muted, #64748b);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; stroke: var(--border-strong, #cbd5e1);"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
             <p style="margin: 0 0 12px; font-size: 15px; font-weight: 500;">No wallet activity recorded yet.</p>
             <?php if (empty($isSuspended)): ?>
                 <a href="#recharge-wallet" class="fpay-btn fpay-btn-primary fpay-btn-sm">Make Your First Deposit</a>
@@ -404,7 +406,7 @@ $baseCurrency = $currency ?? 'BDT';
                     }
                 ?>
                     <tr>
-                        <td style="color: #64748b; white-space: nowrap; font-size: 13px;">
+                        <td style="color: var(--muted, #64748b); white-space: nowrap; font-size: 13px;">
                             <?php echo htmlspecialchars($entry->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
@@ -412,22 +414,22 @@ $baseCurrency = $currency ?? 'BDT';
                                 <?php echo htmlspecialchars(strtoupper($type), ENT_QUOTES, 'UTF-8'); ?>
                             </span>
                         </td>
-                        <td>
+                        <td style="color: var(--text, #1e293b);">
                             <?php echo htmlspecialchars($entry->getDescription(), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
                             <?php if ($crossLinkUrl !== null): ?>
-                                <a href="<?php echo htmlspecialchars($crossLinkUrl, ENT_QUOTES, 'UTF-8'); ?>" style="color: #2563eb; text-decoration: none; font-weight: 600; font-family: monospace; font-size: 12px;">
+                                <a href="<?php echo htmlspecialchars($crossLinkUrl, ENT_QUOTES, 'UTF-8'); ?>" style="color: var(--accent, #2563eb); text-decoration: none; font-weight: 600; font-family: monospace; font-size: 12px;">
                                     <?php echo htmlspecialchars($refId, ENT_QUOTES, 'UTF-8'); ?>
                                 </a>
                             <?php else: ?>
-                                <span style="color: #64748b; font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars($refId, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <span style="color: var(--muted, #64748b); font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars($refId, ENT_QUOTES, 'UTF-8'); ?></span>
                             <?php endif; ?>
                         </td>
-                        <td style="text-align: right; font-weight: 700; color: <?php echo $isCredit ? '#15803d' : ($type === 'hold' ? '#d97706' : '#b91c1c'); ?>;">
+                        <td style="text-align: right; font-weight: 700; color: <?php echo $isCredit ? 'var(--success, #15803d)' : ($type === 'hold' ? 'var(--warning, #d97706)' : 'var(--danger, #b91c1c)'); ?>;">
                             <?php echo ($isCredit ? '+' : '-') . fpay_format_money($entryAmount->getAmount(), $entryAmount->getCurrency()); ?>
                         </td>
-                        <td style="text-align: right; font-weight: 600; color: #1e293b;">
+                        <td style="text-align: right; font-weight: 600; color: var(--heading, #0f172a);">
                             <?php echo fpay_format_money($balAfter->getAmount(), $balAfter->getCurrency()); ?>
                         </td>
                         <td style="text-align: center; white-space: nowrap;">

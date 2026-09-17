@@ -14,22 +14,22 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
 <div class="fpay-card">
     <div class="fpay-card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
         <div>
-            <h2 class="fpay-card-title" style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a;">Payment & Checkout History</h2>
-            <p style="margin: 4px 0 0; font-size: 13px; color: #64748b;">
+            <h2 class="fpay-card-title" style="margin: 0; font-size: 20px; font-weight: 700; color: var(--heading, #0f172a);">Payment & Checkout History</h2>
+            <p style="margin: 4px 0 0; font-size: 13px; color: var(--muted, #64748b);">
                 History of all payment intents, checkout attempts, and gateway transactions.
             </p>
         </div>
-        <span style="font-size: 13px; color: #64748b;">
+        <span style="font-size: 13px; color: var(--muted, #64748b);">
             Total: <strong><?php echo (int)$total; ?></strong> record(s)
         </span>
     </div>
 
     <!-- Filter Form -->
-    <form method="GET" action="/account/payments" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 16px 0 24px;">
+    <form method="GET" action="/account/payments" style="background: var(--surface-muted, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 16px; margin: 16px 0 24px;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: flex-end;">
             <div>
-                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Status</label>
-                <select name="status" style="width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: var(--muted, #64748b); margin-bottom: 4px;">Status</label>
+                <select name="status" style="width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; background: var(--surface, #fff); color: var(--text, #1e293b);">
                     <option value="">All Statuses</option>
                     <option value="succeeded" <?php echo (($filters['status'] ?? '') === 'succeeded') ? 'selected' : ''; ?>>Succeeded</option>
                     <option value="pending" <?php echo (($filters['status'] ?? '') === 'pending') ? 'selected' : ''; ?>>Pending / Processing</option>
@@ -38,12 +38,12 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                 </select>
             </div>
             <div>
-                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">From Date</label>
-                <input type="date" name="date_from" value="<?php echo htmlspecialchars($filters['date_from'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: var(--muted, #64748b); margin-bottom: 4px;">From Date</label>
+                <input type="date" name="date_from" value="<?php echo htmlspecialchars($filters['date_from'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; background: var(--surface, #fff); color: var(--text, #1e293b);">
             </div>
             <div>
-                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">To Date</label>
-                <input type="date" name="date_to" value="<?php echo htmlspecialchars($filters['date_to'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+                <label style="display: block; font-size: 12px; font-weight: 600; color: var(--muted, #64748b); margin-bottom: 4px;">To Date</label>
+                <input type="date" name="date_to" value="<?php echo htmlspecialchars($filters['date_to'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; background: var(--surface, #fff); color: var(--text, #1e293b);">
             </div>
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
                 <a href="/account/payments" class="fpay-btn fpay-btn-secondary" style="text-decoration: none; padding: 7px 14px; font-size: 13px;">Reset</a>
@@ -53,11 +53,11 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
     </form>
 
     <?php if (empty($payments)): ?>
-        <div style="text-align: center; padding: 48px 20px; color: #64748b; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1;">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <p style="margin: 0; font-size: 15px; font-weight: 500;">No payment records found matching your criteria.</p>
+        <div style="text-align: center; padding: 48px 20px; color: var(--muted, #64748b); background: var(--surface, #fff); border-radius: 8px; border: 1px dashed var(--border-strong, #cbd5e1);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; stroke: var(--border-strong, #cbd5e1);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <p style="margin: 0; font-size: 15px; font-weight: 600; color: var(--heading, #0f172a);">No payment records found matching your criteria.</p>
             <?php if (!empty($queryParams)): ?>
-                <p style="margin: 6px 0 0; font-size: 13px;"><a href="/account/payments" style="color: #2563eb; text-decoration: none;">Clear all filters</a></p>
+                <p style="margin: 6px 0 0; font-size: 13px;"><a href="/account/payments" style="color: var(--accent, #2563eb); text-decoration: none;">Clear all filters</a></p>
             <?php endif; ?>
         </div>
     <?php else: ?>
@@ -86,17 +86,17 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                     ?>
                         <tr>
                             <td>
-                                <a href="/account/payments/<?php echo urlencode($txId); ?>" style="color: #2563eb; font-weight: 700; text-decoration: none; font-family: monospace; font-size: 12px;">
+                                <a href="/account/payments/<?php echo urlencode($txId); ?>" style="color: var(--accent, #2563eb); font-weight: 700; text-decoration: none; font-family: monospace; font-size: 12px;">
                                     <?php echo htmlspecialchars($txId, ENT_QUOTES, 'UTF-8'); ?>
                                 </a>
                             </td>
-                            <td style="color: #64748b; white-space: nowrap; font-size: 12px;">
+                            <td style="color: var(--muted, #64748b); white-space: nowrap; font-size: 12px;">
                                 <?php echo htmlspecialchars($date, ENT_QUOTES, 'UTF-8'); ?>
                             </td>
-                            <td style="font-size: 13px; color: #334155;">
+                            <td style="font-size: 13px; color: var(--text, #334155);">
                                 <?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $gw)), ENT_QUOTES, 'UTF-8'); ?>
                             </td>
-                            <td style="text-align: right; font-weight: 700; font-size: 13px; color: #0f172a; white-space: nowrap;">
+                            <td style="text-align: right; font-weight: 700; font-size: 13px; color: var(--heading, #0f172a); white-space: nowrap;">
                                 <?php echo fpay_format_money($amount, $currency); ?>
                             </td>
                             <td>
@@ -106,15 +106,15 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                             </td>
                             <td>
                                 <?php if ($isSettled): ?>
-                                    <span style="color: #15803d; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="color: var(--success, #15803d); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
                                         &check; Credited
                                     </span>
                                 <?php elseif ($status === 'pending'): ?>
-                                    <span style="color: #d97706; font-size: 12px; font-weight: 500;">
+                                    <span style="color: var(--warning, #d97706); font-size: 12px; font-weight: 500;">
                                         &bull; Pending Settlement
                                     </span>
                                 <?php else: ?>
-                                    <span style="color: #94a3b8; font-size: 12px;">
+                                    <span style="color: var(--muted, #94a3b8); font-size: 12px;">
                                         &mdash; Not Credited
                                     </span>
                                 <?php endif; ?>
@@ -132,8 +132,8 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
 
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-            <div class="fpay-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-                <div style="font-size: 13px; color: #64748b;">
+            <div class="fpay-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border, #e2e8f0);">
+                <div style="font-size: 13px; color: var(--muted, #64748b);">
                     Showing page <?php echo (int)$page; ?> of <?php echo (int)$totalPages; ?> (<?php echo (int)$total; ?> total records)
                 </div>
                 <div class="fpay-pagination-links" style="display: flex; gap: 8px;">

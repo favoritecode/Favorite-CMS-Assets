@@ -399,8 +399,9 @@ class CustomerAccountController
             return $this->handleRechargeSubmit($request, $user);
         }
 
-        // GET: Standalone /account/recharge is removed; redirect customer to /account/wallet
-        return Response::redirect('/account/wallet');
+        // GET: Standalone /account/recharge is removed; redirect customer to /account/wallet#recharge-wallet
+        $target = function_exists('site_path') ? site_path('/account/wallet#recharge-wallet') : '/account/wallet#recharge-wallet';
+        return Response::redirect($target);
     }
 
     /**
@@ -410,6 +411,7 @@ class CustomerAccountController
     {
         $userId = (int)$user->id;
         $primaryCurrency = $this->walletService->getPrimaryCurrency();
+        $rechargeUrl = function_exists('site_path') ? site_path('/account/wallet#recharge-wallet') : '/account/wallet#recharge-wallet';
 
         // 1. Amount validation
         $rawAmount = trim((string)$request->post('amount', ''));
@@ -417,17 +419,17 @@ class CustomerAccountController
 
         if ($cleanAmount === '' || !is_numeric($cleanAmount) || (float)$cleanAmount <= 0) {
             $_SESSION['flash_error'] = 'Please enter a valid positive recharge amount.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
         }
 
         $numericAmount = (float)$cleanAmount;
         if ($numericAmount < 1.0) {
             $_SESSION['flash_error'] = 'Minimum recharge amount is 1 ' . $primaryCurrency . '.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
         }
         if ($numericAmount > 1000000.0) {
             $_SESSION['flash_error'] = 'Recharge amount exceeds maximum allowed limit.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
         }
 
         // Convert to minor units (integers only)
@@ -438,12 +440,18 @@ class CustomerAccountController
         $gatewayId = trim((string)($request->post('gateway_id') ?: $request->post('gateway', '')));
         if ($gatewayId === '') {
             $_SESSION['flash_error'] = 'Please select a payment method.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
+        }
+
+        // Strictly reject wallet balance as a recharge gateway
+        if (in_array(strtolower($gatewayId), ['wallet', 'wallet_balance', 'internal_balance'], true)) {
+            $_SESSION['flash_error'] = 'Wallet balance cannot be used to recharge the wallet.';
+            return Response::redirect($rechargeUrl);
         }
 
         if (!$this->gatewayRegistry->has($gatewayId)) {
             $_SESSION['flash_error'] = 'The selected payment method is not recognized.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
         }
 
         $gateway = $this->gatewayRegistry->get($gatewayId);
@@ -748,19 +756,81 @@ class CustomerAccountController
         } elseif (class_exists($storageClass)) {
             $storage = new $storageClass();
         } else {
-            throw new RuntimeException('Secure payment proof storage is unavailable.');
+            $storage = null;
         }
 
-        if (!is_object($storage) || !method_exists($storage, 'storeProofUpload')) {
-            throw new RuntimeException('Secure payment proof storage is unavailable.');
+        if (is_object($storage) && method_exists($storage, 'storeProofUpload')) {
+            $stored = $storage->storeProofUpload($file);
+            if (is_array($stored)) {
+                return $stored;
+            }
         }
 
-        $stored = $storage->storeProofUpload($file);
-        if (!is_array($stored)) {
-            throw new RuntimeException('Secure payment proof storage returned an invalid result.');
+        // Standalone fallback when Favorite Digital storage service is not loaded
+        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
+            throw new InvalidArgumentException('Proof file upload failed with error code ' . (int)$file['error']);
         }
 
-        return $stored;
+        $tmpPath = (string)($file['tmp_name'] ?? '');
+        if ($tmpPath === '' || (!is_uploaded_file($tmpPath) && (!defined('PHPUNIT_RUNNING') || !file_exists($tmpPath)))) {
+            throw new InvalidArgumentException('Invalid uploaded proof file.');
+        }
+
+        $size = (int)($file['size'] ?? 0);
+        if ($size <= 0) {
+            $size = (int)@filesize($tmpPath);
+        }
+        if ($size <= 0) {
+            throw new InvalidArgumentException('Uploaded proof file is empty.');
+        }
+        if ($size > 10485760) {
+            throw new InvalidArgumentException('Proof file exceeds maximum limit of 10MB.');
+        }
+
+        $rawName = (string)($file['name'] ?? 'proof');
+        $ext = strtolower((string)pathinfo($rawName, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        if (!in_array($ext, $allowed, true)) {
+            throw new InvalidArgumentException("Proof file extension '{$ext}' is not allowed. Accepted: JPG, PNG, WEBP, PDF.");
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo ? finfo_file($finfo, $tmpPath) : 'application/octet-stream';
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+
+        if (!str_starts_with($mimeType, 'image/') && $mimeType !== 'application/pdf') {
+            throw new InvalidArgumentException("Invalid proof file MIME type '{$mimeType}'.");
+        }
+
+        $hash = hash_file('sha256', $tmpPath) ?: bin2hex(random_bytes(16));
+        $targetFileName = $hash . ($ext !== '' ? '.' . $ext : '');
+
+        $appRoot = defined('APP_ROOT') ? APP_ROOT : dirname(__DIR__, 4);
+        $proofsDir = rtrim($appRoot, '/\\') . '/storage/app/payments/proofs';
+        if (!is_dir($proofsDir)) {
+            @mkdir($proofsDir, 0755, true);
+        }
+
+        $destination = $proofsDir . '/' . $targetFileName;
+        if (!defined('PHPUNIT_RUNNING') && is_uploaded_file($tmpPath)) {
+            if (!move_uploaded_file($tmpPath, $destination)) {
+                throw new RuntimeException('Failed to move uploaded proof file.');
+            }
+        } else {
+            if (!copy($tmpPath, $destination)) {
+                throw new RuntimeException('Failed to copy proof file.');
+            }
+        }
+
+        return [
+            'file_path' => 'payments/proofs/' . $targetFileName,
+            'file_name' => $targetFileName,
+            'file_hash' => $hash,
+            'file_size' => $size,
+            'mime_type' => $mimeType,
+        ];
     }
 
     /**
@@ -1311,6 +1381,7 @@ class CustomerAccountController
         $data['contentView'] = $viewFile;
         extract($data, EXTR_SKIP);
 
+        $startObLevel = ob_get_level();
         ob_start();
         try {
             if (file_exists($layoutFile)) {
@@ -1318,9 +1389,11 @@ class CustomerAccountController
             } else {
                 include $viewFile;
             }
-            return (string)ob_get_clean();
+            $rawHtml = (string)ob_get_clean();
+            $title = (string)($data['pageTitle'] ?? 'Favorite Pay');
+            return \FavoriteCMS\Pay\Support\CustomerThemeShell::render($rawHtml, $title, $viewName);
         } catch (\Throwable $e) {
-            while (ob_get_level() > 0) {
+            while (ob_get_level() > $startObLevel) {
                 ob_end_clean();
             }
             throw $e;

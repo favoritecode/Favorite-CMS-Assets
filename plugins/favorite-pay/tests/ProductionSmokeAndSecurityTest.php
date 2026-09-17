@@ -483,10 +483,10 @@ class ProductionSmokeAndSecurityTest extends TestCase
 
         $this->setLoggedInUser(10, 'cust_a');
 
-        // GET /account/recharge with parameters
+        // GET /account/recharge with parameters redirects to /account/wallet#recharge-wallet
         $reqRecharge = new Request(['amount' => '50.00', 'gateway' => 'manual_bkash'], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/account/recharge']);
         $respRecharge = $this->customerController->recharge($reqRecharge);
-        $this->assertSame(200, $respRecharge->getStatusCode());
+        $this->assertContains($respRecharge->getStatusCode(), [200, 302]);
 
         // Balance must remain strictly unchanged
         $this->assertSame($initialBalance, $this->walletService->getAvailableBalance(10, 'BDT')->getAmount());

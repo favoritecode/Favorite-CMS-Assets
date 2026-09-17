@@ -10,37 +10,8 @@ $flashError = $_SESSION['flash_error'] ?? null;
 $flashSuccess = $_SESSION['flash_success'] ?? null;
 unset($_SESSION['flash_error'], $_SESSION['flash_success']);
 
-$hasThemeHeader = defined('APP_ROOT') && file_exists(APP_ROOT . '/themes/default/header.php');
-$hasThemeHeader = false;
-if (defined('APP_ROOT') && file_exists(APP_ROOT . '/themes/default/header.php')) {
-    if (class_exists(\FavoriteCMS\Core\Container::class)) {
-        try {
-            $c = \FavoriteCMS\Core\Container::getInstance();
-            if ($c->has('config') || $c->has(\FavoriteCMS\Core\Config::class)) {
-                $hasThemeHeader = true;
-            }
-        } catch (\Throwable) {
-            $hasThemeHeader = false;
-        }
-    }
-}
-if ($hasThemeHeader) {
-    // Isolate customer pagination variable so it doesn't collide with Core CMS $page model in FrontendSeoService
-    $fpayCustomerPageVar = $page ?? null;
-    $page = null;
-    require APP_ROOT . '/themes/default/header.php';
-    $page = $fpayCustomerPageVar;
-} else {
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?> — Favorite Pay</title>
-</head>
-<body style="margin: 0; padding: 0; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
-<?php } ?>
+
 
 <style>
 .fpay-customer-wrapper {
@@ -48,7 +19,7 @@ if ($hasThemeHeader) {
     margin: 32px auto 64px;
     padding: 0 20px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #1e293b;
+    color: var(--text, #1e293b);
 }
 .fpay-page-header {
     display: flex;
@@ -61,18 +32,18 @@ if ($hasThemeHeader) {
 .fpay-page-title {
     font-size: 26px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--heading, #0f172a);
     margin: 0 0 4px;
 }
 .fpay-page-desc {
     font-size: 14px;
-    color: #64748b;
+    color: var(--muted, #64748b);
     margin: 0;
 }
 .fpay-nav-tabs {
     display: flex;
     gap: 8px;
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid var(--border, #e2e8f0);
     margin-bottom: 28px;
     overflow-x: auto;
     padding-bottom: 2px;
@@ -86,20 +57,20 @@ if ($hasThemeHeader) {
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
-    color: #64748b;
+    color: var(--muted, #64748b);
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
     transition: all 0.15s ease;
     white-space: nowrap;
 }
 .fpay-nav-link:hover {
-    color: #0f172a;
-    background: #f1f5f9;
+    color: var(--heading, #0f172a);
+    background: var(--surface-muted, #f1f5f9);
 }
 .fpay-nav-link.active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
-    background: #eff6ff;
+    color: var(--accent, #2563eb);
+    border-bottom-color: var(--accent, #2563eb);
+    background: var(--accent-soft, #eff6ff);
 }
 .fpay-alert {
     padding: 14px 18px;
@@ -111,26 +82,31 @@ if ($hasThemeHeader) {
     gap: 12px;
 }
 .fpay-alert-success {
-    background: #ecfdf5;
-    color: #065f46;
-    border: 1px solid #a7f3d0;
+    background: var(--success-soft, #ecfdf5);
+    color: var(--success, #065f46);
+    border: 1px solid var(--success-border, #a7f3d0);
 }
 .fpay-alert-error {
-    background: #fef2f2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background: var(--danger-soft, #fef2f2);
+    color: var(--danger, #991b1b);
+    border: 1px solid var(--danger-border, #fecaca);
 }
 .fpay-alert-warning {
-    background: #fffbeb;
-    color: #92400e;
-    border: 1px solid #fde68a;
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.fpay-alert-info {
+    background: var(--accent-soft, #eff6ff);
+    color: var(--accent, #1e40af);
+    border: 1px solid var(--border, #bfdbfe);
 }
 .fpay-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #e2e8f0);
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     margin-bottom: 28px;
 }
 .fpay-card-header {
@@ -139,12 +115,12 @@ if ($hasThemeHeader) {
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border, #f1f5f9);
 }
 .fpay-card-title {
     font-size: 18px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--heading, #0f172a);
     margin: 0;
 }
 .fpay-table {
@@ -153,20 +129,20 @@ if ($hasThemeHeader) {
     font-size: 14px;
 }
 .fpay-table th {
-    background: #f8fafc;
-    color: #475569;
+    background: var(--surface-muted, #f8fafc);
+    color: var(--muted, #475569);
     font-weight: 600;
     text-align: left;
     padding: 12px 14px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border, #e2e8f0);
 }
 .fpay-table td {
     padding: 14px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #334155;
+    border-bottom: 1px solid var(--border, #f1f5f9);
+    color: var(--text, #334155);
 }
 .fpay-table tr:hover td {
-    background: #f8fafc;
+    background: var(--surface-muted, #f8fafc);
 }
 .fpay-badge {
     display: inline-flex;
@@ -179,20 +155,24 @@ if ($hasThemeHeader) {
     letter-spacing: 0.03em;
 }
 .fpay-badge-success, .fpay-badge-succeeded, .fpay-badge-paid {
-    background: #dcfce7;
-    color: #15803d;
+    background: var(--success-soft, #dcfce7);
+    color: var(--success, #15803d);
 }
-.fpay-badge-pending, .fpay-badge-awaiting_verification {
-    background: #fef3c7;
-    color: #b45309;
+.fpay-badge-pending, .fpay-badge-awaiting_verification, .fpay-badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
 }
 .fpay-badge-failed, .fpay-badge-cancelled {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--danger-soft, #fee2e2);
+    color: var(--danger, #b91c1c);
 }
 .fpay-badge-active {
-    background: #e0e7ff;
-    color: #4338ca;
+    background: var(--accent-soft, #e0e7ff);
+    color: var(--accent, #4338ca);
+}
+.fpay-badge-secondary {
+    background: var(--surface-muted, #f1f5f9);
+    color: var(--muted, #64748b);
 }
 .fpay-btn {
     display: inline-flex;
@@ -208,19 +188,19 @@ if ($hasThemeHeader) {
     transition: background 0.15s ease;
 }
 .fpay-btn-primary {
-    background: #2563eb;
+    background: var(--accent, #2563eb);
     color: #ffffff;
 }
 .fpay-btn-primary:hover {
-    background: #1d4ed8;
+    opacity: 0.9;
 }
 .fpay-btn-secondary {
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background: var(--surface-muted, #f1f5f9);
+    color: var(--text, #334155);
+    border: 1px solid var(--border-strong, #cbd5e1);
 }
 .fpay-btn-secondary:hover {
-    background: #e2e8f0;
+    background: var(--border, #e2e8f0);
 }
 .fpay-btn-sm {
     padding: 6px 12px;
@@ -233,7 +213,7 @@ if ($hasThemeHeader) {
     align-items: center;
     margin-top: 20px;
     font-size: 13px;
-    color: #64748b;
+    color: var(--muted, #64748b);
 }
 .fpay-pagination-links {
     display: flex;
@@ -311,11 +291,3 @@ if ($hasThemeHeader) {
     <?php endif; ?>
 </div>
 
-<?php
-if ($hasThemeHeader && file_exists(APP_ROOT . '/themes/default/footer.php')) {
-    require APP_ROOT . '/themes/default/footer.php';
-} else {
-?>
-</body>
-</html>
-<?php } ?>

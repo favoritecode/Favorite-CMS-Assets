@@ -135,7 +135,7 @@ class InstallUpgradeRestoreTest extends TestCase
         $migrator = new Migrator($db);
         $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
-        $this->assertCount(7, $applied, 'Expected 7 migrations applied on fresh install');
+        $this->assertCount(8, $applied, 'Expected 8 migrations applied on fresh install');
 
         // Verify all 10 tables now exist
         foreach (FavoritePayPlugin::TABLES as $table) {
@@ -206,7 +206,7 @@ class InstallUpgradeRestoreTest extends TestCase
             // Run Pay migrations
             $migrator = new Migrator($db);
             $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
-            $this->assertCount(7, $applied);
+            $this->assertCount(8, $applied);
 
             // Verify all 10 tables exist in MySQL
             $rawTables = $pdo->query("SHOW TABLES FROM `{$this->mysqlDbName}` LIKE 'favorite_pay_%'")->fetchAll(PDO::FETCH_COLUMN);
@@ -254,7 +254,7 @@ class InstallUpgradeRestoreTest extends TestCase
         // Run migrations with prefix
         $migrator = new Migrator($db);
         $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
-        $this->assertCount(7, $applied);
+        $this->assertCount(8, $applied);
 
         // Verify that underlying SQLite master has tables with the custom prefix
         $tablesInSqlite = $db->select("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '{$prefix}favorite_pay_%'");
@@ -602,14 +602,15 @@ class InstallUpgradeRestoreTest extends TestCase
         $preUpgradeCols = array_map(fn($c) => strtolower(((array)$c)['name'] ?? ''), $db->select("PRAGMA table_info('favorite_pay_withdrawals')"));
         $this->assertNotContains('audit_trail', $preUpgradeCols);
 
-        // 4. Run Upgrade Migrations (005, 006, 007)
+        // 4. Run Upgrade Migrations (005, 006, 007, 008)
         $migrator = new Migrator($db);
         $applied = $migrator->migrate((is_dir(dirname(__DIR__) . '/database') ? dirname(__DIR__) : APP_ROOT . '/plugins/favorite-pay') . '/database/migrations');
 
-        $this->assertCount(3, $applied, 'Expected exactly 3 migrations (005, 006, 007) applied on upgrade');
+        $this->assertCount(4, $applied, 'Expected exactly 4 migrations (005, 006, 007, 008) applied on upgrade');
         $this->assertContains('005_add_audit_trail_to_favorite_pay_withdrawals', $applied);
         $this->assertContains('006_create_favorite_pay_notifications_table', $applied);
         $this->assertContains('007_create_favorite_pay_audit_logs_table', $applied);
+        $this->assertContains('008_remove_obsolete_manual_bd_gateway', $applied);
 
         // 5. Post-Upgrade Invariant Assertions
         // Balances MUST be identical down to 1 paisa

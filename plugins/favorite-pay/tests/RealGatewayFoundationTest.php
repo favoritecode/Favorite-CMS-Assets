@@ -305,13 +305,16 @@ class RealGatewayFoundationTest extends TestCase
      */
     public function testExistingManualGatewaysRegisterCorrectly(): void
     {
-        $expected = ['manual_bd', 'manual_bkash', 'manual_nagad', 'manual_bank'];
+        $expected = ['manual_bkash', 'manual_nagad', 'manual_rocket', 'manual_bank'];
         foreach ($expected as $id) {
             $this->assertTrue($this->registry->has($id), "Gateway {$id} must be registered.");
             $gw = $this->registry->get($id);
             $this->assertSame($id, $gw->getId());
             $this->assertTrue($gw->isEnabled());
         }
+
+        // Generic manual_bd must never be registered
+        $this->assertFalse($this->registry->has('manual_bd'), "Generic manual_bd must not be registered.");
 
         // Aliases work
         $this->assertSame('manual_bkash', $this->registry->get('bkash_manual')->getId());

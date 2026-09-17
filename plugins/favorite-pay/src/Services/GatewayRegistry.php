@@ -27,7 +27,6 @@ final class GatewayRegistry
 
     private function loadDefaults(): void
     {
-        $bd = new \FavoriteCMS\Pay\Gateways\ManualBangladeshGateway();
         $bkash = new \FavoriteCMS\Pay\Gateways\ManualBangladeshGateway(
             'manual_bkash',
             'bKash Manual',
@@ -48,9 +47,6 @@ final class GatewayRegistry
             'Bank Transfer Manual',
             \FavoriteCMS\Pay\Domain\PaymentMethodType::MANUAL_BANK
         );
-
-        $this->gateways[$bd->getId()] = $bd;
-        $this->defaults[$bd->getId()] = true;
 
         $this->gateways[$bkash->getId()] = $bkash;
         $this->defaults[$bkash->getId()] = true;
