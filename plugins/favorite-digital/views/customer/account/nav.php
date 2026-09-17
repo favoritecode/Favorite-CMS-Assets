@@ -11,8 +11,8 @@ $currency = is_array($wallet) ? ($wallet['currency'] ?? 'BDT') : ($wallet->curre
 ?>
 <style>
 .fav-account-nav-wrap {
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--surface, #ffffff);
+    border-bottom: 1px solid var(--border, #e2e8f0);
     margin-bottom: 24px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.02);
 }
@@ -43,17 +43,17 @@ $currency = is_array($wallet) ? ($wallet['currency'] ?? 'BDT') : ($wallet->curre
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
-    color: #475569;
+    color: var(--muted, #475569);
     white-space: nowrap;
     transition: all 0.15s ease;
 }
 .fav-nav-tab:hover {
-    color: #0f172a;
-    background: #f1f5f9;
+    color: var(--heading, #0f172a);
+    background: var(--surface-muted, #f1f5f9);
 }
 .fav-nav-tab.active {
-    color: #2563eb;
-    background: #eff6ff;
+    color: var(--accent, #2563eb);
+    background: var(--accent-soft, #eff6ff);
     font-weight: 700;
 }
 .fav-wallet-pill {
@@ -61,19 +61,19 @@ $currency = is_array($wallet) ? ($wallet['currency'] ?? 'BDT') : ($wallet->curre
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+    background: var(--surface-muted, #f8fafc);
+    border: 1px solid var(--border-strong, #cbd5e1);
     border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--heading, #0f172a);
     text-decoration: none;
 }
 .fav-wallet-pill:hover {
-    background: #f1f5f9;
+    background: var(--border, #f1f5f9);
 }
 .fav-wallet-label {
-    color: #64748b;
+    color: var(--muted, #64748b);
     font-weight: 500;
 }
 </style>

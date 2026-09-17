@@ -47,47 +47,70 @@
         <?php endif; ?>
     </form>
 
-    <table class="wp-list-table widefat fixed striped">
-        <thead>
-            <tr>
-                <th style="width: 180px;">Order #</th>
-                <th style="width: 100px;">Customer ID</th>
-                <th>Order Status</th>
-                <th>Payment Status</th>
-                <th>Fulfillment Status</th>
-                <th style="text-align: right; width: 120px;">Total</th>
-                <th style="width: 150px;">Created Date</th>
-                <th style="width: 100px; text-align: center;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($orders)): ?>
+    <form id="fd-orders-bulk-form" method="POST" action="/admin/page/favorite-digital-orders">
+        <input type="hidden" name="_token" value="<?= htmlspecialchars((string)($csrfToken ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="action" value="bulk_action">
+        <input type="hidden" name="redirect_to" value="<?= htmlspecialchars((string)($_SERVER['REQUEST_URI'] ?? '/admin/page/favorite-digital-orders'), ENT_QUOTES, 'UTF-8') ?>">
+
+        <div class="tablenav top" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <select name="bulk_action" style="padding: 6px 10px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 13px; background: #fff;">
+                <option value="">Bulk Actions</option>
+                <option value="processing">Mark Processing</option>
+                <option value="completed">Mark Completed</option>
+                <option value="cancelled">Cancel Orders</option>
+            </select>
+            <button type="submit" class="button action" style="padding: 6px 14px; background: #f6f7f7; border: 1px solid #8c8f94; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">Apply</button>
+            <span class="bulk-count-badge" style="font-size: 12px; color: #646970; margin-left: 6px;"></span>
+        </div>
+
+        <table class="wp-list-table widefat fixed striped">
+            <thead>
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 20px; color: #666;">No orders found matching criteria.</td>
+                    <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" data-select-all aria-label="Select all orders on this page">
+                    </th>
+                    <th style="width: 180px;">Order #</th>
+                    <th style="width: 100px;">Customer ID</th>
+                    <th>Order Status</th>
+                    <th>Payment Status</th>
+                    <th>Fulfillment Status</th>
+                    <th style="text-align: right; width: 120px;">Total</th>
+                    <th style="width: 150px;">Created Date</th>
+                    <th style="width: 100px; text-align: center;">Actions</th>
                 </tr>
-            <?php else: ?>
-                <?php foreach ($orders as $order): ?>
+            </thead>
+            <tbody>
+                <?php if (empty($orders)): ?>
                     <tr>
-                        <td>
-                            <strong><a href="/admin/page/favorite-digital-orders?action=view&id=<?= (int)$order->id ?>"><?= htmlspecialchars((string)$order->order_number, ENT_QUOTES, 'UTF-8') ?></a></strong>
-                            <?php if (!empty($order->notes)): ?>
-                                <div style="font-size: 11px; color: #666; font-style: italic;"><?= htmlspecialchars((string)$order->notes, ENT_QUOTES, 'UTF-8') ?></div>
-                            <?php endif; ?>
-                        </td>
-                        <td>User #<?= (int)$order->user_id ?></td>
-                        <td><span class="badge badge-<?= htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8')) ?></span></td>
-                        <td><span class="badge badge-pay-<?= htmlspecialchars((string)$order->payment_status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->payment_status, ENT_QUOTES, 'UTF-8')) ?></span></td>
-                        <td><span class="badge badge-ful-<?= htmlspecialchars((string)$order->fulfillment_status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->fulfillment_status, ENT_QUOTES, 'UTF-8')) ?></span></td>
-                        <td style="text-align: right; font-weight: bold;"><?= htmlspecialchars((string)$order->currency, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string)$order->total_amount, ENT_QUOTES, 'UTF-8') ?></td>
-                        <td><?= htmlspecialchars((string)$order->created_at, ENT_QUOTES, 'UTF-8') ?></td>
-                        <td style="text-align: center;">
-                            <a href="/admin/page/favorite-digital-orders?action=view&id=<?= (int)$order->id ?>" class="button button-small">View</a>
-                        </td>
+                        <td colspan="9" style="text-align: center; padding: 20px; color: #666;">No orders found matching criteria.</td>
                     </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                <?php else: ?>
+                    <?php foreach ($orders as $order): ?>
+                        <tr>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="ids[]" value="<?= (int)$order->id ?>" aria-label="Select order #<?= (int)$order->id ?>">
+                            </td>
+                            <td>
+                                <strong><a href="/admin/page/favorite-digital-orders?action=view&id=<?= (int)$order->id ?>"><?= htmlspecialchars((string)$order->order_number, ENT_QUOTES, 'UTF-8') ?></a></strong>
+                                <?php if (!empty($order->notes)): ?>
+                                    <div style="font-size: 11px; color: #666; font-style: italic;"><?= htmlspecialchars((string)$order->notes, ENT_QUOTES, 'UTF-8') ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td>User #<?= (int)$order->user_id ?></td>
+                            <td><span class="badge badge-<?= htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8')) ?></span></td>
+                            <td><span class="badge badge-pay-<?= htmlspecialchars((string)$order->payment_status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->payment_status, ENT_QUOTES, 'UTF-8')) ?></span></td>
+                            <td><span class="badge badge-ful-<?= htmlspecialchars((string)$order->fulfillment_status, ENT_QUOTES, 'UTF-8') ?>"><?= strtoupper(htmlspecialchars((string)$order->fulfillment_status, ENT_QUOTES, 'UTF-8')) ?></span></td>
+                            <td style="text-align: right; font-weight: bold;"><?= htmlspecialchars((string)$order->currency, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string)$order->total_amount, ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?= htmlspecialchars((string)$order->created_at, ENT_QUOTES, 'UTF-8') ?></td>
+                            <td style="text-align: center;">
+                                <a href="/admin/page/favorite-digital-orders?action=view&id=<?= (int)$order->id ?>" class="button button-small">View</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </form>
 
     <?php if (($totalPages ?? 1) > 1): ?>
         <div class="tablenav" style="margin-top: 15px;">
@@ -104,3 +127,16 @@
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.initAdminMultiSelect === 'function') {
+        window.initAdminMultiSelect('fd-orders-bulk-form', {
+            itemType: 'order',
+            confirmMessages: {
+                cancelled: 'Are you sure you want to cancel the selected orders? Eligible orders will be cancelled and refunded where applicable.'
+            }
+        });
+    }
+});
+</script>

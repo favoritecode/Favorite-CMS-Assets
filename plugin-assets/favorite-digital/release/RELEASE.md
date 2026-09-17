@@ -8,15 +8,32 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.5 |
-| **Package File** | Favorite-Digital-v1.0.5.zip / Favorite-Digital.zip |
-| **Package Size** | 233,950 bytes |
-| **ZIP Entries** | 115 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `674ea2f97462f00dff95f850f7c92732c9010bbc9f013aa072dc01ab391ee604` |
+| **Release Version** | 1.0.6 |
+| **Package File** | Favorite-Digital-v1.0.6.zip / Favorite-Digital.zip |
+| **Package Size** | 243,455 bytes |
+| **ZIP Entries** | 120 entries (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `1691edac9894390094611f217787e97019083693022ba8216a084e9095c8ec76` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
+
+---
+
+## What's New in v1.0.6
+
+1. **[Administrative Bulk Actions]**:
+   - Integrated `BulkActionService` across Products, Services, Packages, Memberships, and Orders administrative screens.
+   - Comprehensive multi-select actions with permission-consistent authorization checks.
+   - Idempotent and transaction-safe batch state transitions.
+
+2. **[Admin Navigation Alignment & Core v1.0.14 Compatibility]**:
+   - Clean, standard menu registration structure (`favorite-digital` parent with `favorite-digital` landing submenu "Digital Products").
+   - 100% compatible with Favorite CMS Universal v1.0.14 generic duplicate-parent submenu suppression.
+
+3. **[Customer Theme Shell & Dark Mode Polish]**:
+   - Enhanced `CustomerThemeShell` integration across all storefront, wallet, and checkout views.
+   - High-contrast dark-mode semantic design tokens for optimal readability.
 
 ---
 

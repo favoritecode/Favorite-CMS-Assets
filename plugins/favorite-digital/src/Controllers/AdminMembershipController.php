@@ -10,6 +10,7 @@ use FavoriteCMS\Core\Response;
 use FavoriteCMS\Digital\Domain\MembershipStatus;
 use FavoriteCMS\Digital\Domain\ProductStatus;
 use FavoriteCMS\Digital\Domain\ProductType;
+use FavoriteCMS\Digital\Services\BulkActionService;
 use FavoriteCMS\Digital\Services\MembershipLifecycleService;
 use FavoriteCMS\Digital\Services\ProductManagementService;
 use FavoriteCMS\Models\User;
@@ -20,6 +21,7 @@ class AdminMembershipController
     protected Application $app;
     protected MembershipLifecycleService $membershipService;
     protected ProductManagementService $productService;
+    protected BulkActionService $bulkService;
 
     public function __construct(
         Application $app,
@@ -29,6 +31,12 @@ class AdminMembershipController
         $this->app = $app;
         $this->membershipService = $membershipService;
         $this->productService = $productService;
+        $this->bulkService = new BulkActionService();
+    }
+
+    public function setBulkActionService(BulkActionService $bulkService): void
+    {
+        $this->bulkService = $bulkService;
     }
 
     public function getMembershipService(): MembershipLifecycleService
@@ -108,8 +116,27 @@ class AdminMembershipController
             'toggle_auto_renew' => $this->toggleAutoRenew($request, $id),
             'expire'            => $this->expireMembership($request, $id),
             'recover_grace'     => $this->recoverGrace($request, $id),
+            'bulk_action'       => $this->handleBulkAction($request),
             default             => Response::redirect('/admin/page/favorite-digital-memberships'),
         };
+    }
+
+    /**
+     * Process bulk actions for customer memberships/subscriptions.
+     */
+    public function handleBulkAction(Request $request): Response
+    {
+        return $this->bulkService->handle($request, [
+            'cancel'            => fn(int $id) => $this->membershipService->cancelMembership($id),
+            'expire'            => fn(int $id) => $this->membershipService->expireMembership($id),
+            'enable_auto_renew' => fn(int $id) => $this->membershipService->enableAutoRenewal($id),
+            'disable_auto_renew'=> fn(int $id) => $this->membershipService->disableAutoRenewal($id),
+        ], '/admin/page/favorite-digital-memberships', [
+            'cancel'            => 'Cancellation',
+            'expire'            => 'Expiration',
+            'enable_auto_renew' => 'Enable Auto-Renewal',
+            'disable_auto_renew'=> 'Disable Auto-Renewal',
+        ]);
     }
 
     /**

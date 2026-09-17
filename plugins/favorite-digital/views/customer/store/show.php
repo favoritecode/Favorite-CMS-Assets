@@ -28,17 +28,17 @@ $state = $customer_state;
     <link rel="canonical" href="/store/<?= htmlspecialchars($product->slug, ENT_QUOTES, 'UTF-8') ?>">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px 16px; line-height: 1.6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif; background: var(--bg, #f8fafc); color: var(--text, #1e293b); margin: 0; padding: 24px 16px; line-height: 1.6; }
         .detail-container { max-width: 1040px; margin: 0 auto; }
 
-        .breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 24px; }
-        .breadcrumbs a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        .breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted, #64748b); margin-bottom: 24px; }
+        .breadcrumbs a { color: var(--accent, #2563eb); text-decoration: none; font-weight: 500; }
         .breadcrumbs a:hover { text-decoration: underline; }
-        .breadcrumbs span.separator { color: #cbd5e1; }
+        .breadcrumbs span.separator { color: var(--border-strong, #cbd5e1); }
 
         .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; font-weight: 500; }
-        .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+        .alert-error { background: var(--danger-soft, #fef2f2); border: 1px solid var(--danger-border, #fecaca); color: var(--danger, #b91c1c); }
+        .alert-success { background: var(--success-soft, #f0fdf4); border: 1px solid var(--success-border, #bbf7d0); color: var(--success, #15803d); }
 
         .detail-layout { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
         @media (max-width: 820px) {
@@ -46,62 +46,62 @@ $state = $customer_state;
         }
 
         /* Main Content Area */
-        .main-content { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+        .main-content { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
         .title-header { margin-bottom: 20px; }
         .badge-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
         .type-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 10px; border-radius: 4px; }
-        .type-digital { background: #e0e7ff; color: #4338ca; }
-        .type-service { background: #fef3c7; color: #b45309; }
-        .type-package { background: #fae8ff; color: #86198f; }
-        .type-membership { background: #dcfce7; color: #15803d; }
+        .type-digital { background: rgba(59, 130, 246, 0.15); color: var(--accent, #2563eb); }
+        .type-service { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .type-package { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .type-membership { background: rgba(16, 185, 129, 0.15); color: var(--success, #15803d); }
 
         .state-tag { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; }
-        .state-owned { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-        .state-member { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .state-required { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .state-owned { background: rgba(16, 185, 129, 0.15); color: var(--success, #047857); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .state-member { background: rgba(16, 185, 129, 0.15); color: var(--success, #166534); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .state-required { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
 
-        h1.product-title { margin: 0; font-size: 28px; font-weight: 800; color: #0f172a; line-height: 1.25; }
-        .description-box { font-size: 15px; color: #334155; margin-bottom: 32px; white-space: pre-line; }
+        h1.product-title { margin: 0; font-size: 28px; font-weight: 800; color: var(--heading, #0f172a); line-height: 1.25; }
+        .description-box { font-size: 15px; color: var(--text, #334155); margin-bottom: 32px; white-space: pre-line; }
 
         /* Specific Specs Card */
-        .specs-section { border-top: 1px solid #e2e8f0; padding-top: 24px; margin-top: 24px; }
-        .specs-section h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 0; margin-bottom: 16px; }
+        .specs-section { border-top: 1px solid var(--border, #e2e8f0); padding-top: 24px; margin-top: 24px; }
+        .specs-section h2 { font-size: 18px; font-weight: 700; color: var(--heading, #0f172a); margin-top: 0; margin-bottom: 16px; }
         .specs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .spec-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
-        .spec-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
-        .spec-value { font-size: 14px; font-weight: 700; color: #0f172a; }
+        .spec-item { background: var(--surface-muted, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 12px 14px; }
+        .spec-label { font-size: 12px; font-weight: 600; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+        .spec-value { font-size: 14px; font-weight: 700; color: var(--heading, #0f172a); }
 
         /* Package Items List */
-        .package-items-list { list-style: none; padding: 0; margin: 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-        .package-item-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e2e8f0; background: #fff; }
+        .package-items-list { list-style: none; padding: 0; margin: 0; border: 1px solid var(--border, #e2e8f0); border-radius: 8px; overflow: hidden; }
+        .package-item-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border, #e2e8f0); background: var(--surface, #fff); }
         .package-item-row:last-child { border-bottom: none; }
-        .package-item-title { font-weight: 600; font-size: 14px; color: #0f172a; }
-        .package-item-type { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #64748b; margin-left: 6px; }
-        .package-item-price { font-size: 13px; font-weight: 700; color: #475569; }
+        .package-item-title { font-weight: 600; font-size: 14px; color: var(--heading, #0f172a); }
+        .package-item-type { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted, #64748b); margin-left: 6px; }
+        .package-item-price { font-size: 13px; font-weight: 700; color: var(--text, #475569); }
 
         /* Sidebar Action Card */
-        .sidebar-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); position: sticky; top: 24px; }
-        .pricing-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
-        .price-label { font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+        .sidebar-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); position: sticky; top: 24px; }
+        .pricing-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border, #e2e8f0); }
+        .price-label { font-size: 13px; color: var(--muted, #64748b); font-weight: 600; margin-bottom: 6px; }
         .price-display { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-        .final-price { font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1; }
-        .original-price { font-size: 18px; color: #94a3b8; text-decoration: line-through; }
-        .discount-badge { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+        .final-price { font-size: 32px; font-weight: 800; color: var(--heading, #0f172a); line-height: 1; }
+        .original-price { font-size: 18px; color: var(--muted, #94a3b8); text-decoration: line-through; }
+        .discount-badge { background: var(--danger-soft, #fef2f2); color: var(--danger, #dc2626); border: 1px solid var(--danger-border, #fecaca); font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
 
         .ownership-banner { padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; font-size: 13px; }
-        .ownership-banner-owned { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
-        .ownership-banner-required { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-        .ownership-banner-member { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .ownership-banner-owned { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success, #065f46); }
+        .ownership-banner-required { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #d97706; }
+        .ownership-banner-member { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success, #166534); }
 
         .btn-action { display: block; width: 100%; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background 0.2s, transform 0.1s; border: none; }
-        .btn-primary { background: #2563eb; color: #ffffff; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-success { background: #059669; color: #ffffff; }
+        .btn-primary { background: var(--accent, #2563eb); color: #ffffff; }
+        .btn-primary:hover { background: var(--accent-hover, #1d4ed8); }
+        .btn-success { background: var(--success, #059669); color: #ffffff; }
         .btn-success:hover { background: #047857; }
         .btn-warning { background: #d97706; color: #ffffff; }
         .btn-warning:hover { background: #b45309; }
 
-        .guarantee-note { margin-top: 18px; font-size: 12px; color: #64748b; text-align: center; }
+        .guarantee-note { margin-top: 18px; font-size: 12px; color: var(--muted, #64748b); text-align: center; }
     </style>
 </head>
 <body>
@@ -139,7 +139,7 @@ $state = $customer_state;
             $coverImg = !empty($product->cover_image_url) ? $product->cover_image_url : (!empty($product->cover_image_path) ? $product->cover_image_path : null);
             ?>
             <?php if ($coverImg): ?>
-                <div class="product-cover-banner" style="margin-bottom: 24px; border-radius: 12px; overflow: hidden; max-height: 380px; border: 1px solid #e2e8f0; background: #f8fafc;">
+                <div class="product-cover-banner" style="margin-bottom: 24px; border-radius: 12px; overflow: hidden; max-height: 380px; border: 1px solid var(--border, #e2e8f0); background: var(--surface-muted, #f8fafc);">
                     <img src="<?= htmlspecialchars($coverImg, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($product->title, ENT_QUOTES, 'UTF-8') ?>" style="width: 100%; height: auto; max-height: 380px; object-fit: cover; display: block;">
                 </div>
             <?php endif; ?>
@@ -208,7 +208,7 @@ $state = $customer_state;
                         <?php if ($type_details['is_membership_eligible']): ?>
                             <div class="spec-item" style="grid-column: 1 / -1;">
                                 <div class="spec-label">Membership Privilege</div>
-                                <div class="spec-value" style="color: #15803d;">Included with active membership</div>
+                                <div class="spec-value" style="color: var(--success, #15803d);">Included with active membership</div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -228,13 +228,13 @@ $state = $customer_state;
                     <?php if (!empty($type_details['service_scope'])): ?>
                         <div style="margin-top: 16px;">
                             <div class="spec-label">Service Scope</div>
-                            <p style="font-size: 14px; margin: 4px 0 0; color: #334155;"><?= nl2br(htmlspecialchars($type_details['service_scope'], ENT_QUOTES, 'UTF-8')) ?></p>
+                            <p style="font-size: 14px; margin: 4px 0 0; color: var(--text, #334155);"><?= nl2br(htmlspecialchars($type_details['service_scope'], ENT_QUOTES, 'UTF-8')) ?></p>
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($type_details['requirements_prompt'])): ?>
                         <div style="margin-top: 16px;">
                             <div class="spec-label">Client Requirements Instructions</div>
-                            <p style="font-size: 14px; margin: 4px 0 0; color: #334155;"><?= nl2br(htmlspecialchars($type_details['requirements_prompt'], ENT_QUOTES, 'UTF-8')) ?></p>
+                            <p style="font-size: 14px; margin: 4px 0 0; color: var(--text, #334155);"><?= nl2br(htmlspecialchars($type_details['requirements_prompt'], ENT_QUOTES, 'UTF-8')) ?></p>
                         </div>
                     <?php endif; ?>
                 </section>
@@ -251,7 +251,7 @@ $state = $customer_state;
                                     <span class="package-item-title"><?= htmlspecialchars($pItem['title'], ENT_QUOTES, 'UTF-8') ?></span>
                                     <span class="package-item-type">(<?= htmlspecialchars($pItem['product_type'], ENT_QUOTES, 'UTF-8') ?>)</span>
                                     <?php if (!empty($pItem['description'])): ?>
-                                        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                        <div style="font-size: 12px; color: var(--muted, #64748b); margin-top: 2px;">
                                             <?= htmlspecialchars(substr($pItem['description'], 0, 100), ENT_QUOTES, 'UTF-8') ?>
                                         </div>
                                     <?php endif; ?>
@@ -309,7 +309,7 @@ $state = $customer_state;
             <!-- Contextual Customer State Banners -->
             <?php if ($state['state'] === 'owned'): ?>
                 <?php if ($type === 'service' && !empty($state['service_status'])): ?>
-                    <div class="ownership-banner ownership-banner-owned" style="background: #f0fdf4; border: 1px solid #86efac; color: #166534;">
+                    <div class="ownership-banner ownership-banner-owned">
                         <strong><?= htmlspecialchars($state['service_status_label'] ?? 'Service: ' . ucfirst($state['service_status']), ENT_QUOTES, 'UTF-8') ?></strong><br>
                         <?php if ($state['service_status'] === 'completed' || $state['service_status'] === 'complete'): ?>
                             Your requested service has been successfully completed.

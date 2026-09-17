@@ -19,56 +19,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Membership — Favorite Digital</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 0; line-height: 1.5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: var(--bg, #f8fafc); color: var(--text, #1e293b); margin: 0; padding: 0; line-height: 1.5; }
         .membership-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
 
         .dashboard-header { margin-bottom: 24px; }
-        .dashboard-header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: #0f172a; }
-        .dashboard-header p { margin: 0; font-size: 14px; color: #64748b; }
+        .dashboard-header h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: var(--heading, #0f172a); }
+        .dashboard-header p { margin: 0; font-size: 14px; color: var(--muted, #64748b); }
 
         /* Membership Tier Card */
-        .tier-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
-        .tier-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; }
-        .tier-title { margin: 0; font-size: 22px; font-weight: 800; color: #0f172a; }
+        .tier-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 12px; padding: 24px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .tier-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border, #f1f5f9); padding-bottom: 16px; }
+        .tier-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--heading, #0f172a); }
         .badge-status { font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; }
-        .status-active { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-        .status-grace { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-        .status-expired { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .status-active { background: var(--success-soft, #ecfdf5); color: var(--success, #059669); border: 1px solid var(--success-border, #a7f3d0); }
+        .status-grace { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .status-expired { background: var(--danger-soft, #fef2f2); color: var(--danger, #dc2626); border: 1px solid var(--danger-border, #fecaca); }
 
         .tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
-        .info-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
-        .info-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #64748b; margin-bottom: 4px; letter-spacing: 0.03em; }
-        .info-value { font-size: 15px; font-weight: 700; color: #0f172a; }
+        .info-block { background: var(--surface-muted, #f8fafc); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 12px 14px; }
+        .info-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted, #64748b); margin-bottom: 4px; letter-spacing: 0.03em; }
+        .info-value { font-size: 15px; font-weight: 700; color: var(--heading, #0f172a); }
 
         .tier-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .btn-tier { padding: 10px 18px; border-radius: 6px; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-tier-primary { background: #2563eb; color: #fff; }
-        .btn-tier-primary:hover { background: #1d4ed8; }
-        .btn-tier-outline { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
-        .btn-tier-outline:hover { background: #f1f5f9; }
+        .btn-tier-primary { background: var(--accent, #2563eb); color: #fff; }
+        .btn-tier-primary:hover { opacity: 0.9; }
+        .btn-tier-outline { border: 1px solid var(--border-strong, #cbd5e1); background: var(--surface, #fff); color: var(--text, #334155); }
+        .btn-tier-outline:hover { background: var(--surface-muted, #f1f5f9); }
 
         /* Section Heading */
-        .section-title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 16px; }
+        .section-title { font-size: 20px; font-weight: 800; color: var(--heading, #0f172a); margin: 0 0 16px; }
 
         /* Perks Grid */
         .perks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 36px; }
-        .perk-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
-        .perk-title { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px; }
-        .perk-desc { font-size: 12px; color: #64748b; margin-bottom: 12px; }
-        .btn-perk { display: block; text-align: center; padding: 8px 12px; background: #059669; color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 700; }
-        .btn-perk:hover { background: #047857; }
+        .perk-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+        .perk-title { font-size: 15px; font-weight: 700; color: var(--heading, #0f172a); margin: 0 0 6px; }
+        .perk-desc { font-size: 12px; color: var(--muted, #64748b); margin-bottom: 12px; }
+        .btn-perk { display: block; text-align: center; padding: 8px 12px; background: var(--success, #059669); color: #ffffff; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 700; }
+        .btn-perk:hover { opacity: 0.9; }
 
         /* History Table */
-        .history-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .history-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 10px; overflow: hidden; }
         .history-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .history-table th { background: #f8fafc; padding: 12px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-        .history-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
+        .history-table th { background: var(--surface-muted, #f8fafc); padding: 12px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted, #64748b); border-bottom: 1px solid var(--border, #e2e8f0); }
+        .history-table td { padding: 14px 16px; font-size: 14px; color: var(--text, #1e293b); border-bottom: 1px solid var(--border, #f1f5f9); }
+        .history-table td strong { color: var(--heading, #0f172a); }
         .history-table tr:last-child td { border-bottom: none; }
 
         /* Inactive Alert */
-        .no-mem-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 32px 24px; text-align: center; margin-bottom: 32px; }
-        .no-mem-title { font-size: 20px; font-weight: 800; color: #1e3a8a; margin-bottom: 8px; }
-        .no-mem-desc { font-size: 14px; color: #3b82f6; max-width: 480px; margin: 0 auto 20px; }
+        .no-mem-box { background: var(--surface-muted, #eff6ff); border: 1px solid var(--border, #bfdbfe); border-radius: 10px; padding: 32px 24px; text-align: center; margin-bottom: 32px; }
+        .no-mem-title { font-size: 20px; font-weight: 800; color: var(--heading, #1e3a8a); margin-bottom: 8px; }
+        .no-mem-desc { font-size: 14px; color: var(--muted, #3b82f6); max-width: 480px; margin: 0 auto 20px; }
+
+        /* Alert Grace */
+        .alert-grace { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #d97706; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -114,7 +118,7 @@
             </div>
 
             <?php if ($activeMembership->status === 'grace'): ?>
-                <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 13px;">
+                <div class="alert-grace">
                     ⚠️ Your membership is currently in the grace period. Please renew before <?= htmlspecialchars((string)$activeMembership->grace_expires_at, ENT_QUOTES, 'UTF-8') ?> to prevent loss of access.
                 </div>
             <?php endif; ?>

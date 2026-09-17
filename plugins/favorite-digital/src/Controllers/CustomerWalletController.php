@@ -88,11 +88,15 @@ class CustomerWalletController
             // Foreign rate unavailable or expired; remains null
         }
 
-        // Fetch available gateways from Favorite Pay
+        // Fetch available gateways from Favorite Pay (external gateways only for recharge)
         $availableGateways = [];
         if ($this->paymentService !== null) {
             try {
-                $availableGateways = $this->paymentService->getAvailablePaymentMethods($currency);
+                $rawGateways = $this->paymentService->getAvailablePaymentMethods($currency);
+                $availableGateways = array_values(array_filter($rawGateways, function ($gw) {
+                    $id = strtolower((string)($gw['id'] ?? ''));
+                    return !in_array($id, ['wallet', 'wallet_balance', 'internal_balance', 'manual_bd'], true);
+                }));
             } catch (Throwable) {
             }
         }
@@ -153,20 +157,33 @@ class CustomerWalletController
         $amount = (string)$request->post('amount', '');
         $gatewayId = trim((string)$request->post('gateway_id', ''));
 
+        $rechargeUrl = function_exists('site_path') ? site_path('/account/wallet#recharge-wallet') : '/account/wallet#recharge-wallet';
+
         if ($gatewayId === '') {
             $_SESSION['flash_error'] = 'Please select a payment method.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
+        }
+
+        // Strictly reject wallet balance as a recharge gateway
+        if (in_array(strtolower($gatewayId), ['wallet', 'wallet_balance', 'internal_balance'], true)) {
+            $_SESSION['flash_error'] = 'Wallet balance cannot be used to recharge the wallet.';
+            return Response::redirect($rechargeUrl);
         }
 
         $isManual = $this->isManualGateway($gatewayId);
         $trxId = trim((string)$request->post('trx_id', ''));
+        $senderAccount = trim((string)$request->post('sender_account', ''));
 
         if ($isManual && $trxId === '') {
             $_SESSION['flash_error'] = 'Transaction ID (TrxID) is required for manual payment.';
-            return Response::redirect('/account/wallet');
+            return Response::redirect($rechargeUrl);
         }
 
-        $senderAccount = trim((string)$request->post('sender_account', ''));
+        if ($isManual && $senderAccount === '') {
+            $_SESSION['flash_error'] = 'Sender account number is required for manual payment.';
+            return Response::redirect($rechargeUrl);
+        }
+
         $notes = trim((string)$request->post('notes', ''));
 
         $details = [
@@ -313,6 +330,11 @@ class CustomerWalletController
 
         if ($trxId === '') {
             $_SESSION['flash_error'] = 'Transaction reference (TrxID) is required.';
+            return Response::redirect('/account/wallet/recharge/manual?intent_id=' . urlencode($intentId));
+        }
+
+        if ($senderAccount === '') {
+            $_SESSION['flash_error'] = 'Sender account number is required.';
             return Response::redirect('/account/wallet/recharge/manual?intent_id=' . urlencode($intentId));
         }
 

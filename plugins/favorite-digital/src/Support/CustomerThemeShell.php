@@ -8,8 +8,8 @@ use FavoriteCMS\Models\Setting;
 use Throwable;
 
 /**
- * Places trusted customer-facing plugin views inside an active theme shell
- * when that theme explicitly declares support in its manifest.
+ * Places trusted customer-facing plugin views inside the active CMS theme shell
+ * dynamically resolved from Core CMS settings.
  */
 final class CustomerThemeShell
 {
@@ -20,7 +20,7 @@ final class CustomerThemeShell
         }
 
         $viewHtml = self::renderFile($viewPath, $data);
-        $theme = self::supportedTheme();
+        $theme = self::resolveActiveTheme();
         if ($theme === null) {
             return $viewHtml;
         }
@@ -28,7 +28,9 @@ final class CustomerThemeShell
         [$content, $headHtml] = self::splitDocument($viewHtml);
         $siteName = 'Favorite CMS';
         try {
-            $siteName = (string)Setting::get('general', 'site_name', $siteName);
+            if (class_exists(Setting::class)) {
+                $siteName = (string)Setting::get('general', 'site_name', $siteName);
+            }
         } catch (Throwable) {
         }
 
@@ -40,13 +42,21 @@ final class CustomerThemeShell
         $bodyClass = 'favorite-customer-shell favorite-digital-customer-page';
         $additionalHeadHtml = $headHtml;
 
+        $startObLevel = ob_get_level();
         ob_start();
-        include $theme['header'];
-        echo '<main class="site-main site-main--customer" id="main-content" tabindex="-1">';
-        echo $content;
-        echo '</main>';
-        include $theme['footer'];
-        return (string)ob_get_clean();
+        try {
+            include $theme['header'];
+            echo '<main class="site-main site-main--customer" id="main-content" tabindex="-1">';
+            echo $content;
+            echo '</main>';
+            include $theme['footer'];
+            return (string)ob_get_clean();
+        } catch (Throwable $e) {
+            while (ob_get_level() > $startObLevel) {
+                ob_end_clean();
+            }
+            return $viewHtml;
+        }
     }
 
     private static function renderFile(string $viewPath, array $data): string
@@ -57,51 +67,106 @@ final class CustomerThemeShell
         return (string)ob_get_clean();
     }
 
-    /** @return array{header:string,footer:string}|null */
-    private static function supportedTheme(): ?array
+    /**
+     * Dynamically resolve the active theme from Core CMS.
+     *
+     * @return array{header:string,footer:string,theme_id:string,has_customer_shell:bool}|null
+     */
+    public static function resolveActiveTheme(): ?array
     {
-        try {
-            $themeId = (string)Setting::get('theme', 'active_theme', 'default');
-        } catch (Throwable) {
-            return null;
+        $activeThemeId = null;
+        if (function_exists('active_theme_id')) {
+            $activeThemeId = active_theme_id();
         }
-        if (preg_match('/^[a-zA-Z0-9_-]+$/', $themeId) !== 1) {
-            return null;
+        if ($activeThemeId === null || $activeThemeId === '') {
+            try {
+                if (class_exists(Setting::class)) {
+                    $activeThemeId = (string)Setting::get('theme', 'active_theme', 'favorite-web');
+                }
+            } catch (Throwable) {
+                $activeThemeId = 'favorite-web';
+            }
         }
-
-        $themeDir = APP_ROOT . '/themes/' . $themeId;
-        $manifestPath = $themeDir . '/theme.json';
-        $header = $themeDir . '/header.php';
-        $footer = $themeDir . '/footer.php';
-        if (!is_file($manifestPath) || !is_file($header) || !is_file($footer)) {
-            return null;
-        }
-
-        $manifest = json_decode((string)file_get_contents($manifestPath), true);
-        if (!is_array($manifest) || empty($manifest['features']['customer_shell'])) {
-            return null;
+        if ($activeThemeId === null || preg_match('/^[a-zA-Z0-9_-]+$/', $activeThemeId) !== 1) {
+            $activeThemeId = 'favorite-web';
         }
 
-        return ['header' => $header, 'footer' => $footer];
+        $themeIdsToTry = array_unique([$activeThemeId, 'favorite-web', 'default']);
+
+        $appRoot = defined('APP_ROOT') ? APP_ROOT : (function_exists('app_root') ? app_root() : dirname(__DIR__, 4));
+        $rootDirs = array_unique([
+            rtrim($appRoot, '/\\'),
+            dirname(__DIR__, 4),
+            'E:/Favorite-CMS-Universal',
+            'E:/Favorite-CMS-Assets',
+        ]);
+
+        foreach ($themeIdsToTry as $tid) {
+            foreach ($rootDirs as $root) {
+                $themeDir = $root . '/themes/' . $tid;
+                $header = $themeDir . '/header.php';
+                $footer = $themeDir . '/footer.php';
+                if (is_dir($themeDir) && is_file($header) && is_file($footer)) {
+                    $manifestPath = $themeDir . '/theme.json';
+                    $hasCustomerShell = false;
+                    if (is_file($manifestPath)) {
+                        $manifest = json_decode((string)file_get_contents($manifestPath), true);
+                        $hasCustomerShell = is_array($manifest) && !empty($manifest['features']['customer_shell']);
+                    } else {
+                        $hasCustomerShell = true;
+                    }
+                    return [
+                        'header'             => $header,
+                        'footer'             => $footer,
+                        'theme_id'           => $tid,
+                        'has_customer_shell' => $hasCustomerShell,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Backward compatibility alias for existing callers/tests.
+     *
+     * @return array{header:string,footer:string,theme_id:string}|null
+     */
+    public static function supportedTheme(): ?array
+    {
+        $theme = self::resolveActiveTheme();
+        if ($theme === null) {
+            return null;
+        }
+        return [
+            'header'   => $theme['header'],
+            'footer'   => $theme['footer'],
+            'theme_id' => $theme['theme_id'],
+        ];
     }
 
     /** @return array{0:string,1:string} */
     private static function splitDocument(string $html): array
     {
-        if (stripos($html, '<html') === false) {
-            return [$html, ''];
-        }
-
         $headHtml = '';
-        if (preg_match_all('#<style\b[^>]*>.*?</style>#is', $html, $styles) === 1 || !empty($styles[0])) {
-            $headHtml = implode("\n", $styles[0]);
+        if (preg_match_all('#<style\b[^>]*>(.*?)</style>#is', $html, $styles) === 1 || !empty($styles[0])) {
+            $cleanedStyles = [];
+            foreach ($styles[1] as $css) {
+                // Scope body styles so they do not override global theme styling or dark mode
+                $css = preg_replace('/(?<![a-zA-Z0-9_-])body\s*\{([^}]*)\}/i', '.site-main--customer { $1 }', $css);
+                $css = preg_replace('/background:\s*#f8fafc;?/i', '', $css);
+                $cleanedStyles[] = '<style>' . $css . '</style>';
+            }
+            $headHtml = implode("\n", $cleanedStyles);
+            $html = (string)preg_replace('#<style\b[^>]*>.*?</style>#is', '', $html);
         }
 
         if (preg_match('#<body\b[^>]*>(.*)</body>#is', $html, $body) === 1) {
             return [trim($body[1]), $headHtml];
         }
 
-        return [$html, $headHtml];
+        return [trim($html), $headHtml];
     }
 
     private static function viewTitle(string $viewName): string

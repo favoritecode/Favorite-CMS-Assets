@@ -7,6 +7,7 @@ namespace FavoriteCMS\Digital\Controllers;
 use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
+use FavoriteCMS\Digital\Services\BulkActionService;
 use FavoriteCMS\Digital\Services\OrderService;
 use FavoriteCMS\Digital\Support\OrderLifecycleState;
 use FavoriteCMS\Models\User;
@@ -19,6 +20,7 @@ class AdminOrderController
     protected ?\FavoriteCMS\Digital\Services\FulfillmentService $fulfillmentService;
     protected ?\FavoriteCMS\Digital\Repositories\EntitlementRepository $entitlementRepo;
     protected ?\FavoriteCMS\Digital\Services\RefundService $refundService;
+    protected BulkActionService $bulkService;
 
     public function __construct(
         Application $app,
@@ -32,6 +34,12 @@ class AdminOrderController
         $this->fulfillmentService = $fulfillmentService;
         $this->entitlementRepo = $entitlementRepo;
         $this->refundService = $refundService;
+        $this->bulkService = new BulkActionService();
+    }
+
+    public function setBulkActionService(BulkActionService $bulkService): void
+    {
+        $this->bulkService = $bulkService;
     }
 
     public function getOrderService(): OrderService
@@ -109,6 +117,7 @@ class AdminOrderController
             'update_status' => $this->updateStatus($request, $id),
             'fulfill'       => $this->fulfillOrder($request, $id),
             'refund'        => $this->processRefund($request, $id),
+            'bulk_action'   => $this->handleBulkAction($request),
             default         => Response::redirect('/admin/page/favorite-digital-orders'),
         };
     }
@@ -228,15 +237,23 @@ class AdminOrderController
         return Response::redirect('/admin/page/favorite-digital-orders?action=view&id=' . $id);
     }
 
-    public function acceptOrder(Request $request, int $id): Response
+    /**
+     * Accept a single order (settle payment, fulfill, and update status).
+     */
+    public function acceptSingleOrder(int $id, string $chosenStatus = 'completed'): string
     {
         $order = $this->orderService->getOrder($id);
         if (!$order) {
-            $_SESSION['flash_error'] = 'Order not found.';
-            return Response::redirect('/admin/page/favorite-digital-orders');
+            throw new \InvalidArgumentException("Order #{$id} not found.");
         }
 
-        $chosenStatus = trim((string)$request->post('chosen_status', 'pending'));
+        if ($order->status === OrderLifecycleState::STATUS_CANCELLED) {
+            throw new \InvalidArgumentException("Order #{$order->order_number} is already cancelled and cannot be transitioned.");
+        }
+        if ($order->status === OrderLifecycleState::STATUS_REFUNDED) {
+            throw new \InvalidArgumentException("Order #{$order->order_number} is already refunded and cannot be transitioned.");
+        }
+
         if (!in_array($chosenStatus, ['pending', 'processing', 'completed', 'complete'], true)) {
             $chosenStatus = 'pending';
         }
@@ -244,54 +261,103 @@ class AdminOrderController
             $chosenStatus = 'completed';
         }
 
-        try {
-            $orderRepo = $this->orderService->getOrderRepository();
+        $orderRepo = $this->orderService->getOrderRepository();
 
-            // 1. Settle all pending payments as completed
-            $payments = $orderRepo->getOrderPayments($id);
-            $hasPaid = false;
-            foreach ($payments as $pay) {
-                if ($pay->status === 'pending') {
-                    $orderRepo->updatePayment((int)$pay->id, ['status' => 'completed']);
-                    $hasPaid = true;
-                } elseif ($pay->status === 'completed' || $pay->status === 'paid') {
-                    $hasPaid = true;
-                }
+        // 1. Settle all pending payments as completed
+        $payments = $orderRepo->getOrderPayments($id);
+        $hasPaid = false;
+        foreach ($payments as $pay) {
+            if ($pay->status === 'pending') {
+                $orderRepo->updatePayment((int)$pay->id, ['status' => 'completed']);
+                $hasPaid = true;
+            } elseif ($pay->status === 'completed' || $pay->status === 'paid') {
+                $hasPaid = true;
             }
+        }
 
-            if (!$hasPaid && (float)$order->total_amount > 0) {
-                $orderRepo->createOrderPayment([
-                    'order_id'           => $id,
-                    'payment_method'     => 'manual',
-                    'favorite_pay_tx_id' => null,
-                    'wallet_tx_id'       => null,
-                    'amount_paid'        => $order->total_amount,
-                    'currency'           => $order->currency ?? 'BDT',
-                    'status'             => 'completed',
-                    'created_at'         => date('Y-m-d H:i:s'),
-                    'updated_at'         => date('Y-m-d H:i:s'),
-                ]);
-            }
+        if (!$hasPaid && (float)$order->total_amount > 0) {
+            $orderRepo->createOrderPayment([
+                'order_id'           => $id,
+                'payment_method'     => 'manual',
+                'favorite_pay_tx_id' => null,
+                'wallet_tx_id'       => null,
+                'amount_paid'        => $order->total_amount,
+                'currency'           => $order->currency ?? 'BDT',
+                'status'             => 'completed',
+                'created_at'         => date('Y-m-d H:i:s'),
+                'updated_at'         => date('Y-m-d H:i:s'),
+            ]);
+        }
 
-            // 2. Mark order payment_status as paid
-            $orderRepo->updatePaymentStatus($id, OrderLifecycleState::PAYMENT_PAID);
+        // 2. Mark order payment_status as paid
+        $orderRepo->updatePaymentStatus($id, OrderLifecycleState::PAYMENT_PAID);
 
-            // 3. Fulfill items and set the chosen status
-            if ($this->fulfillmentService !== null) {
-                $this->fulfillmentService->fulfillOrder($id, $chosenStatus);
+        // 3. Fulfill items and set the chosen status
+        if ($this->fulfillmentService !== null) {
+            $this->fulfillmentService->fulfillOrder($id, $chosenStatus);
+        } else {
+            $orderRepo->updateOrderStatus($id, $chosenStatus);
+            if ($chosenStatus === 'completed') {
+                $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_FULFILLED);
+            } elseif ($chosenStatus === 'processing') {
+                $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_PARTIALLY_FULFILLED);
             } else {
-                $orderRepo->updateOrderStatus($id, $chosenStatus);
-                if ($chosenStatus === 'completed') {
-                    $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_FULFILLED);
-                } elseif ($chosenStatus === 'processing') {
-                    $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_PARTIALLY_FULFILLED);
-                } else {
-                    $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_UNFULFILLED);
-                }
+                $orderRepo->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_UNFULFILLED);
             }
+        }
 
-            $displayStatus = ucfirst($chosenStatus);
-            $_SESSION['flash_success'] = "Order #{$order->order_number} accepted and set to {$displayStatus}. Customer access updated.";
+        $displayStatus = ucfirst($chosenStatus);
+        return "Order #{$order->order_number} accepted and set to {$displayStatus}.";
+    }
+
+    /**
+     * Cancel a single order with wallet refund if paid and fulfillment revocation.
+     */
+    public function cancelSingleOrder(int $id, string $reason = 'Order cancelled by administrator.', ?int $userId = null): string
+    {
+        $order = $this->orderService->getOrder($id);
+        if (!$order) {
+            throw new \InvalidArgumentException("Order #{$id} not found.");
+        }
+
+        if ($order->status === OrderLifecycleState::STATUS_CANCELLED) {
+            throw new \InvalidArgumentException("Order #{$order->order_number} is already cancelled.");
+        }
+        if ($order->status === OrderLifecycleState::STATUS_REFUNDED) {
+            throw new \InvalidArgumentException("Order #{$order->order_number} is already refunded and cannot be cancelled.");
+        }
+
+        if ($userId === null || $userId <= 0) {
+            $userId = (int)($_SESSION['auth_user_id'] ?? 0);
+            if (isset($GLOBALS['_test_current_user']->id)) {
+                $userId = (int)$GLOBALS['_test_current_user']->id;
+            }
+        }
+
+        $paidAmount = 0.0;
+        if ($this->refundService !== null) {
+            $paidAmount = (float)$this->refundService->calculateAuthoritativeRefundAmount($order);
+        }
+
+        if ($paidAmount > 0 && $this->refundService !== null) {
+            $this->refundService->processRefund($id, $reason, $userId, true);
+            $this->orderService->getOrderRepository()->updateOrderStatus($id, OrderLifecycleState::STATUS_CANCELLED);
+            $this->orderService->getOrderRepository()->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_CANCELLED);
+            return "Order #{$order->order_number} cancelled. Payment of ৳" . number_format($paidAmount, 2, '.', '') . " refunded to customer wallet.";
+        }
+
+        $this->orderService->updateStatus($id, OrderLifecycleState::STATUS_CANCELLED);
+        $this->orderService->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_CANCELLED);
+        return "Order #{$order->order_number} has been cancelled.";
+    }
+
+    public function acceptOrder(Request $request, int $id): Response
+    {
+        $chosenStatus = trim((string)$request->post('chosen_status', 'pending'));
+
+        try {
+            $msg = $this->acceptSingleOrder($id, $chosenStatus);
+            $_SESSION['flash_success'] = $msg;
         } catch (Throwable $e) {
             $_SESSION['flash_error'] = 'Failed to accept order: ' . $e->getMessage();
         }
@@ -338,12 +404,6 @@ class AdminOrderController
 
     public function cancelOrder(Request $request, int $id): Response
     {
-        $order = $this->orderService->getOrder($id);
-        if (!$order) {
-            $_SESSION['flash_error'] = 'Order not found.';
-            return Response::redirect('/admin/page/favorite-digital-orders');
-        }
-
         $reason = trim((string)$request->post('cancel_reason', 'Order cancelled by administrator.'));
         if ($reason === '') {
             $reason = 'Order cancelled by administrator.';
@@ -355,27 +415,29 @@ class AdminOrderController
         }
 
         try {
-            $paidAmount = 0.0;
-            if ($this->refundService !== null) {
-                $paidAmount = (float)$this->refundService->calculateAuthoritativeRefundAmount($order);
-            }
-
-            if ($paidAmount > 0 && $this->refundService !== null) {
-                // If payment was confirmed, refund full payment amount to customer wallet
-                $this->refundService->processRefund($id, $reason, $userId, true);
-                $this->orderService->getOrderRepository()->updateOrderStatus($id, OrderLifecycleState::STATUS_CANCELLED);
-                $this->orderService->getOrderRepository()->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_CANCELLED);
-                $_SESSION['flash_success'] = "Order #{$order->order_number} cancelled. Payment of ৳" . number_format($paidAmount, 2, '.', '') . " refunded to customer wallet.";
-            } else {
-                $this->orderService->updateStatus($id, OrderLifecycleState::STATUS_CANCELLED);
-                $this->orderService->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_CANCELLED);
-                $_SESSION['flash_success'] = "Order #{$order->order_number} has been cancelled.";
-            }
+            $msg = $this->cancelSingleOrder($id, $reason, $userId);
+            $_SESSION['flash_success'] = $msg;
         } catch (Throwable $e) {
             $_SESSION['flash_error'] = 'Failed to cancel order: ' . $e->getMessage();
         }
 
         return Response::redirect('/admin/page/favorite-digital-orders?action=view&id=' . $id);
+    }
+
+    /**
+     * Process bulk actions for orders.
+     */
+    public function handleBulkAction(Request $request): Response
+    {
+        return $this->bulkService->handle($request, [
+            'processing' => fn(int $id) => $this->acceptSingleOrder($id, 'processing'),
+            'completed'  => fn(int $id) => $this->acceptSingleOrder($id, 'completed'),
+            'cancelled'  => fn(int $id) => $this->cancelSingleOrder($id, 'Bulk order cancellation by administrator.'),
+        ], '/admin/page/favorite-digital-orders', [
+            'processing' => 'Mark Processing',
+            'completed'  => 'Mark Completed',
+            'cancelled'  => 'Cancellation',
+        ]);
     }
 
     protected function validateCsrf(Request $request): bool
@@ -485,5 +547,4 @@ class AdminOrderController
 
         return Response::redirect('/admin/page/favorite-digital-orders?action=view&id=' . $id);
     }
-
 }

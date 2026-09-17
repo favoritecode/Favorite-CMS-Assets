@@ -366,7 +366,7 @@ final class FavoriteDigitalPlugin
             if (function_exists('add_admin_submenu')) {
                 add_admin_submenu(
                     'favorite-digital',
-                    'favorite-digital-products',
+                    'favorite-digital',
                     'Digital Products',
                     $productHandler,
                     'manage_options'
@@ -404,6 +404,14 @@ final class FavoriteDigitalPlugin
                     'manage_options'
                 );
             }
+        }
+
+        // Backward compatibility redirect for legacy /admin/page/favorite-digital-products URL
+        if (function_exists('add_route')) {
+            add_route(['GET', 'POST'], '/admin/page/favorite-digital-products', function (Request $request) {
+                $qs = $request->server('QUERY_STRING', '');
+                return Response::redirect('/admin/page/favorite-digital' . ($qs !== '' ? '?' . $qs : ''));
+            });
         }
 
         // Register Customer Frontend Routes

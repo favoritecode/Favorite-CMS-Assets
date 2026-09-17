@@ -32,7 +32,7 @@
             margin: 0 auto 40px;
             padding: 0 16px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: #1e293b;
+            color: var(--text, #1e293b);
         }
         .fav-alert {
             padding: 12px 16px;
@@ -42,14 +42,14 @@
             font-weight: 500;
         }
         .fav-alert-success {
-            background: #ecfdf5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
+            background: var(--success-soft, #ecfdf5);
+            color: var(--success, #065f46);
+            border: 1px solid var(--success-border, #a7f3d0);
         }
         .fav-alert-error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+            background: var(--danger-soft, #fef2f2);
+            color: var(--danger, #991b1b);
+            border: 1px solid var(--danger-border, #fecaca);
         }
         .fav-wallet-header {
             display: grid;
@@ -63,8 +63,8 @@
             }
         }
         .fav-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border, #e2e8f0);
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.03);
@@ -73,7 +73,7 @@
             font-size: 18px;
             font-weight: 700;
             margin: 0 0 16px;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -87,12 +87,12 @@
         .fav-balance-currency {
             font-size: 20px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--muted, #64748b);
         }
         .fav-balance-val {
             font-size: 40px;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
             letter-spacing: -0.5px;
         }
         .fav-status-badge {
@@ -106,28 +106,28 @@
             letter-spacing: 0.5px;
         }
         .fav-status-active {
-            background: #ecfdf5;
-            color: #059669;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success, #059669);
         }
         .fav-status-suspended {
-            background: #fef2f2;
-            color: #dc2626;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger, #dc2626);
         }
         .fav-status-pending {
-            background: #fffbeb;
+            background: rgba(245, 158, 11, 0.15);
             color: #d97706;
         }
         .fav-status-completed, .fav-status-succeeded {
-            background: #ecfdf5;
-            color: #059669;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success, #059669);
         }
         .fav-status-failed {
-            background: #fef2f2;
-            color: #dc2626;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger, #dc2626);
         }
         .fav-status-expired {
-            background: #f1f5f9;
-            color: #64748b;
+            background: var(--surface-muted, #f1f5f9);
+            color: var(--muted, #64748b);
         }
         .fav-form-group {
             margin-bottom: 16px;
@@ -137,7 +137,7 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 6px;
-            color: #334155;
+            color: var(--text, #334155);
         }
         .fav-input-wrap {
             position: relative;
@@ -149,22 +149,23 @@
             left: 14px;
             font-size: 16px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--muted, #64748b);
         }
         .fav-input {
             width: 100%;
             padding: 10px 14px 10px 36px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
+            background: var(--surface, #ffffff);
             box-sizing: border-box;
             transition: border-color 0.15s;
         }
         .fav-input:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: var(--accent, #2563eb);
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
         .fav-quick-amounts {
@@ -174,19 +175,19 @@
             margin-top: 8px;
         }
         .fav-quick-btn {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
+            background: var(--surface-muted, #f1f5f9);
+            border: 1px solid var(--border, #e2e8f0);
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
-            color: #475569;
+            color: var(--muted, #475569);
             cursor: pointer;
             transition: all 0.15s;
         }
         .fav-quick-btn:hover {
-            background: #e2e8f0;
-            color: #0f172a;
+            background: var(--border, #e2e8f0);
+            color: var(--heading, #0f172a);
         }
         .fav-gateways-grid {
             display: grid;
@@ -199,28 +200,29 @@
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            color: #334155;
+            color: var(--text, #334155);
+            background: var(--surface, #ffffff);
             transition: all 0.15s;
         }
         .fav-gateway-label:hover {
-            border-color: #94a3b8;
-            background: #f8fafc;
+            border-color: var(--border-strong, #94a3b8);
+            background: var(--surface-muted, #f8fafc);
         }
         .fav-gateway-label input[type="radio"]:checked + span {
-            color: #2563eb;
+            color: var(--accent, #2563eb);
         }
         .fav-gateway-label:has(input[type="radio"]:checked) {
-            border-color: #2563eb;
-            background: #eff6ff;
+            border-color: var(--accent, #2563eb);
+            background: var(--accent-soft, #eff6ff);
         }
         .fav-manual-box {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
+            background: var(--surface-muted, #f8fafc);
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 8px;
             padding: 16px;
             margin-top: 14px;
@@ -230,7 +232,7 @@
             margin: 0 0 10px;
             font-size: 14px;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
         }
         .fav-manual-grid {
             display: grid;
@@ -239,29 +241,29 @@
             margin-bottom: 12px;
         }
         .fav-manual-item {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border, #e2e8f0);
             border-radius: 6px;
             padding: 8px 12px;
         }
         .fav-manual-item-lbl {
             font-size: 11px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--muted, #64748b);
             text-transform: uppercase;
             margin-bottom: 2px;
         }
         .fav-manual-item-val {
             font-size: 14px;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
         }
         .fav-manual-instructions {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
             border-radius: 6px;
             padding: 10px 12px;
-            color: #92400e;
+            color: #d97706;
             margin-bottom: 12px;
             font-size: 13px;
             line-height: 1.5;
@@ -278,7 +280,7 @@
         .fav-manual-inputs-grid label {
             font-size: 12px;
             font-weight: 600;
-            color: #334155;
+            color: var(--text, #334155);
             display: block;
             margin-bottom: 4px;
         }
@@ -286,9 +288,11 @@
             width: 100%;
             box-sizing: border-box;
             padding: 8px 10px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 6px;
             font-size: 13px;
+            background: var(--surface, #ffffff);
+            color: var(--text, #1e293b);
         }
         @media (max-width: 600px) {
             .fav-manual-inputs-grid {
@@ -298,7 +302,7 @@
         .fav-btn-primary {
             display: inline-block;
             width: 100%;
-            background: #2563eb;
+            background: var(--accent, #2563eb);
             color: #ffffff;
             font-size: 15px;
             font-weight: 700;
@@ -312,10 +316,10 @@
             transition: background 0.15s;
         }
         .fav-btn-primary:hover {
-            background: #1d4ed8;
+            background: var(--accent-hover, #1d4ed8);
         }
         .fav-btn-primary:disabled {
-            background: #94a3b8;
+            background: var(--muted, #94a3b8);
             cursor: not-allowed;
         }
         .fav-btn-sm {
@@ -339,19 +343,19 @@
             font-size: 14px;
         }
         .fav-table th {
-            background: #f8fafc;
+            background: var(--surface-muted, #f8fafc);
             padding: 12px 16px;
             font-weight: 600;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
+            color: var(--muted, #475569);
+            border-bottom: 1px solid var(--border, #e2e8f0);
         }
         .fav-table td {
             padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
+            border-bottom: 1px solid var(--border, #f1f5f9);
+            color: var(--text, #334155);
         }
         .fav-table tr:hover td {
-            background: #f8fafc;
+            background: var(--surface-muted, #f8fafc);
         }
         .fav-badge-type {
             display: inline-flex;
@@ -362,27 +366,27 @@
             text-transform: uppercase;
         }
         .fav-badge-recharge, .fav-badge-credit {
-            background: #ecfdf5;
-            color: #059669;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success, #059669);
         }
         .fav-badge-refund_credit {
-            background: #eff6ff;
-            color: #2563eb;
+            background: rgba(37, 99, 235, 0.15);
+            color: var(--accent, #2563eb);
         }
         .fav-badge-debit {
-            background: #f1f5f9;
-            color: #475569;
+            background: var(--surface-muted, #f1f5f9);
+            color: var(--muted, #475569);
         }
         .fav-badge-reversal {
-            background: #fffbeb;
+            background: rgba(245, 158, 11, 0.15);
             color: #d97706;
         }
         .fav-amount-credit {
-            color: #059669;
+            color: var(--success, #059669);
             font-weight: 700;
         }
         .fav-amount-debit {
-            color: #0f172a;
+            color: var(--heading, #0f172a);
             font-weight: 700;
         }
         .fav-pagination {
@@ -394,17 +398,18 @@
         }
         .fav-page-link {
             padding: 6px 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 6px;
             text-decoration: none;
-            color: #475569;
+            color: var(--muted, #475569);
+            background: var(--surface, #ffffff);
             font-size: 13px;
             font-weight: 600;
         }
         .fav-page-link.active {
-            background: #2563eb;
+            background: var(--accent, #2563eb);
             color: #ffffff;
-            border-color: #2563eb;
+            border-color: var(--accent, #2563eb);
         }
     </style>
 </head>
@@ -442,7 +447,7 @@ include __DIR__ . '/../account/nav.php';
                 <span class="fav-balance-currency"><?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?></span>
                 <span class="fav-balance-val"><?= htmlspecialchars($balance, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
-            <p style="color: #64748b; font-size: 13px; margin: 8px 0 0; line-height: 1.5;">
+            <p style="color: var(--muted, #64748b); font-size: 13px; margin: 8px 0 0; line-height: 1.5;">
                 ✨ Your wallet balance <strong>never expires</strong>. Recharged funds and refund credits remain safe in your account and can be used immediately during checkout for any digital product, package, or service.
             </p>
         </div>
@@ -480,7 +485,7 @@ include __DIR__ . '/../account/nav.php';
                             <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('2000.00')">৳2,000</button>
                             <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('5000.00')">৳5,000</button>
                         </div>
-                        <p style="font-size: 12px; color: #64748b; margin: 6px 0 0;">
+                        <p style="font-size: 12px; color: var(--muted, #64748b); margin: 6px 0 0;">
                             Limits: Min ৳<?= htmlspecialchars($regularLimits['min'], ENT_QUOTES, 'UTF-8') ?> — Max ৳<?= htmlspecialchars($regularLimits['max'], ENT_QUOTES, 'UTF-8') ?>
                             <?php if ($binanceLimits): ?>
                                 (Binance Pay Min: ৳<?= htmlspecialchars($binanceLimits['min'], ENT_QUOTES, 'UTF-8') ?> eq. 1 USD)
@@ -491,7 +496,7 @@ include __DIR__ . '/../account/nav.php';
                     <div class="fav-form-group">
                         <label class="fav-label">Payment Method</label>
                         <?php if (empty($availableGateways)): ?>
-                            <p style="font-size: 13px; color: #64748b;">No payment methods currently available.</p>
+                            <p style="font-size: 13px; color: var(--muted, #64748b);">No payment methods currently available.</p>
                         <?php else: ?>
                             <div class="fav-gateways-grid">
                                 <?php foreach ($availableGateways as $gw): ?>
@@ -528,13 +533,13 @@ include __DIR__ . '/../account/nav.php';
                                         <input type="text" name="sender_account" id="sender_account" placeholder="e.g., 017XXXXXXXX">
                                     </div>
                                     <div>
-                                        <label for="trx_id">Transaction ID (TrxID) <span style="color: #dc2626;">*</span>:</label>
+                                        <label for="trx_id">Transaction ID (TrxID) <span style="color: var(--danger, #dc2626);">*</span>:</label>
                                         <input type="text" name="trx_id" id="trx_id" placeholder="e.g., 9J28A74LK">
                                     </div>
                                     <div class="fav-full-span">
                                         <label for="payment_proof">Payment Proof / Screenshot (Optional):</label>
                                         <input type="file" name="payment_proof" id="payment_proof" accept="image/jpeg,image/png,image/webp,application/pdf">
-                                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Supported: JPG, PNG, WEBP, PDF (max 10MB)</div>
+                                        <div style="font-size: 11px; color: var(--muted, #64748b); margin-top: 2px;">Supported: JPG, PNG, WEBP, PDF (max 10MB)</div>
                                     </div>
                                     <div class="fav-full-span">
                                         <label for="payment_notes">Notes / Deposit Remarks (Optional):</label>
@@ -557,11 +562,11 @@ include __DIR__ . '/../account/nav.php';
     <section class="fav-card" style="margin-bottom: 32px;" aria-label="Wallet Transaction History">
         <h2 class="fav-card-title">
             <span>📜 Wallet Transaction Ledger</span>
-            <span style="font-size: 13px; font-weight: 500; color: #64748b;"><?= (int)$totalTransactions ?> Total Records</span>
+            <span style="font-size: 13px; font-weight: 500; color: var(--muted, #64748b);"><?= (int)$totalTransactions ?> Total Records</span>
         </h2>
 
         <?php if (empty($transactions)): ?>
-            <p style="color: #64748b; font-size: 14px; text-align: center; padding: 24px 0;">
+            <p style="color: var(--muted, #64748b); font-size: 14px; text-align: center; padding: 24px 0;">
                 No wallet transactions yet.
             </p>
         <?php else: ?>
@@ -590,33 +595,33 @@ include __DIR__ . '/../account/nav.php';
                             };
                             ?>
                             <tr>
-                                <td style="white-space: nowrap; font-size: 13px; color: #64748b;">
+                                <td style="white-space: nowrap; font-size: 13px; color: var(--muted, #64748b);">
                                     <?= htmlspecialchars($tx->created_at, ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td>
                                     <span class="fav-badge-type fav-badge-<?= htmlspecialchars($tx->type, ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($typeLabel, ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td class="<?= $isCredit ? 'fav-amount-credit' : 'fav-amount-debit' ?>">
-                                    <?= $isCredit ? '+' : '-' ?>৳<?= htmlspecialchars($tx->amount, ENT_QUOTES, 'UTF-8') ?>
-                                </td>
-                                <td style="font-weight: 600;">
-                                    ৳<?= htmlspecialchars($tx->balance_after, ENT_QUOTES, 'UTF-8') ?>
-                                </td>
-                                <td style="max-width: 320px;">
-                                    <div style="font-weight: 600; font-size: 13px; color: #0f172a;">
-                                        <?= htmlspecialchars($tx->description ?: 'Wallet ledger entry', ENT_QUOTES, 'UTF-8') ?>
-                                    </div>
-                                    <div style="font-size: 11px; color: #64748b; font-family: monospace;">
-                                        <?= htmlspecialchars($tx->reference_id, ENT_QUOTES, 'UTF-8') ?>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="fav-status-badge fav-status-completed">
-                                        Completed
-                                    </span>
-                                </td>
+                                         <?= htmlspecialchars($typeLabel, ENT_QUOTES, 'UTF-8') ?>
+                                     </span>
+                                 </td>
+                                 <td class="<?= $isCredit ? 'fav-amount-credit' : 'fav-amount-debit' ?>">
+                                     <?= $isCredit ? '+' : '-' ?>৳<?= htmlspecialchars($tx->amount, ENT_QUOTES, 'UTF-8') ?>
+                                 </td>
+                                 <td style="font-weight: 600;">
+                                     ৳<?= htmlspecialchars($tx->balance_after, ENT_QUOTES, 'UTF-8') ?>
+                                 </td>
+                                 <td style="max-width: 320px;">
+                                     <div style="font-weight: 600; font-size: 13px; color: var(--heading, #0f172a);">
+                                         <?= htmlspecialchars($tx->description ?: 'Wallet ledger entry', ENT_QUOTES, 'UTF-8') ?>
+                                     </div>
+                                     <div style="font-size: 11px; color: var(--muted, #64748b); font-family: monospace;">
+                                         <?= htmlspecialchars($tx->reference_id, ENT_QUOTES, 'UTF-8') ?>
+                                     </div>
+                                 </td>
+                                 <td>
+                                     <span class="fav-status-badge fav-status-completed">
+                                         Completed
+                                     </span>
+                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -643,7 +648,7 @@ include __DIR__ . '/../account/nav.php';
         </h2>
 
         <?php if (empty($recharges)): ?>
-            <p style="color: #64748b; font-size: 14px; text-align: center; padding: 24px 0;">
+            <p style="color: var(--muted, #64748b); font-size: 14px; text-align: center; padding: 24px 0;">
                 No recent recharge records found.
             </p>
         <?php else: ?>
@@ -663,7 +668,7 @@ include __DIR__ . '/../account/nav.php';
                     <tbody>
                         <?php foreach ($recharges as $rc): ?>
                             <tr>
-                                <td style="white-space: nowrap; font-size: 13px; color: #64748b;">
+                                <td style="white-space: nowrap; font-size: 13px; color: var(--muted, #64748b);">
                                     <?= htmlspecialchars($rc->created_at, ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td style="font-family: monospace; font-size: 12px;">
@@ -672,7 +677,7 @@ include __DIR__ . '/../account/nav.php';
                                 <td>
                                     <?= htmlspecialchars(ucwords(str_replace(['_', '-'], ' ', $rc->gateway_id)), ENT_QUOTES, 'UTF-8') ?>
                                 </td>
-                                <td style="font-weight: 700; color: #059669;">
+                                <td style="font-weight: 700; color: var(--success, #059669);">
                                     +৳<?= htmlspecialchars($rc->wallet_amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($rc->wallet_currency, ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td style="font-weight: 600;">
@@ -685,7 +690,7 @@ include __DIR__ . '/../account/nav.php';
                                 </td>
                                 <td>
                                     <?php if ($rc->status === 'pending' || $rc->status === 'awaiting_verification'): ?>
-                                        <a href="/account/wallet/recharge/manual?intent_id=<?= urlencode($rc->transaction_id) ?>" class="fav-btn-sm" style="background: #2563eb; color: #fff;">
+                                        <a href="/account/wallet/recharge/manual?intent_id=<?= urlencode($rc->transaction_id) ?>" class="fav-btn-sm" style="background: var(--accent, #2563eb); color: #fff;">
                                             Submit TrxID
                                         </a>
                                     <?php elseif ($rc->status === 'failed' || $rc->status === 'expired'): ?>
@@ -693,12 +698,12 @@ include __DIR__ . '/../account/nav.php';
                                             <input type="hidden" name="_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="intent_id" value="<?= htmlspecialchars($rc->transaction_id, ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="gateway_id" value="<?= htmlspecialchars($rc->gateway_id, ENT_QUOTES, 'UTF-8') ?>">
-                                            <button type="submit" class="fav-btn-sm" style="background: #e2e8f0; color: #334155;">
+                                            <button type="submit" class="fav-btn-sm" style="background: var(--surface-muted, #e2e8f0); color: var(--text, #334155); border: 1px solid var(--border, #cbd5e1);">
                                                 Retry
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <span style="color: #94a3b8; font-size: 13px;">—</span>
+                                        <span style="color: var(--muted, #94a3b8); font-size: 13px;">—</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>

@@ -24,11 +24,11 @@
             margin: 40px auto;
             padding: 0 16px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: #1e293b;
+            color: var(--text, #1e293b);
         }
         .fav-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
+            background: var(--surface, #ffffff);
+            border: 1px solid var(--border, #e2e8f0);
             border-radius: 12px;
             padding: 28px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -36,18 +36,18 @@
         .fav-title {
             font-size: 22px;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
             margin: 0 0 8px;
         }
         .fav-subtitle {
             font-size: 14px;
-            color: #64748b;
+            color: var(--muted, #64748b);
             margin: 0 0 24px;
         }
         .fav-instructions-box {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid #2563eb;
+            background: var(--surface-muted, #f8fafc);
+            border: 1px solid var(--border, #e2e8f0);
+            border-left: 4px solid var(--accent, #2563eb);
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 24px;
@@ -61,16 +61,16 @@
         }
         .fav-instr-label {
             font-weight: 600;
-            color: #475569;
+            color: var(--muted, #475569);
         }
         .fav-instr-val {
             font-weight: 700;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
         }
         .fav-alert-error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+            background: var(--danger-soft, #fef2f2);
+            color: var(--danger, #991b1b);
+            border: 1px solid var(--danger-border, #fecaca);
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -84,25 +84,26 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 6px;
-            color: #334155;
+            color: var(--text, #334155);
         }
         .fav-input {
             width: 100%;
             padding: 10px 14px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-strong, #cbd5e1);
             border-radius: 8px;
             font-size: 15px;
-            color: #0f172a;
+            color: var(--heading, #0f172a);
+            background: var(--surface, #ffffff);
             box-sizing: border-box;
         }
         .fav-input:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: var(--accent, #2563eb);
             box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
         }
         .fav-btn-submit {
             width: 100%;
-            background: #2563eb;
+            background: var(--accent, #2563eb);
             color: #ffffff;
             font-size: 15px;
             font-weight: 700;
@@ -113,18 +114,18 @@
             transition: background 0.15s;
         }
         .fav-btn-submit:hover {
-            background: #1d4ed8;
+            background: var(--accent-hover, #1d4ed8);
         }
         .fav-back-link {
             display: inline-block;
             margin-top: 16px;
             font-size: 14px;
             font-weight: 600;
-            color: #64748b;
+            color: var(--muted, #64748b);
             text-decoration: none;
         }
         .fav-back-link:hover {
-            color: #0f172a;
+            color: var(--heading, #0f172a);
         }
     </style>
 </head>
@@ -151,7 +152,7 @@ include __DIR__ . '/../account/nav.php';
         <div class="fav-instructions-box">
             <div class="fav-instr-item">
                 <span class="fav-instr-label">Amount Payable:</span>
-                <span class="fav-instr-val" style="color: #059669; font-size: 16px;">
+                <span class="fav-instr-val" style="color: var(--success, #059669); font-size: 16px;">
                     ৳<?= htmlspecialchars($amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?>
                 </span>
             </div>
@@ -176,7 +177,7 @@ include __DIR__ . '/../account/nav.php';
                 </div>
             <?php endif; ?>
             <?php if (!empty($instructions['instructions'])): ?>
-                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569;">
+                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border, #e2e8f0); font-size: 13px; color: var(--text, #475569);">
                     <?= htmlspecialchars($instructions['instructions'], ENT_QUOTES, 'UTF-8') ?>
                 </div>
             <?php endif; ?>
@@ -213,14 +214,14 @@ include __DIR__ . '/../account/nav.php';
 
             <div class="fav-form-group">
                 <label for="payment_proof" class="fav-label">Payment Proof / Screenshot (Optional)</label>
-                <input 
-                    type="file" 
-                    id="payment_proof" 
-                    name="payment_proof" 
-                    class="fav-input" 
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                >
-                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Supported: JPG, PNG, WEBP, PDF (max 10MB)</div>
+                    <input 
+                        type="file" 
+                        id="payment_proof" 
+                        name="payment_proof" 
+                        class="fav-input" 
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                    >
+                    <div style="font-size: 11px; color: var(--muted, #64748b); margin-top: 4px;">Supported: JPG, PNG, WEBP, PDF (max 10MB)</div>
             </div>
 
             <div class="fav-form-group">

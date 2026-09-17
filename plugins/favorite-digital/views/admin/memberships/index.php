@@ -150,79 +150,119 @@
             </div>
         </div>
 
-        <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-                <thead>
-                    <tr style="background: #f8f9fa; border-bottom: 1px solid #c3c4c7; color: #50575e; font-weight: 600;">
-                        <th style="padding: 12px 14px; width: 60px;">ID</th>
-                        <th style="padding: 12px 14px; width: 90px;">User ID</th>
-                        <th style="padding: 12px 14px;">Plan</th>
-                        <th style="padding: 12px 14px; width: 100px;">Status</th>
-                        <th style="padding: 12px 14px; width: 160px;">Expires At</th>
-                        <th style="padding: 12px 14px; width: 110px;">Auto-Renew</th>
-                        <th style="padding: 12px 14px; width: 120px; text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($memberships)): ?>
-                        <tr>
-                            <td colspan="7" style="padding: 24px 14px; text-align: center; color: #646970;">
-                                No customer subscriptions found for this view.
-                            </td>
+        <!-- Bulk Actions Form for Subscriptions -->
+        <form id="fd-memberships-bulk-form" method="POST" action="/admin/page/favorite-digital-memberships">
+            <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="action" value="bulk_action">
+            <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/admin/page/favorite-digital-memberships', ENT_QUOTES, 'UTF-8'); ?>">
+
+            <!-- Bulk Actions Toolbar -->
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <select name="bulk_action" style="padding: 6px 10px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 13px; background: #fff;">
+                    <option value="">Bulk Actions</option>
+                    <option value="cancel">Cancel Subscriptions</option>
+                    <option value="expire">Expire Immediately</option>
+                    <option value="enable_auto_renew">Enable Auto-Renew</option>
+                    <option value="disable_auto_renew">Disable Auto-Renew</option>
+                </select>
+                <button type="submit" class="button action" style="padding: 6px 14px; background: #f6f7f7; border: 1px solid #8c8f94; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">Apply</button>
+                <span class="bulk-count-badge" style="font-size: 12px; color: #646970; margin-left: 6px;"></span>
+            </div>
+
+            <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 1px solid #c3c4c7; color: #50575e; font-weight: 600;">
+                            <th style="padding: 12px 14px; width: 40px; text-align: center;">
+                                <input type="checkbox" data-select-all aria-label="Select all subscriptions on this page">
+                            </th>
+                            <th style="padding: 12px 14px; width: 60px;">ID</th>
+                            <th style="padding: 12px 14px; width: 90px;">User ID</th>
+                            <th style="padding: 12px 14px;">Plan</th>
+                            <th style="padding: 12px 14px; width: 100px;">Status</th>
+                            <th style="padding: 12px 14px; width: 160px;">Expires At</th>
+                            <th style="padding: 12px 14px; width: 110px;">Auto-Renew</th>
+                            <th style="padding: 12px 14px; width: 120px; text-align: right;">Actions</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($memberships as $m): ?>
-                            <tr style="border-bottom: 1px solid #f0f0f1;">
-                                <td style="padding: 12px 14px; color: #646970; font-family: monospace;">
-                                    #<?php echo (int)$m->id; ?>
-                                </td>
-                                <td style="padding: 12px 14px; font-weight: 500; color: #1e1e1e;">
-                                    User #<?php echo (int)$m->user_id; ?>
-                                </td>
-                                <td style="padding: 12px 14px;">
-                                    <strong><?php echo htmlspecialchars($m->plan_title ?? 'Membership', ENT_QUOTES, 'UTF-8'); ?></strong>
-                                    <span style="font-size: 11px; color: #646970; text-transform: capitalize; margin-left: 4px;">
-                                        (<?php echo htmlspecialchars($m->plan_type ?? '', ENT_QUOTES, 'UTF-8'); ?>)
-                                    </span>
-                                </td>
-                                <td style="padding: 12px 14px;">
-                                    <?php
-                                    $st = $m->status;
-                                    if ($st === 'active'): ?>
-                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #e7f7ed; color: #155724;">Active</span>
-                                    <?php elseif ($st === 'grace'): ?>
-                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #92400e;">Grace Window</span>
-                                    <?php elseif ($st === 'cancelled'): ?>
-                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569;">Cancelled</span>
-                                    <?php else: ?>
-                                        <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fdf2f2; color: #721c24;">Expired</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="padding: 12px 14px; font-family: monospace; font-size: 12px; color: #1e1e1e;">
-                                    <?php echo htmlspecialchars($m->expires_at, ENT_QUOTES, 'UTF-8'); ?>
-                                    <?php if (!empty($m->grace_expires_at) && $m->status === 'grace'): ?>
-                                        <div style="color: #b45309; font-size: 11px;">
-                                            Grace: <?php echo htmlspecialchars($m->grace_expires_at, ENT_QUOTES, 'UTF-8'); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="padding: 12px 14px;">
-                                    <?php if (!empty($m->auto_renew)): ?>
-                                        <span style="color: #15803d; font-size: 12px; font-weight: 600;">ON</span>
-                                    <?php else: ?>
-                                        <span style="color: #94a3b8; font-size: 12px;">OFF</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td style="padding: 12px 14px; text-align: right;">
-                                    <a href="/admin/page/favorite-digital-memberships?action=view_membership&amp;id=<?php echo (int)$m->id; ?>" style="color: #2271b1; text-decoration: none; font-weight: 500; font-size: 12px; padding: 4px 8px; border: 1px solid #c3c4c7; border-radius: 3px; background: #f6f7f7;">
-                                        Inspect
-                                    </a>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($memberships)): ?>
+                            <tr>
+                                <td colspan="8" style="padding: 24px 14px; text-align: center; color: #646970;">
+                                    No customer subscriptions found for this view.
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                        <?php else: ?>
+                            <?php foreach ($memberships as $m): ?>
+                                <tr style="border-bottom: 1px solid #f0f0f1;">
+                                    <td style="padding: 12px 14px; text-align: center;">
+                                        <input type="checkbox" name="ids[]" value="<?php echo (int)$m->id; ?>" aria-label="Select subscription #<?php echo (int)$m->id; ?>">
+                                    </td>
+                                    <td style="padding: 12px 14px; color: #646970; font-family: monospace;">
+                                        #<?php echo (int)$m->id; ?>
+                                    </td>
+                                    <td style="padding: 12px 14px; font-weight: 500; color: #1e1e1e;">
+                                        User #<?php echo (int)$m->user_id; ?>
+                                    </td>
+                                    <td style="padding: 12px 14px;">
+                                        <strong><?php echo htmlspecialchars($m->plan_title ?? 'Membership', ENT_QUOTES, 'UTF-8'); ?></strong>
+                                        <span style="font-size: 11px; color: #646970; text-transform: capitalize; margin-left: 4px;">
+                                            (<?php echo htmlspecialchars($m->plan_type ?? '', ENT_QUOTES, 'UTF-8'); ?>)
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 14px;">
+                                        <?php
+                                        $st = $m->status;
+                                        if ($st === 'active'): ?>
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #e7f7ed; color: #155724;">Active</span>
+                                        <?php elseif ($st === 'grace'): ?>
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #92400e;">Grace Window</span>
+                                        <?php elseif ($st === 'cancelled'): ?>
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569;">Cancelled</span>
+                                        <?php else: ?>
+                                            <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fdf2f2; color: #721c24;">Expired</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 12px 14px; font-family: monospace; font-size: 12px; color: #1e1e1e;">
+                                        <?php echo htmlspecialchars($m->expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php if (!empty($m->grace_expires_at) && $m->status === 'grace'): ?>
+                                            <div style="color: #b45309; font-size: 11px;">
+                                                Grace: <?php echo htmlspecialchars($m->grace_expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 12px 14px;">
+                                        <?php if (!empty($m->auto_renew)): ?>
+                                            <span style="color: #15803d; font-size: 12px; font-weight: 600;">ON</span>
+                                        <?php else: ?>
+                                            <span style="color: #94a3b8; font-size: 12px;">OFF</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 12px 14px; text-align: right;">
+                                        <a href="/admin/page/favorite-digital-memberships?action=view_membership&amp;id=<?php echo (int)$m->id; ?>" style="color: #2271b1; text-decoration: none; font-weight: 500; font-size: 12px; padding: 4px 8px; border: 1px solid #c3c4c7; border-radius: 3px; background: #f6f7f7;">
+                                            Inspect
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.initAdminMultiSelect === 'function') {
+        window.initAdminMultiSelect('fd-memberships-bulk-form', {
+            itemType: 'subscription',
+            confirmMessages: {
+                cancel: 'Are you sure you want to cancel the selected subscriptions?',
+                expire: 'Are you sure you want to expire the selected subscriptions immediately?'
+            }
+        });
+    }
+});
+</script>

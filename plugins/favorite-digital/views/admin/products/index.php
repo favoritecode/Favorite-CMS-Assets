@@ -71,116 +71,149 @@
         </form>
     </div>
 
-    <!-- Products Table -->
-    <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-            <thead>
-                <tr style="background: #f8f9fa; border-bottom: 1px solid #c3c4c7; color: #50575e; font-weight: 600;">
-                    <th style="padding: 12px 14px; width: 60px;">ID</th>
-                    <th style="padding: 12px 14px;">Product</th>
-                    <th style="padding: 12px 14px; width: 130px;">Price</th>
-                    <th style="padding: 12px 14px; width: 90px;">Version</th>
-                    <th style="padding: 12px 14px; width: 110px;">Membership</th>
-                    <th style="padding: 12px 14px; width: 95px;">Status</th>
-                    <th style="padding: 12px 14px; width: 180px; text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($products)): ?>
-                    <tr>
-                        <td colspan="7" style="padding: 32px 14px; text-align: center; color: #646970;">
-                            No digital products found.
-                            <a href="/admin/page/favorite-digital?action=create" style="color: #2271b1; text-decoration: underline; margin-left: 6px;">Add your first digital product</a>.
-                        </td>
+    <!-- Bulk Actions Form -->
+    <form id="fd-products-bulk-form" method="POST" action="/admin/page/favorite-digital">
+        <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="action" value="bulk_action">
+        <input type="hidden" name="redirect_to" value="<?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/admin/page/favorite-digital', ENT_QUOTES, 'UTF-8'); ?>">
+
+        <!-- Bulk Actions Toolbar -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <select name="bulk_action" style="padding: 6px 10px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 13px; background: #fff;">
+                <option value="">Bulk Actions</option>
+                <option value="publish">Publish</option>
+                <option value="draft">Draft</option>
+                <option value="archive">Archive</option>
+            </select>
+            <button type="submit" class="button action" style="padding: 6px 14px; background: #f6f7f7; border: 1px solid #8c8f94; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">Apply</button>
+            <span class="bulk-count-badge" style="font-size: 12px; color: #646970; margin-left: 6px;"></span>
+        </div>
+
+        <!-- Products Table -->
+        <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #c3c4c7; color: #50575e; font-weight: 600;">
+                        <th style="padding: 12px 14px; width: 40px; text-align: center;">
+                            <input type="checkbox" data-select-all aria-label="Select all products on this page">
+                        </th>
+                        <th style="padding: 12px 14px; width: 60px;">ID</th>
+                        <th style="padding: 12px 14px;">Product</th>
+                        <th style="padding: 12px 14px; width: 130px;">Price</th>
+                        <th style="padding: 12px 14px; width: 90px;">Version</th>
+                        <th style="padding: 12px 14px; width: 110px;">Membership</th>
+                        <th style="padding: 12px 14px; width: 95px;">Status</th>
+                        <th style="padding: 12px 14px; width: 180px; text-align: right;">Actions</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($products as $p): ?>
-                        <tr style="border-bottom: 1px solid #f0f0f1;">
-                            <td style="padding: 12px 14px; color: #646970; font-family: monospace;">
-                                #<?php echo (int)$p->id; ?>
-                            </td>
-                            <td style="padding: 12px 14px;">
-                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">
-                                    <a href="/admin/page/favorite-digital?action=view&id=<?php echo (int)$p->id; ?>" style="color: #2271b1; text-decoration: none;">
-                                        <?php echo htmlspecialchars($p->title, ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                </div>
-                                <div style="color: #646970; font-size: 12px; font-family: monospace;">
-                                    /<?php echo htmlspecialchars($p->slug, ENT_QUOTES, 'UTF-8'); ?>
-                                </div>
-                            </td>
-                            <td style="padding: 12px 14px;">
-                                <?php if (!empty($p->is_free)): ?>
-                                    <span style="display: inline-block; background: #e7f7ed; color: #155724; font-weight: 600; padding: 2px 6px; border-radius: 3px; font-size: 12px;">FREE (৳0)</span>
-                                <?php else: ?>
-                                    <div style="font-weight: 600; color: #1e1e1e;">
-                                        ৳<?php echo htmlspecialchars(number_format((float)$p->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
-                                    </div>
-                                    <?php if ((float)$p->discount_percent > 0): ?>
-                                        <div style="font-size: 11px; color: #8c8f94; text-decoration: line-through;">
-                                            ৳<?php echo htmlspecialchars(number_format((float)$p->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
-                                        </div>
-                                        <div style="font-size: 11px; color: #d63638; font-weight: 600;">
-                                            -<?php echo htmlspecialchars(number_format((float)$p->discount_percent, 2), ENT_QUOTES, 'UTF-8'); ?>%
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            </td>
-                            <td style="padding: 12px 14px; color: #50575e; font-size: 12px;">
-                                v<?php echo htmlspecialchars($p->version ?? '1.0.0', ENT_QUOTES, 'UTF-8'); ?>
-                            </td>
-                            <td style="padding: 12px 14px;">
-                                <?php if (!empty($p->is_membership_eligible)): ?>
-                                    <span style="display: inline-block; background: #e8f0fe; color: #1967d2; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px;">Included</span>
-                                <?php else: ?>
-                                    <span style="color: #8c8f94; font-size: 12px;">No</span>
-                                <?php endif; ?>
-                            </td>
-                            <td style="padding: 12px 14px;">
-                                <?php
-                                $statusStyles = [
-                                    'published' => 'background: #e7f7ed; color: #155724; border: 1px solid #c3e6cb;',
-                                    'draft'     => 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;',
-                                    'archived'  => 'background: #f8f9fa; color: #6c757d; border: 1px solid #e2e3e5;',
-                                ];
-                                $style = $statusStyles[$p->status] ?? $statusStyles['draft'];
-                                ?>
-                                <span style="display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; <?php echo $style; ?>">
-                                    <?php echo htmlspecialchars($p->status, ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </td>
-                            <td style="padding: 12px 14px; text-align: right;">
-                                <div style="display: inline-flex; align-items: center; gap: 8px;">
-                                    <?php if ($p->status === 'published'): ?>
-                                        <a href="/digital-store/<?php echo htmlspecialchars($p->slug, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #2271b1; text-decoration: none; font-weight: 500;">View</a>
-                                    <?php else: ?>
-                                        <span style="color: #a7aaad; font-weight: 500; cursor: not-allowed;" title="Item is unpublished (draft/archived) and cannot be viewed on public storefront">View</span>
-                                    <?php endif; ?>
-                                    <span style="color: #dcdcde;">|</span>
-                                    <a href="/admin/page/favorite-digital?action=edit&id=<?php echo (int)$p->id; ?>" style="color: #2271b1; text-decoration: none; font-weight: 500;">Edit</a>
-                                    <span style="color: #dcdcde;">|</span>
-                                    <?php if ($p->status !== 'published'): ?>
-                                        <form method="POST" action="/admin/page/favorite-digital" style="display: inline; margin: 0;">
-                                            <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <input type="hidden" name="action" value="publish">
-                                            <input type="hidden" name="id" value="<?php echo (int)$p->id; ?>">
-                                            <button type="submit" style="background: none; border: none; padding: 0; color: #28a745; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none;">Publish</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <form method="POST" action="/admin/page/favorite-digital" style="display: inline; margin: 0;">
-                                            <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-                                            <input type="hidden" name="action" value="draft">
-                                            <input type="hidden" name="id" value="<?php echo (int)$p->id; ?>">
-                                            <button type="submit" style="background: none; border: none; padding: 0; color: #856404; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none;">Draft</button>
-                                        </form>
-                                    <?php endif; ?>
-                                </div>
+                </thead>
+                <tbody>
+                    <?php if (empty($products)): ?>
+                        <tr>
+                            <td colspan="8" style="padding: 32px 14px; text-align: center; color: #646970;">
+                                No digital products found.
+                                <a href="/admin/page/favorite-digital?action=create" style="color: #2271b1; text-decoration: underline; margin-left: 6px;">Add your first digital product</a>.
                             </td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
+                    <?php else: ?>
+                        <?php foreach ($products as $p): ?>
+                            <tr style="border-bottom: 1px solid #f0f0f1;">
+                                <td style="padding: 12px 14px; text-align: center;">
+                                    <input type="checkbox" name="ids[]" value="<?php echo (int)$p->id; ?>" aria-label="Select product #<?php echo (int)$p->id; ?>">
+                                </td>
+                                <td style="padding: 12px 14px; color: #646970; font-family: monospace;">
+                                    #<?php echo (int)$p->id; ?>
+                                </td>
+                                <td style="padding: 12px 14px;">
+                                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">
+                                        <a href="/admin/page/favorite-digital?action=view&id=<?php echo (int)$p->id; ?>" style="color: #2271b1; text-decoration: none;">
+                                            <?php echo htmlspecialchars($p->title, ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    </div>
+                                    <div style="color: #646970; font-size: 12px; font-family: monospace;">
+                                        /<?php echo htmlspecialchars($p->slug, ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                </td>
+                                <td style="padding: 12px 14px;">
+                                    <?php if (!empty($p->is_free)): ?>
+                                        <span style="display: inline-block; background: #e7f7ed; color: #155724; font-weight: 600; padding: 2px 6px; border-radius: 3px; font-size: 12px;">FREE (৳0)</span>
+                                    <?php else: ?>
+                                        <div style="font-weight: 600; color: #1e1e1e;">
+                                            ৳<?php echo htmlspecialchars(number_format((float)$p->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                        </div>
+                                        <?php if ((float)$p->discount_percent > 0): ?>
+                                            <div style="font-size: 11px; color: #8c8f94; text-decoration: line-through;">
+                                                ৳<?php echo htmlspecialchars(number_format((float)$p->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                            </div>
+                                            <div style="font-size: 11px; color: #d63638; font-weight: 600;">
+                                                -<?php echo htmlspecialchars(number_format((float)$p->discount_percent, 2), ENT_QUOTES, 'UTF-8'); ?>%
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding: 12px 14px; color: #50575e; font-size: 12px;">
+                                    v<?php echo htmlspecialchars($p->version ?? '1.0.0', ENT_QUOTES, 'UTF-8'); ?>
+                                </td>
+                                <td style="padding: 12px 14px;">
+                                    <?php if (!empty($p->is_membership_eligible)): ?>
+                                        <span style="display: inline-block; background: #e8f0fe; color: #1967d2; font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px;">Included</span>
+                                    <?php else: ?>
+                                        <span style="color: #8c8f94; font-size: 12px;">No</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding: 12px 14px;">
+                                    <?php
+                                    $statusStyles = [
+                                        'published' => 'background: #e7f7ed; color: #155724; border: 1px solid #c3e6cb;',
+                                        'draft'     => 'background: #fff3cd; color: #856404; border: 1px solid #ffeeba;',
+                                        'archived'  => 'background: #f8f9fa; color: #6c757d; border: 1px solid #e2e3e5;',
+                                    ];
+                                    $style = $statusStyles[$p->status] ?? $statusStyles['draft'];
+                                    ?>
+                                    <span style="display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; <?php echo $style; ?>">
+                                        <?php echo htmlspecialchars($p->status, ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 12px 14px; text-align: right;">
+                                    <div style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <?php if ($p->status === 'published'): ?>
+                                            <a href="/digital-store/<?php echo htmlspecialchars($p->slug, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #2271b1; text-decoration: none; font-weight: 500;">View</a>
+                                        <?php else: ?>
+                                            <span style="color: #a7aaad; font-weight: 500; cursor: not-allowed;" title="Item is unpublished (draft/archived) and cannot be viewed on public storefront">View</span>
+                                        <?php endif; ?>
+                                        <span style="color: #dcdcde;">|</span>
+                                        <a href="/admin/page/favorite-digital?action=edit&id=<?php echo (int)$p->id; ?>" style="color: #2271b1; text-decoration: none; font-weight: 500;">Edit</a>
+                                        <span style="color: #dcdcde;">|</span>
+                                        <?php if ($p->status !== 'published'): ?>
+                                            <form method="POST" action="/admin/page/favorite-digital" style="display: inline; margin: 0;">
+                                                <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <input type="hidden" name="action" value="publish">
+                                                <input type="hidden" name="id" value="<?php echo (int)$p->id; ?>">
+                                                <button type="submit" style="background: none; border: none; padding: 0; color: #28a745; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none;">Publish</button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form method="POST" action="/admin/page/favorite-digital" style="display: inline; margin: 0;">
+                                                <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                                <input type="hidden" name="action" value="draft">
+                                                <input type="hidden" name="id" value="<?php echo (int)$p->id; ?>">
+                                                <button type="submit" style="background: none; border: none; padding: 0; color: #856404; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none;">Draft</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.initAdminMultiSelect === 'function') {
+        window.initAdminMultiSelect('fd-products-bulk-form', { itemType: 'product' });
+    }
+});
+</script>
 

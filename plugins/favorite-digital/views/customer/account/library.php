@@ -58,91 +58,91 @@ if (!function_exists('buildLibraryUrl')) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Digital Library — Favorite Digital</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 0; line-height: 1.5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: var(--bg, #f8fafc); color: var(--text, #1e293b); margin: 0; padding: 0; line-height: 1.5; }
         .library-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
         
         /* Header */
         .library-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
-        .library-title-area h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: #0f172a; }
-        .library-title-area p { margin: 0; font-size: 14px; color: #64748b; }
-        .btn-storefront { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; }
-        .btn-storefront:hover { background: #1d4ed8; }
+        .library-title-area h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: var(--heading, #0f172a); }
+        .library-title-area p { margin: 0; font-size: 14px; color: var(--muted, #64748b); }
+        .btn-storefront { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent, #2563eb); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; }
+        .btn-storefront:hover { background: var(--accent-hover, #1d4ed8); }
 
         /* Controls Card */
-        .controls-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .controls-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .search-row { display: flex; gap: 10px; margin-bottom: 14px; }
-        .search-input { flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
-        .search-input:focus { border-color: #2563eb; }
-        .btn-search { padding: 10px 20px; background: #0f172a; color: #ffffff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .btn-reset { padding: 10px 16px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; }
+        .search-input { flex: 1; padding: 10px 14px; border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; font-size: 14px; outline: none; background: var(--surface, #ffffff); color: var(--text, #1e293b); }
+        .search-input:focus { border-color: var(--accent, #2563eb); }
+        .btn-search { padding: 10px 20px; background: var(--heading, #0f172a); color: var(--bg, #ffffff); border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-reset { padding: 10px 16px; background: var(--surface-muted, #f1f5f9); color: var(--muted, #475569); border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; }
 
         .filter-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
         .type-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-        .tab-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; }
-        .tab-btn.active { background: #0f172a; color: #ffffff; border-color: #0f172a; }
-        .tab-badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #e2e8f0; color: #334155; }
-        .tab-btn.active .tab-badge { background: #334155; color: #ffffff; }
+        .tab-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--muted, #475569); background: var(--surface-muted, #f8fafc); border: 1px solid var(--border, #e2e8f0); }
+        .tab-btn.active { background: var(--heading, #0f172a); color: var(--bg, #ffffff); border-color: var(--heading, #0f172a); }
+        .tab-badge { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: var(--border, #e2e8f0); color: var(--text, #334155); }
+        .tab-btn.active .tab-badge { background: var(--surface, #334155); color: var(--heading, #ffffff); }
 
-        .select-filter { padding: 7px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; color: #334155; font-weight: 500; }
+        .select-filter { padding: 7px 12px; border: 1px solid var(--border-strong, #cbd5e1); border-radius: 6px; font-size: 13px; background: var(--surface, #fff); color: var(--text, #334155); font-weight: 500; }
 
         /* Grid */
         .library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 32px; }
-        .item-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .item-card { background: var(--surface, #ffffff); border: 1px solid var(--border, #e2e8f0); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.15s ease, box-shadow 0.15s ease; }
         .item-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.05); }
 
-        .card-header { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .card-header { padding: 14px 16px; border-bottom: 1px solid var(--border, #f1f5f9); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
         .card-type-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
-        .type-digital { background: #eff6ff; color: #1d4ed8; }
-        .type-service { background: #fef3c7; color: #b45309; }
-        .type-package { background: #fae8ff; color: #86198f; }
-        .type-membership { background: #dcfce7; color: #15803d; }
+        .type-digital { background: rgba(59, 130, 246, 0.15); color: var(--accent, #1d4ed8); }
+        .type-service { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .type-package { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .type-membership { background: rgba(16, 185, 129, 0.15); color: var(--success, #15803d); }
 
         .card-state-tag { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
-        .state-accessible { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-        .state-revoked { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-        .state-expired { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-        .state-unavailable { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .state-accessible { background: rgba(16, 185, 129, 0.15); color: var(--success, #065f46); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .state-revoked { background: var(--danger-soft, #fef2f2); color: var(--danger, #991b1b); border: 1px solid var(--danger-border, #fecaca); }
+        .state-expired { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .state-unavailable { background: var(--surface-muted, #f1f5f9); color: var(--muted, #475569); border: 1px solid var(--border-strong, #cbd5e1); }
 
         .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
-        .item-title { margin: 0 0 8px; font-size: 17px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+        .item-title { margin: 0 0 8px; font-size: 17px; font-weight: 700; color: var(--heading, #0f172a); line-height: 1.3; }
         .item-title a { color: inherit; text-decoration: none; }
-        .item-title a:hover { color: #2563eb; }
+        .item-title a:hover { color: var(--accent, #2563eb); }
 
         .source-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-        .source-tag { font-size: 11px; font-weight: 600; padding: 2px 7px; background: #f1f5f9; color: #475569; border-radius: 4px; }
-        .source-membership { background: #dcfce7; color: #166534; }
-        .source-package { background: #fdf4ff; color: #701a75; }
+        .source-tag { font-size: 11px; font-weight: 600; padding: 2px 7px; background: var(--surface-muted, #f1f5f9); color: var(--muted, #475569); border-radius: 4px; }
+        .source-membership { background: rgba(16, 185, 129, 0.15); color: var(--success, #166534); }
+        .source-package { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
 
-        .item-desc { font-size: 13px; color: #475569; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+        .item-desc { font-size: 13px; color: var(--muted, #475569); margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
 
         /* Meta details */
-        .item-specs { background: #f8fafc; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #475569; margin-bottom: 14px; }
+        .item-specs { background: var(--surface-muted, #f8fafc); border-radius: 6px; padding: 10px 12px; font-size: 12px; color: var(--muted, #475569); margin-bottom: 14px; }
         .spec-line { display: flex; justify-content: space-between; margin-bottom: 4px; }
         .spec-line:last-child { margin-bottom: 0; }
 
-        .card-footer { padding: 14px 16px; border-top: 1px solid #f1f5f9; background: #fafafa; }
+        .card-footer { padding: 14px 16px; border-top: 1px solid var(--border, #f1f5f9); background: var(--surface-muted, #fafafa); }
         .btn-action { display: block; width: 100%; text-align: center; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; text-decoration: none; border: none; box-sizing: border-box; transition: background 0.15s; }
-        .btn-primary { background: #2563eb; color: #ffffff; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-secondary { background: #0f172a; color: #ffffff; }
-        .btn-secondary:hover { background: #1e293b; }
+        .btn-primary { background: var(--accent, #2563eb); color: #ffffff; }
+        .btn-primary:hover { background: var(--accent-hover, #1d4ed8); }
+        .btn-secondary { background: var(--heading, #0f172a); color: var(--bg, #ffffff); }
+        .btn-secondary:hover { background: var(--text, #1e293b); }
         .btn-warning { background: #d97706; color: #ffffff; }
         .btn-warning:hover { background: #b45309; }
-        .btn-disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        .btn-disabled { background: var(--surface-muted, #e2e8f0); color: var(--muted, #94a3b8); cursor: not-allowed; }
 
-        .download-meta { display: block; font-size: 11px; color: #64748b; text-align: center; margin-top: 6px; }
+        .download-meta { display: block; font-size: 11px; color: var(--muted, #64748b); text-align: center; margin-top: 6px; }
 
         /* Empty State */
-        .empty-state { background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 48px 24px; text-align: center; }
+        .empty-state { background: var(--surface, #ffffff); border: 1px dashed var(--border-strong, #cbd5e1); border-radius: 12px; padding: 48px 24px; text-align: center; }
         .empty-icon { font-size: 48px; margin-bottom: 12px; }
-        .empty-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
-        .empty-desc { font-size: 14px; color: #64748b; max-width: 440px; margin: 0 auto 20px; }
+        .empty-title { font-size: 18px; font-weight: 700; color: var(--heading, #0f172a); margin-bottom: 6px; }
+        .empty-desc { font-size: 14px; color: var(--muted, #64748b); max-width: 440px; margin: 0 auto 20px; }
 
         /* Pagination */
         .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-        .page-link { padding: 8px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #334155; text-decoration: none; font-size: 13px; font-weight: 600; }
-        .page-link.active { background: #0f172a; color: #fff; border-color: #0f172a; }
-        .page-link:hover:not(.active) { background: #f1f5f9; }
+        .page-link { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border-strong, #cbd5e1); background: var(--surface, #fff); color: var(--text, #334155); text-decoration: none; font-size: 13px; font-weight: 600; }
+        .page-link.active { background: var(--heading, #0f172a); color: var(--bg, #fff); border-color: var(--heading, #0f172a); }
+        .page-link:hover:not(.active) { background: var(--surface-muted, #f1f5f9); }
     </style>
 </head>
 <body>
@@ -204,7 +204,7 @@ if (!function_exists('buildLibraryUrl')) {
 
                 <!-- Status Filter -->
                 <div>
-                    <label for="statusFilter" style="font-size: 13px; font-weight: 600; color: #475569; margin-right: 6px;">Status:</label>
+                    <label for="statusFilter" style="font-size: 13px; font-weight: 600; color: var(--muted, #64748b); margin-right: 6px;">Status:</label>
                     <select name="status" id="statusFilter" class="select-filter" onchange="document.getElementById('libraryFilterForm').submit()">
                         <option value="">All Access States</option>
                         <option value="accessible" <?= $activeStatus === 'accessible' ? 'selected' : '' ?>>Active Access</option>
@@ -275,7 +275,7 @@ if (!function_exists('buildLibraryUrl')) {
                                 <?php if (!empty($item['has_url_resource'])): ?>
                                     <div class="spec-line">
                                         <span>Resource:</span>
-                                        <strong style="color: #0284c7;">Online Access</strong>
+                                        <strong style="color: var(--accent, #3b82f6);">Online Access</strong>
                                     </div>
                                 <?php endif; ?>
                                 <?php if (!empty($item['file_size_formatted'])): ?>
@@ -350,7 +350,7 @@ if (!function_exists('buildLibraryUrl')) {
                                     <a href="<?= htmlspecialchars(!empty($item['download_url']) ? $item['download_url'] : $item['external_resource_url'], ENT_QUOTES, 'UTF-8') ?>"
                                        target="_blank"
                                        class="btn-action btn-primary"
-                                       style="<?= !empty($item['has_file_resource']) ? 'margin-top: 8px; background: #0284c7;' : '' ?>">
+                                       style="<?= !empty($item['has_file_resource']) ? 'margin-top: 8px;' : '' ?>">
                                         <?= !empty($item['has_file_resource']) ? '🔗 Access Online Resource' : '📥 Download File' ?>
                                     </a>
                                 <?php endif; ?>
@@ -359,13 +359,13 @@ if (!function_exists('buildLibraryUrl')) {
                                     <?= htmlspecialchars($item['action_label'], ENT_QUOTES, 'UTF-8') ?>
                                 </button>
                                 <?php if ($item['state'] === 'revoked'): ?>
-                                    <span class="download-meta" style="color: #dc2626;">Order was refunded. Access revoked.</span>
+                                    <span class="download-meta" style="color: var(--danger, #dc2626);">Order was refunded. Access revoked.</span>
                                 <?php elseif ($item['state'] === 'membership_expired'): ?>
-                                    <span class="download-meta" style="color: #d97706;">Membership expired. <a href="/store?product_type=membership">Renew plan</a></span>
+                                    <span class="download-meta" style="color: var(--warning, #d97706);">Membership expired. <a href="/store?product_type=membership">Renew plan</a></span>
                                 <?php endif; ?>
                             <?php endif; ?>
                         <?php elseif ($item['product_type'] === 'service'): ?>
-                            <a href="<?= htmlspecialchars($item['action_url'] ?? '/store/' . $item['slug'], ENT_QUOTES, 'UTF-8') ?>" class="btn-action btn-secondary" style="background: #0f172a; color: #fff;">
+                            <a href="<?= htmlspecialchars($item['action_url'] ?? '/store/' . $item['slug'], ENT_QUOTES, 'UTF-8') ?>" class="btn-action btn-secondary">
                                 👁️ View Access
                             </a>
                         <?php elseif ($item['product_type'] === 'package'): ?>

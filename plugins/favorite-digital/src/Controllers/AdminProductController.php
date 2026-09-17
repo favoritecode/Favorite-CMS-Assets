@@ -9,6 +9,7 @@ use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
 use FavoriteCMS\Digital\Domain\ProductStatus;
 use FavoriteCMS\Digital\Domain\ProductType;
+use FavoriteCMS\Digital\Services\BulkActionService;
 use FavoriteCMS\Digital\Services\ProductManagementService;
 use FavoriteCMS\Models\User;
 use Throwable;
@@ -17,6 +18,7 @@ class AdminProductController
 {
     protected Application $app;
     protected ProductManagementService $service;
+    protected BulkActionService $bulkService;
 
     public function __construct(
         Application $app,
@@ -24,6 +26,12 @@ class AdminProductController
     ) {
         $this->app = $app;
         $this->service = $service;
+        $this->bulkService = new BulkActionService();
+    }
+
+    public function setBulkActionService(BulkActionService $bulkService): void
+    {
+        $this->bulkService = $bulkService;
     }
 
     public function getService(): ProductManagementService
@@ -92,13 +100,30 @@ class AdminProductController
         $id = (int)$request->post('id', 0);
 
         return match ($action) {
-            'store'   => $this->store($request),
-            'update'  => $this->update($request, $id),
-            'publish' => $this->publish($request, $id),
-            'draft'   => $this->draft($request, $id),
-            'archive' => $this->archive($request, $id),
-            default   => Response::redirect('/admin/page/favorite-digital'),
+            'store'       => $this->store($request),
+            'update'      => $this->update($request, $id),
+            'publish'     => $this->publish($request, $id),
+            'draft'       => $this->draft($request, $id),
+            'archive'     => $this->archive($request, $id),
+            'bulk_action' => $this->handleBulkAction($request),
+            default       => Response::redirect('/admin/page/favorite-digital'),
         };
+    }
+
+    /**
+     * Process bulk actions for digital products.
+     */
+    public function handleBulkAction(Request $request): Response
+    {
+        return $this->bulkService->handle($request, [
+            'publish' => fn(int $id) => $this->service->publishProduct($id),
+            'draft'   => fn(int $id) => $this->service->draftProduct($id),
+            'archive' => fn(int $id) => $this->service->archiveProduct($id),
+        ], '/admin/page/favorite-digital', [
+            'publish' => 'Publish',
+            'draft'   => 'Draft',
+            'archive' => 'Archive',
+        ]);
     }
 
     /**
