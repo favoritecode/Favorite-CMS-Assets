@@ -19,8 +19,13 @@ Without Favorite Digital, the theme remains fully usable and shows clear categor
 
 ## Customization & Advanced Theme Customizer
 
-Favorite Web 1.1.1 includes an Advanced Theme Customizer accessible via **Admin → Appearance → Customize**:
+Favorite Web 1.2.0 includes a full-screen Visual Theme Customizer accessible via **Admin → Appearance → Customize**:
 
+- **Full-Screen Visual Shell**: Dedicated `100vw × 100vh` workspace with responsive device switcher (Desktop, Tablet 768px, Mobile 375px), live reload preview, and full editor focus without admin sidebar/topbar overlap.
+- **Section Navigator**: Visual tree navigator listing all homepage sections with live drag-and-drop reordering, instant jump-to-edit (`✏️`), and settings copy (`📋`).
+- **History (Undo / Redo)**: In-memory revision history tracking all panel setting edits, color changes, and section reorderings.
+- **Reusable Templates**: Save, preview, apply, and export theme configuration presets directly within the visual shell.
+- **Universal Media Picker**: Integrated modal with Media Library, file upload, and direct URL tabs, fully accessible with ESC key, backdrop click, and focus restoration.
 - **Site Identity**: Site title, tagline, custom logo (with adjustable width), and favicon using Core Media Library.
 - **Header & Navigation**: Sticky header toggle, search bar toggle, store action button toggle, dark mode toggle.
 - **Homepage Sections & Ordering**: Reorder homepage sections via drag-and-drop or Up/Down buttons, and toggle individual section visibility.
@@ -51,7 +56,7 @@ The theme supports the Core Customizer, menus, widget regions, SEO head output, 
 
 ## Source
 
-Theme version: `1.1.1`
+Theme version: `1.2.0`
 
 Official website: <https://www.favoriteweb.net/>
 

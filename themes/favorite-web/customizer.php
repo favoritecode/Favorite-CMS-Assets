@@ -83,26 +83,19 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
 
 <div class="fw-customizer-root" id="fw-customizer-root">
     <style>
-        /* Scoped Customizer Layout */
-        .wp-content:has(.fw-customizer-root) {
-            padding: 0 !important;
-            max-width: 100% !important;
-        }
+        /* Scoped Full-Viewport Customizer Layout */
         .fw-customizer-root {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 46px);
+            width: 100vw;
+            height: 100vh;
             background: var(--admin-bg, #f8fafc);
             color: var(--admin-text, #1e293b);
             font-family: inherit;
             overflow: hidden;
-            margin: -24px -28px;
-        }
-        @media (max-width: 782px) {
-            .fw-customizer-root {
-                margin: -16px;
-                height: calc(100vh - 46px);
-            }
+            margin: 0;
+            padding: 0;
+            position: relative;
         }
 
         /* Top Header Bar */
@@ -110,17 +103,19 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 18px;
+            padding: 0 16px;
+            height: 52px;
             background: var(--admin-surface, #ffffff);
             border-bottom: 1px solid var(--admin-border, #e2e8f0);
             z-index: 20;
             gap: 12px;
             flex-shrink: 0;
+            user-select: none;
         }
         .fw-topbar-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
         .fw-back-link {
             display: inline-flex;
@@ -148,6 +143,28 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             padding: 3px 8px;
             border-radius: 12px;
             border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .fw-tool-btn {
+            background: transparent;
+            border: 1px solid var(--admin-border, #cbd5e1);
+            color: var(--admin-text, #1e293b);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .fw-tool-btn:hover:not(:disabled) {
+            background: var(--admin-surface-subtle, #f1f5f9);
+            color: var(--admin-text-heading, #0f172a);
+        }
+        .fw-tool-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
         .fw-save-status {
             font-size: 12px;
@@ -261,7 +278,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
         .fw-customizer-workspace {
             display: flex;
             flex: 1;
-            height: calc(100% - 56px);
+            height: calc(100vh - 52px);
             overflow: hidden;
             position: relative;
         }
@@ -271,18 +288,154 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             width: 400px;
             min-width: 360px;
             max-width: 480px;
+            height: 100%;
             background: var(--admin-surface, #ffffff);
             border-right: 1px solid var(--admin-border, #e2e8f0);
             display: flex;
             flex-direction: column;
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: hidden;
             flex-shrink: 0;
             z-index: 10;
         }
-        .fw-sidebar-content {
-            padding: 14px;
+        .fw-sidebar-tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--admin-border, #e2e8f0);
+            background: var(--admin-surface-subtle, #f8fafc);
+            flex-shrink: 0;
+        }
+        .fw-sidebar-tab-btn {
             flex: 1;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--admin-text-muted, #64748b);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .fw-sidebar-tab-btn:hover {
+            color: var(--admin-text, #1e293b);
+        }
+        .fw-sidebar-tab-btn.active {
+            color: var(--admin-primary, #3b82f6);
+            border-bottom-color: var(--admin-primary, #3b82f6);
+            background: var(--admin-surface, #ffffff);
+        }
+        .fw-nav-badge {
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--admin-primary, #3b82f6);
+            font-weight: 600;
+        }
+        .fw-sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 14px;
+        }
+
+        /* Navigator Section Tree */
+        .fw-navigator-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .fw-nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            border: 1px solid var(--admin-border, #e2e8f0);
+            border-radius: 6px;
+            background: var(--admin-surface, #ffffff);
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .fw-nav-item:hover {
+            border-color: var(--admin-primary, #3b82f6);
+            background: var(--admin-surface-subtle, #f8fafc);
+        }
+        .fw-nav-item.is-dragging {
+            opacity: 0.4;
+            border-style: dashed;
+        }
+        .fw-nav-item-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+        .fw-nav-icon {
+            font-size: 15px;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .fw-nav-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--admin-text-heading, #0f172a);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fw-nav-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .fw-nav-btn {
+            background: transparent;
+            border: 1px solid var(--admin-border, #cbd5e1);
+            color: var(--admin-text, #1e293b);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fw-nav-btn:hover {
+            background: var(--admin-surface-subtle, #f1f5f9);
+            border-color: var(--admin-primary, #3b82f6);
+            color: var(--admin-primary, #3b82f6);
+        }
+        .fw-panel.fw-panel-highlighted {
+            animation: fwPanelPulse 1.2s ease;
+        }
+        @keyframes fwPanelPulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+            50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* Toast notification */
+        .fw-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            font-weight: 500;
+            z-index: 999999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
         /* Accordion Panels */
@@ -766,13 +919,42 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             border-color: var(--admin-primary, #3b82f6);
             background: rgba(59, 130, 246, 0.04);
         }
+        .fw-mobile-toggle-btn {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .fw-mobile-toggle-btn {
+                display: inline-flex !important;
+            }
+            .fw-device-switcher {
+                display: none;
+            }
+            .fw-customizer-sidebar {
+                position: absolute;
+                top: 52px;
+                bottom: 0;
+                left: 0;
+                width: 85vw;
+                max-width: 360px;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease-in-out;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            }
+            .fw-customizer-sidebar.is-open {
+                transform: translateX(0);
+            }
+        }
     </style>
 
     <!-- Top Navigation Bar -->
-    <header class="fw-customizer-topbar">
+    <header class="fw-customizer-topbar" id="fw-customizer-topbar">
         <div class="fw-topbar-left">
-            <a href="/admin/appearance" class="fw-back-link" title="Return to Appearance Themes">&larr; Appearance</a>
+            <a href="/admin/themes" class="fw-back-link" title="Return to Appearance Themes">&larr; Appearance</a>
+            <button type="button" class="fw-tool-btn fw-mobile-toggle-btn" id="fw-toggle-sidebar-btn" title="Toggle Controls Sidebar" aria-label="Toggle Controls Sidebar">&#9776; Controls</button>
             <span class="fw-theme-pill"><?php echo htmlspecialchars($themeName, ENT_QUOTES, 'UTF-8'); ?></span>
+            <button type="button" class="fw-tool-btn" id="fw-undo-btn" title="Undo (Ctrl+Z)" disabled>&lsaquo; Undo</button>
+            <button type="button" class="fw-tool-btn" id="fw-redo-btn" title="Redo (Ctrl+Shift+Z)" disabled>Redo &rsaquo;</button>
             <div class="fw-save-status">
                 <span class="fw-status-dot" id="fw-status-dot"></span>
                 <span id="fw-status-text">All changes saved</span>
@@ -797,10 +979,12 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             </button>
             <a href="/?fw_preview=1" target="_blank" class="fw-preview-action-btn" title="Open preview in new tab">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                ↗ Preview
             </a>
         </div>
 
         <div class="fw-topbar-right">
+            <button type="button" class="fw-tool-btn" id="fw-templates-btn" title="Reusable Templates">📋 Templates</button>
             <form id="fw-reset-form" method="POST" action="/admin/customize/reset" style="display:inline;">
                 <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <button type="button" id="fw-reset-btn" class="fw-btn fw-btn--danger-outline">&#8635; Reset Defaults</button>
@@ -813,14 +997,25 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
     <div class="fw-customizer-workspace">
         <!-- Controls Sidebar -->
         <aside class="fw-customizer-sidebar" role="region" aria-label="Theme Customization Panels">
+            <div class="fw-sidebar-tab-bar">
+                <button type="button" class="fw-sidebar-tab-btn active" id="fw-tab-btn-panels" data-view="panels">
+                    <span>🎨</span> Panels
+                </button>
+                <button type="button" class="fw-sidebar-tab-btn" id="fw-tab-btn-navigator" data-view="navigator">
+                    <span>🗂️</span> Navigator <span class="fw-nav-badge">10</span>
+                </button>
+            </div>
+
             <div class="fw-sidebar-content">
                 <form id="fw-customizer-form" method="POST" action="/admin/customize/save">
                     <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="mods[services_json]" id="fw-mod-services-json" value="<?php echo htmlspecialchars($servicesJson, ENT_QUOTES, 'UTF-8'); ?>">
 
-                    <div class="fw-accordion" id="fw-accordion">
-                        <!-- Panel 1: Site Identity -->
-                        <div class="fw-panel is-open">
+                    <!-- View 1: Panels Accordion -->
+                    <div class="fw-sidebar-view active" id="fw-view-panels">
+                        <div class="fw-accordion" id="fw-accordion">
+                            <!-- Panel 1: Site Identity -->
+                            <div class="fw-panel is-open" id="fw-panel-site-identity">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🏷️</span> Site Identity</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -886,7 +1081,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 2: Header Navigation -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-header-nav">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🧭</span> Header Navigation</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -925,7 +1120,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 3: Homepage Sections & Reorder -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-sections-order">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">📑</span> Homepage Sections &amp; Order</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -959,7 +1154,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 4: Hero Section -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-hero">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🚀</span> Hero Section</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1033,7 +1228,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 5: Trust & Stats -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-trust-stats">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">📊</span> Trust &amp; Stats Section</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1076,7 +1271,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 6: About Section -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-about">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🏢</span> About Section</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1125,7 +1320,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 7: Services Section -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-services">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🛠️</span> Professional Services</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1156,7 +1351,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 8: Digital Products -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-products">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">📦</span> Digital Products</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1196,7 +1391,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 9: Packages & Solutions -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-packages">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">💼</span> Packages &amp; Solutions</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1225,7 +1420,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 10: Membership Section -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-memberships">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">👑</span> Memberships</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1274,7 +1469,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 11: Latest Articles -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-posts">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">📰</span> Latest Articles</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1295,7 +1490,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 12: Call To Action (CTA) -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-cta">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">📣</span> Call to Action</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1331,7 +1526,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 13: Footer -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-footer">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">⚓</span> Footer</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1353,7 +1548,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 14: Colors — Light Theme -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-colors-light">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">☀️</span> Colors — Light Theme</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1398,7 +1593,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 15: Colors — Dark Theme -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-colors-dark">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🌙</span> Colors — Dark Theme</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1436,7 +1631,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 16: Typography & Layout -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-typography">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">🔤</span> Typography &amp; Layout</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1463,7 +1658,7 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                         </div>
 
                         <!-- Panel 17: Custom CSS -->
-                        <div class="fw-panel">
+                        <div class="fw-panel" id="fw-panel-custom-css">
                             <button type="button" class="fw-panel-header">
                                 <span class="fw-panel-title"><span class="fw-panel-icon">💻</span> Custom CSS</span>
                                 <span class="fw-panel-arrow">&rsaquo;</span>
@@ -1477,7 +1672,45 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                             </div>
                         </div>
                     </div>
-                </form>
+                </div> <!-- /#fw-view-panels -->
+
+                <!-- View 2: 10-Section Navigator -->
+                <div class="fw-sidebar-view" id="fw-view-navigator" style="display: none;">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 13px; font-weight: 700; color: var(--admin-text-heading, #0f172a); margin-bottom: 2px;">Section Hierarchy (10 Sections)</div>
+                        <div class="fw-help">Drag to reorder sections. Click ✏️ to jump to controls, or 📋 to copy settings.</div>
+                    </div>
+                    <div class="fw-navigator-container" id="fw-navigator-list">
+                        <?php
+                        $navSections = [
+                            ['id' => 'hero', 'name' => 'Hero Banner', 'icon' => '🚀', 'panel' => 'fw-panel-hero'],
+                            ['id' => 'trust-stats', 'name' => 'Trust & Performance Metrics', 'icon' => '📊', 'panel' => 'fw-panel-trust-stats'],
+                            ['id' => 'about', 'name' => 'About & Value Narrative', 'icon' => '🏢', 'panel' => 'fw-panel-about'],
+                            ['id' => 'services', 'name' => 'Professional Services', 'icon' => '🛠️', 'panel' => 'fw-panel-services'],
+                            ['id' => 'digital-products', 'name' => 'Digital Products', 'icon' => '📦', 'panel' => 'fw-panel-products'],
+                            ['id' => 'packages', 'name' => 'Packages & Solutions', 'icon' => '💼', 'panel' => 'fw-panel-packages'],
+                            ['id' => 'memberships', 'name' => 'Membership Plans', 'icon' => '👑', 'panel' => 'fw-panel-memberships'],
+                            ['id' => 'latest-posts', 'name' => 'Latest Articles', 'icon' => '📰', 'panel' => 'fw-panel-posts'],
+                            ['id' => 'cta', 'name' => 'Call to Action Banner', 'icon' => '📣', 'panel' => 'fw-panel-cta'],
+                            ['id' => 'footer', 'name' => 'Footer Brand & Navigation', 'icon' => '⚓', 'panel' => 'fw-panel-footer'],
+                        ];
+                        ?>
+                        <?php foreach ($navSections as $nSec): ?>
+                            <div class="fw-nav-item" data-section-id="<?php echo htmlspecialchars($nSec['id'], ENT_QUOTES, 'UTF-8'); ?>" data-panel-id="<?php echo htmlspecialchars($nSec['panel'], ENT_QUOTES, 'UTF-8'); ?>" draggable="true">
+                                <div class="fw-nav-item-left">
+                                    <span class="fw-drag-handle" title="Drag to reorder">&#x2807;&#x2807;</span>
+                                    <span class="fw-nav-icon"><?php echo $nSec['icon']; ?></span>
+                                    <span class="fw-nav-title"><?php echo htmlspecialchars($nSec['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="fw-nav-item-actions">
+                                    <button type="button" class="fw-nav-btn fw-nav-edit-btn" data-panel-id="<?php echo htmlspecialchars($nSec['panel'], ENT_QUOTES, 'UTF-8'); ?>" title="Jump to edit section">✏️</button>
+                                    <button type="button" class="fw-nav-btn fw-nav-copy-btn" data-section-id="<?php echo htmlspecialchars($nSec['id'], ENT_QUOTES, 'UTF-8'); ?>" title="Copy section settings">📋</button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </form>
             </div>
         </aside>
 
@@ -1545,6 +1778,9 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             </div>
         </div>
     </div>
+
+    <!-- Floating Toast Notification -->
+    <div class="fw-toast" id="fw-toast" style="display: none;"></div>
 </div>
 
 <script>
@@ -1610,8 +1846,14 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             if (statusText) statusText.textContent = 'Unsaved changes';
         }
     }
-    form.addEventListener('input', markDirty);
-    form.addEventListener('change', markDirty);
+    form.addEventListener('input', function() {
+        markDirty();
+        if (typeof pushHistoryState === 'function') pushHistoryState();
+    });
+    form.addEventListener('change', function() {
+        markDirty();
+        if (typeof pushHistoryState === 'function') pushHistoryState();
+    });
 
     // Live Token postMessage Bridge
     window.fwTriggerLiveToken = function(property, value) {
@@ -1671,6 +1913,8 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                     sortList.insertBefore(item, prev);
                     markDirty();
                     updateSortArrows();
+                    if (typeof syncNavigatorFromSectionSortList === 'function') syncNavigatorFromSectionSortList();
+                    if (typeof pushHistoryState === 'function') pushHistoryState();
                 }
             } else if (target.classList.contains('fw-sort-down')) {
                 var next = item.nextElementSibling;
@@ -1678,6 +1922,8 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                     sortList.insertBefore(next, item);
                     markDirty();
                     updateSortArrows();
+                    if (typeof syncNavigatorFromSectionSortList === 'function') syncNavigatorFromSectionSortList();
+                    if (typeof pushHistoryState === 'function') pushHistoryState();
                 }
             }
         });
@@ -1697,6 +1943,8 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                 draggedItem = null;
                 markDirty();
                 updateSortArrows();
+                if (typeof syncNavigatorFromSectionSortList === 'function') syncNavigatorFromSectionSortList();
+                if (typeof pushHistoryState === 'function') pushHistoryState();
             }
         });
         sortList.addEventListener('dragover', function(e) {
@@ -1893,6 +2141,323 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                 alert('An error occurred while saving: ' + err.message + '\nSubmitting standard form...');
                 form.submit();
             });
+        });
+    }
+
+    // Toast Notification Utility
+    function showToast(msg) {
+        var toast = document.getElementById('fw-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        toast.style.opacity = '1';
+        setTimeout(function() {
+            toast.style.opacity = '0';
+            setTimeout(function() { toast.style.display = 'none'; }, 200);
+        }, 2200);
+    }
+
+    // Sidebar View Switcher (Panels vs Navigator)
+    var tabBtnPanels = document.getElementById('fw-tab-btn-panels');
+    var tabBtnNav = document.getElementById('fw-tab-btn-navigator');
+    var viewPanels = document.getElementById('fw-view-panels');
+    var viewNav = document.getElementById('fw-view-navigator');
+
+    function switchSidebarView(view) {
+        if (view === 'panels') {
+            if (tabBtnPanels) tabBtnPanels.classList.add('active');
+            if (tabBtnNav) tabBtnNav.classList.remove('active');
+            if (viewPanels) viewPanels.style.display = 'block';
+            if (viewNav) viewNav.style.display = 'none';
+        } else {
+            if (tabBtnPanels) tabBtnPanels.classList.remove('active');
+            if (tabBtnNav) tabBtnNav.classList.add('active');
+            if (viewPanels) viewPanels.style.display = 'none';
+            if (viewNav) viewNav.style.display = 'block';
+        }
+    }
+
+    if (tabBtnPanels) tabBtnPanels.addEventListener('click', function() { switchSidebarView('panels'); });
+    if (tabBtnNav) tabBtnNav.addEventListener('click', function() { switchSidebarView('navigator'); });
+
+    // Mobile Drawer Toggle
+    var mobileToggleBtn = document.getElementById('fw-toggle-sidebar-btn');
+    var customizerSidebar = document.querySelector('.fw-customizer-sidebar');
+    if (mobileToggleBtn && customizerSidebar) {
+        mobileToggleBtn.addEventListener('click', function() {
+            customizerSidebar.classList.toggle('is-open');
+        });
+    }
+
+    // Navigator Jump to Edit (Click ✏️)
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.fw-nav-edit-btn');
+        if (editBtn) {
+            e.preventDefault();
+            var panelId = editBtn.getAttribute('data-panel-id');
+            if (!panelId) return;
+            var targetPanel = document.getElementById(panelId);
+            if (targetPanel) {
+                switchSidebarView('panels');
+                targetPanel.classList.add('is-open');
+                targetPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                targetPanel.classList.remove('fw-panel-highlighted');
+                void targetPanel.offsetWidth; // Force CSS reflow
+                targetPanel.classList.add('fw-panel-highlighted');
+            }
+        }
+    });
+
+    // Navigator Copy Section Settings (Click 📋)
+    document.addEventListener('click', function(e) {
+        var copyBtn = e.target.closest('.fw-nav-copy-btn');
+        if (copyBtn) {
+            e.preventDefault();
+            var secId = copyBtn.getAttribute('data-section-id');
+            var navItem = copyBtn.closest('.fw-nav-item');
+            var panelId = navItem ? navItem.getAttribute('data-panel-id') : null;
+            var targetPanel = panelId ? document.getElementById(panelId) : null;
+            if (targetPanel) {
+                var inputs = targetPanel.querySelectorAll('input, select, textarea');
+                var data = {};
+                inputs.forEach(function(inp) {
+                    if (!inp.name) return;
+                    if (inp.type === 'checkbox') data[inp.name] = inp.checked;
+                    else if (inp.type === 'radio') { if (inp.checked) data[inp.name] = inp.value; }
+                    else data[inp.name] = inp.value;
+                });
+                if (window.FavoriteBuilder && window.FavoriteBuilder.clipboard) {
+                    window.FavoriteBuilder.clipboard.copy('section_' + secId, data);
+                }
+                showToast('Copied ' + secId + ' section settings!');
+            }
+        }
+    });
+
+    // Navigator HTML5 Drag-and-Drop Reordering
+    var navList = document.getElementById('fw-navigator-list');
+    if (navList) {
+        var navDragged = null;
+        navList.addEventListener('dragstart', function(e) {
+            navDragged = e.target.closest('.fw-nav-item');
+            if (navDragged) {
+                navDragged.classList.add('is-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+        navList.addEventListener('dragend', function() {
+            if (navDragged) {
+                navDragged.classList.remove('is-dragging');
+                navDragged = null;
+                syncSectionSortListFromNavigator();
+                markDirty();
+                pushHistoryState();
+            }
+        });
+        navList.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            var target = e.target.closest('.fw-nav-item');
+            if (target && target !== navDragged) {
+                var rect = target.getBoundingClientRect();
+                var next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                navList.insertBefore(navDragged, next && target.nextSibling || target);
+            }
+        });
+    }
+
+    function syncSectionSortListFromNavigator() {
+        if (!sortList || !navList) return;
+        var navItems = navList.querySelectorAll('.fw-nav-item');
+        navItems.forEach(function(item) {
+            var secId = item.getAttribute('data-section-id');
+            var sortItem = sortList.querySelector('[data-section-id="' + secId + '"]');
+            if (sortItem) sortList.appendChild(sortItem);
+        });
+        if (typeof updateSortArrows === 'function') updateSortArrows();
+    }
+
+    function syncNavigatorFromSectionSortList() {
+        if (!sortList || !navList) return;
+        var sortItems = sortList.querySelectorAll('.fw-section-sort-item');
+        sortItems.forEach(function(sortItem) {
+            var secId = sortItem.getAttribute('data-section-id');
+            var navItem = navList.querySelector('[data-section-id="' + secId + '"]');
+            if (navItem) navList.appendChild(navItem);
+        });
+    }
+
+    // In-Memory Form State Capture & Restore (for History & Snapshots)
+    function captureFormState() {
+        var inputs = form.querySelectorAll('input, select, textarea');
+        var data = {};
+        inputs.forEach(function(el) {
+            if (!el.name) return;
+            if (el.type === 'checkbox') {
+                data[el.name + '::' + el.value] = el.checked;
+            } else if (el.type === 'radio') {
+                if (el.checked) data[el.name] = el.value;
+            } else {
+                data[el.name] = el.value;
+            }
+        });
+        var sectionOrders = [];
+        document.querySelectorAll('#fw-section-sort-list input[name="section_order[]"]').forEach(function(el) {
+            sectionOrders.push(el.value);
+        });
+        data['__section_orders__'] = sectionOrders;
+        data['__services_data__'] = JSON.parse(JSON.stringify(servicesData));
+        return data;
+    }
+
+    function restoreFormState(state) {
+        if (!state) return;
+        var inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(function(el) {
+            if (!el.name) return;
+            if (el.type === 'checkbox') {
+                var key = el.name + '::' + el.value;
+                if (state[key] !== undefined) {
+                    el.checked = !!state[key];
+                }
+            } else if (el.type === 'radio') {
+                if (state[el.name] !== undefined) {
+                    el.checked = (el.value === state[el.name]);
+                }
+            } else {
+                if (state[el.name] !== undefined) {
+                    el.value = state[el.name];
+                }
+            }
+        });
+
+        if (Array.isArray(state['__section_orders__']) && sortList) {
+            state['__section_orders__'].forEach(function(secId) {
+                var sortItem = sortList.querySelector('[data-section-id="' + secId + '"]');
+                if (sortItem) sortList.appendChild(sortItem);
+            });
+            if (typeof updateSortArrows === 'function') updateSortArrows();
+            syncNavigatorFromSectionSortList();
+        }
+
+        if (Array.isArray(state['__services_data__'])) {
+            servicesData = JSON.parse(JSON.stringify(state['__services_data__']));
+            syncServicesJson();
+            renderServices();
+        }
+
+        markDirty();
+    }
+
+    // In-Memory History Push (Debounced)
+    var historyDebounceTimer = null;
+    function pushHistoryState() {
+        clearTimeout(historyDebounceTimer);
+        historyDebounceTimer = setTimeout(function() {
+            if (window.FavoriteBuilder && window.FavoriteBuilder.history) {
+                window.FavoriteBuilder.history.push(captureFormState());
+            }
+        }, 300);
+    }
+
+    var undoBtn = document.getElementById('fw-undo-btn');
+    var redoBtn = document.getElementById('fw-redo-btn');
+
+    if (window.FavoriteBuilder && window.FavoriteBuilder.history) {
+        window.FavoriteBuilder.history.subscribe(function(canUndo, canRedo) {
+            if (undoBtn) undoBtn.disabled = !canUndo;
+            if (redoBtn) redoBtn.disabled = !canRedo;
+        });
+    }
+
+    if (undoBtn) {
+        undoBtn.addEventListener('click', function() {
+            if (!window.FavoriteBuilder || !window.FavoriteBuilder.history.canUndo()) return;
+            var current = captureFormState();
+            var prev = window.FavoriteBuilder.history.undo(current);
+            if (prev) {
+                restoreFormState(prev);
+                showToast('Undo action');
+            }
+        });
+    }
+
+    if (redoBtn) {
+        redoBtn.addEventListener('click', function() {
+            if (!window.FavoriteBuilder || !window.FavoriteBuilder.history.canRedo()) return;
+            var current = captureFormState();
+            var next = window.FavoriteBuilder.history.redo(current);
+            if (next) {
+                restoreFormState(next);
+                showToast('Redo action');
+            }
+        });
+    }
+
+    // Capture initial baseline state for History
+    setTimeout(function() {
+        if (window.FavoriteBuilder && window.FavoriteBuilder.history) {
+            window.FavoriteBuilder.history.push(captureFormState());
+        }
+    }, 120);
+
+    // Reusable Templates Modal Integration
+    var tplBtn = document.getElementById('fw-templates-btn');
+    var coreTplModal = document.getElementById('core-templates-modal');
+    var coreTplClose = document.getElementById('core-tpl-modal-close');
+    var coreTplList = document.getElementById('core-templates-list');
+
+    function openReusableTemplatesModal() {
+        if (!coreTplModal) return;
+        coreTplModal.hidden = false;
+        coreTplModal.classList.add('is-open');
+        coreTplModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        if (coreTplList && window.FavoriteBuilder && window.FavoriteBuilder.templates) {
+            coreTplList.innerHTML = '<p style="font-size:13px; color:var(--admin-text-muted);">Loading templates...</p>';
+            window.FavoriteBuilder.templates.list().then(function(res) {
+                var items = (res && res.templates) || [];
+                if (items.length === 0) {
+                    coreTplList.innerHTML = '<p style="font-size:13px; color:var(--admin-text-muted); text-align:center; padding:24px 0;">No saved templates yet. You can save any section configuration as a reusable template.</p>';
+                    return;
+                }
+                var html = '<ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:8px;">';
+                items.forEach(function(tpl) {
+                    html += '<li style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border:1px solid var(--admin-border, #e2e8f0); border-radius:6px; background:var(--admin-surface, #ffffff);">';
+                    html += '<div><strong>' + escapeHtml(tpl.name || 'Unnamed') + '</strong> <span style="font-size:11px; color:var(--admin-text-muted);">&bull; ' + escapeHtml(tpl.type || 'section') + '</span></div>';
+                    html += '<button type="button" class="fw-tool-btn fw-tpl-del-btn" data-id="' + escapeHtml(tpl.id) + '" style="color:var(--admin-danger, #ef4444);">&times; Delete</button>';
+                    html += '</li>';
+                });
+                html += '</ul>';
+                coreTplList.innerHTML = html;
+
+                coreTplList.querySelectorAll('.fw-tpl-del-btn').forEach(function(delBtn) {
+                    delBtn.addEventListener('click', function() {
+                        var id = delBtn.getAttribute('data-id');
+                        if (confirm('Delete this template?')) {
+                            window.FavoriteBuilder.templates.delete(id).then(function() { openReusableTemplatesModal(); });
+                        }
+                    });
+                });
+            }).catch(function() {
+                coreTplList.innerHTML = '<p style="color:var(--admin-danger, #ef4444); font-size:13px;">Error loading templates.</p>';
+            });
+        }
+    }
+
+    function closeReusableTemplatesModal() {
+        if (!coreTplModal) return;
+        coreTplModal.hidden = true;
+        coreTplModal.classList.remove('is-open');
+        coreTplModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    if (tplBtn) tplBtn.addEventListener('click', openReusableTemplatesModal);
+    if (coreTplClose) coreTplClose.addEventListener('click', closeReusableTemplatesModal);
+    if (coreTplModal) {
+        coreTplModal.addEventListener('click', function(e) {
+            if (e.target === coreTplModal) closeReusableTemplatesModal();
         });
     }
 
