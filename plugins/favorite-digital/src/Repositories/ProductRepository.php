@@ -22,6 +22,9 @@ class ProductRepository
 
     public function createProduct(array $data): int
     {
+        if (!isset($data['currency'])) {
+            $data['currency'] = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
+        }
         return (int)$this->db->insert('favorite_digital_products', $data);
     }
 

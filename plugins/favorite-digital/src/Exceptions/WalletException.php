@@ -8,9 +8,10 @@ use RuntimeException;
 
 class WalletException extends RuntimeException
 {
-    public static function insufficientBalance(string $available, string $required): self
+    public static function insufficientBalance(string $available, string $required, ?string $currency = null): self
     {
-        return new self("Insufficient wallet balance. Available: ৳{$available}, Required: ৳{$required}.");
+        $sym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currency) : ($currency ? $currency . ' ' : '');
+        return new self("Insufficient wallet balance. Available: {$sym}{$available}, Required: {$sym}{$required}.");
     }
 
     public static function invalidAmount(string $amount): self

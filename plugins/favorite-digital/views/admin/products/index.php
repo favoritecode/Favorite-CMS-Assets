@@ -134,15 +134,19 @@
                                     </div>
                                 </td>
                                 <td style="padding: 12px 14px;">
+                                    <?php
+                                    $pCurrency = $p->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                                    $pSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($pCurrency) : '৳';
+                                    ?>
                                     <?php if (!empty($p->is_free)): ?>
-                                        <span style="display: inline-block; background: #e7f7ed; color: #155724; font-weight: 600; padding: 2px 6px; border-radius: 3px; font-size: 12px;">FREE (৳0)</span>
+                                        <span style="display: inline-block; background: #e7f7ed; color: #155724; font-weight: 600; padding: 2px 6px; border-radius: 3px; font-size: 12px;">FREE (<?= htmlspecialchars($pSymbol, ENT_QUOTES, 'UTF-8') ?>0)</span>
                                     <?php else: ?>
                                         <div style="font-weight: 600; color: #1e1e1e;">
-                                            ৳<?php echo htmlspecialchars(number_format((float)$p->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= htmlspecialchars($pSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$p->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                                         </div>
                                         <?php if ((float)$p->discount_percent > 0): ?>
                                             <div style="font-size: 11px; color: #8c8f94; text-decoration: line-through;">
-                                                ৳<?php echo htmlspecialchars(number_format((float)$p->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                                <?= htmlspecialchars($pSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$p->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                                             </div>
                                             <div style="font-size: 11px; color: #d63638; font-weight: 600;">
                                                 -<?php echo htmlspecialchars(number_format((float)$p->discount_percent, 2), ENT_QUOTES, 'UTF-8'); ?>%

@@ -508,13 +508,22 @@ class StorefrontService
     public function formatPrice(string|float $amount, ?string $currency = null): string
     {
         $curr = $currency ? strtoupper(trim($currency)) : $this->getSiteCurrency();
+
+        if (class_exists(Currency::class)) {
+            try {
+                return Currency::format((float)$amount, $curr);
+            } catch (Throwable) {
+                // Fallback
+            }
+        }
+
         $symbol = '$';
         $decimals = 2;
 
         if (class_exists(Currency::class)) {
             try {
+                $symbol = Currency::getSymbol($curr);
                 $info = Currency::get($curr);
-                $symbol = $info['symbol'] ?? $curr . ' ';
                 $decimals = $info['decimals'] ?? 2;
             } catch (Throwable) {
                 $symbol = $curr . ' ';

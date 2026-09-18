@@ -7,7 +7,9 @@
  */
 $tab = $activeTab ?? 'library';
 $walletBalance = is_array($wallet) ? ($wallet['balance'] ?? '0.00') : ($wallet->balance_amount ?? ($wallet->balance ?? '0.00'));
-$currency = is_array($wallet) ? ($wallet['currency'] ?? 'BDT') : ($wallet->currency ?? 'BDT');
+$primaryCurrency = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
+$currency = is_array($wallet) ? ($wallet['currency'] ?? $primaryCurrency) : ($wallet->currency ?? $primaryCurrency);
+$currencySymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currency) : $currency;
 ?>
 <style>
 .fav-account-nav-wrap {
@@ -102,7 +104,7 @@ $currency = is_array($wallet) ? ($wallet['currency'] ?? 'BDT') : ($wallet->curre
         </div>
         <div class="fav-wallet-badge-wrap">
             <a href="/account/wallet" class="fav-wallet-pill" title="View Digital Wallet & Recharge">
-                👛 <span class="fav-wallet-label">Wallet:</span> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>
+                👛 <span class="fav-wallet-label">Wallet:</span> <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>
             </a>
         </div>
     </nav>

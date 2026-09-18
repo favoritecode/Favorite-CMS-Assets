@@ -10,6 +10,8 @@
  * @var string|null $flashError
  * @var string|null $flashSuccess
  */
+$currencyCode = $order->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+$currencySymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currencyCode) : '৳';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +71,7 @@
 
     <div class="wallet-badge">
         <span>Customer Wallet Balance:</span>
-        <span>৳<?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?> BDT</span>
+        <span><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($currencyCode, ENT_QUOTES, 'UTF-8') ?></span>
     </div>
 
     <div class="order-summary">
@@ -79,17 +81,17 @@
         </div>
         <div class="summary-row">
             <span>Subtotal:</span>
-            <span>৳<?= htmlspecialchars($order->subtotal_amount, ENT_QUOTES, 'UTF-8') ?></span>
+            <span><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($order->subtotal_amount, ENT_QUOTES, 'UTF-8') ?></span>
         </div>
         <?php if ((float)$order->discount_amount > 0): ?>
             <div class="summary-row" style="color: var(--success, #16a34a);">
                 <span>Discount:</span>
-                <span>-৳<?= htmlspecialchars($order->discount_amount, ENT_QUOTES, 'UTF-8') ?></span>
+                <span>-<?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($order->discount_amount, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
         <?php endif; ?>
         <div class="summary-row total">
             <span>Payable Amount:</span>
-            <span>৳<?= htmlspecialchars($remainingPayable, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($order->currency ?? 'BDT', ENT_QUOTES, 'UTF-8') ?></span>
+            <span><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($remainingPayable, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($currencyCode, ENT_QUOTES, 'UTF-8') ?></span>
         </div>
 
         <?php if (!empty($order->items)): ?>
@@ -97,7 +99,7 @@
                 <?php foreach ($order->items as $item): ?>
                     <div class="item-row">
                         <span><?= htmlspecialchars($item->snapshot['title'] ?? $item->title_snapshot ?? 'Item', ENT_QUOTES, 'UTF-8') ?> (x<?= (int)($item->quantity ?? $item->snapshot['quantity'] ?? 1) ?>)</span>
-                        <span>৳<?= htmlspecialchars((string)$item->final_price, ENT_QUOTES, 'UTF-8') ?></span>
+                        <span><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars((string)$item->final_price, ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -121,7 +123,7 @@
                         <span>Pay with Wallet Balance</span>
                     </label>
                     <div class="method-desc">
-                        Deduct full ৳<?= htmlspecialchars($remainingPayable, ENT_QUOTES, 'UTF-8') ?> from your available ৳<?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?> balance.
+                        Deduct full <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($remainingPayable, ENT_QUOTES, 'UTF-8') ?> from your available <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?> balance.
                         <?php if (!$canUseWallet): ?>
                             <span style="color: var(--danger, #dc2626);">(Insufficient balance)</span>
                         <?php endif; ?>
@@ -196,7 +198,7 @@
                         </label>
                         <div class="method-desc">Use all or part of your wallet balance and pay the remaining with a payment gateway.</div>
                         <div class="field-group" id="mixed_fields" style="display: none;">
-                            <label for="wallet_amount">Wallet Amount to Use (max ৳<?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>):</label>
+                            <label for="wallet_amount">Wallet Amount to Use (max <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>):</label>
                             <input type="number" step="0.01" min="1.00" max="<?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>" name="wallet_amount" id="wallet_amount" value="<?= htmlspecialchars($walletBalance, ENT_QUOTES, 'UTF-8') ?>">
                         </div>
                     </div>

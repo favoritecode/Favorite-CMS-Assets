@@ -151,7 +151,12 @@ $savings = $combinedIndividualPrice - (float)$product->final_price;
                                         <?php echo htmlspecialchars($item->status, ENT_QUOTES, 'UTF-8'); ?>
                                     </td>
                                     <td style="padding: 12px; text-align: right; font-weight: 600;">
-                                        ৳<?php echo htmlspecialchars(number_format((float)$item->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php
+                                        $pkgCurrency = $product->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                                        $pkgSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($pkgCurrency) : '৳';
+                                        $itemSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($item->currency ?? $pkgCurrency) : '৳';
+                                        ?>
+                                        <?= htmlspecialchars($itemSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$item->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -162,7 +167,7 @@ $savings = $combinedIndividualPrice - (float)$product->final_price;
                                     Combined Individual Items Value:
                                 </td>
                                 <td style="padding: 10px 12px; font-weight: 700; text-align: right; color: #1e1e1e;">
-                                    ৳<?php echo htmlspecialchars(number_format($combinedIndividualPrice, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format($combinedIndividualPrice, 2), ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                             </tr>
                         </tfoot>
@@ -195,16 +200,16 @@ $savings = $combinedIndividualPrice - (float)$product->final_price;
                     <div style="font-size: 12px; color: #646970;">Package Selling Price</div>
                     <div style="font-size: 26px; font-weight: 700; color: #1e1e1e; margin: 2px 0;">
                         <?php if ((bool)$product->is_free): ?>
-                            <span style="color: #28a745;">৳0.00 (Free)</span>
+                            <span style="color: #28a745;"><?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?>0.00 (Free)</span>
                         <?php else: ?>
-                            ৳<?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                            <?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                         <?php endif; ?>
                     </div>
 
                     <?php if (!(bool)$product->is_free && (float)$product->discount_percent > 0): ?>
                         <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 4px;">
                             <span style="text-decoration: line-through; color: #8c8f94;">
-                                ৳<?php echo htmlspecialchars(number_format((float)$product->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                <?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                             </span>
                             <span style="background: #fce8e6; color: #c5221f; padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: 11px;">
                                 <?php echo htmlspecialchars(number_format((float)$product->discount_percent, 2), ENT_QUOTES, 'UTF-8'); ?>% OFF
@@ -216,13 +221,13 @@ $savings = $combinedIndividualPrice - (float)$product->final_price;
                 <div style="background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; padding: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #646970;">Items Bought Separately:</span>
-                        <strong style="color: #1e1e1e;">৳<?php echo htmlspecialchars(number_format($combinedIndividualPrice, 2), ENT_QUOTES, 'UTF-8'); ?></strong>
+                        <strong style="color: #1e1e1e;"><?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format($combinedIndividualPrice, 2), ENT_QUOTES, 'UTF-8'); ?></strong>
                     </div>
 
                     <?php if ($savings > 0): ?>
                         <div style="display: flex; justify-content: space-between; border-top: 1px dashed #c3c4c7; padding-top: 6px;">
                             <span style="color: #155724; font-weight: 600;">Customer Package Savings:</span>
-                            <strong style="color: #155724;">৳<?php echo htmlspecialchars(number_format($savings, 2), ENT_QUOTES, 'UTF-8'); ?></strong>
+                            <strong style="color: #155724;"><?= htmlspecialchars($pkgSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format($savings, 2), ENT_QUOTES, 'UTF-8'); ?></strong>
                         </div>
                     <?php endif; ?>
                 </div>

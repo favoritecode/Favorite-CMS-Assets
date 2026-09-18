@@ -111,7 +111,8 @@ class CustomerCheckoutController
         $favPayService = $this->checkoutService->getFavoritePayService();
         if ($favPayService !== null) {
             try {
-                $availableGateways = $favPayService->getAvailablePaymentMethods($order->currency ?? 'BDT');
+                $curr = $order->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                $availableGateways = $favPayService->getAvailablePaymentMethods($curr);
             } catch (Throwable) {
             }
         }

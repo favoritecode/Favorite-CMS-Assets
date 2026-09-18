@@ -153,7 +153,7 @@ include __DIR__ . '/../account/nav.php';
             <div class="fav-instr-item">
                 <span class="fav-instr-label">Amount Payable:</span>
                 <span class="fav-instr-val" style="color: var(--success, #059669); font-size: 16px;">
-                    ৳<?= htmlspecialchars($amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?>
+                    <?= htmlspecialchars(class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currency) : '৳', ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?>
                 </span>
             </div>
             <?php if (!empty($instructions['account_number'])): ?>

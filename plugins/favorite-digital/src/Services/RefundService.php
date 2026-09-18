@@ -108,6 +108,8 @@ class RefundService
             throw RefundException::orderNotFound($orderId);
         }
 
+        $orderCurrency = !empty($order->currency) ? strtoupper(trim((string)$order->currency)) : (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+
         // Check if already refunded
         if ($order->payment_status === OrderLifecycleState::PAYMENT_REFUNDED ||
             $order->status === OrderLifecycleState::STATUS_REFUNDED) {
@@ -118,7 +120,7 @@ class RefundService
                 'existing_refund'      => $existing,
                 'order'                => $order,
                 'verified_paid_amount' => '0.00',
-                'currency'             => 'BDT',
+                'currency'             => $orderCurrency,
                 'reason'               => 'Order has already been refunded.',
             ];
         }
@@ -132,7 +134,7 @@ class RefundService
                 'already_refunded'     => false,
                 'order'                => $order,
                 'verified_paid_amount' => '0.00',
-                'currency'             => 'BDT',
+                'currency'             => $orderCurrency,
                 'reason'               => 'Order has no verified paid component to refund.',
             ];
         }
@@ -142,7 +144,7 @@ class RefundService
             'already_refunded'     => false,
             'order'                => $order,
             'verified_paid_amount' => $paidAmount,
-            'currency'             => 'BDT',
+            'currency'             => $orderCurrency,
             'reason'               => 'Eligible for wallet refund.',
         ];
     }
@@ -232,7 +234,7 @@ class RefundService
                 'order_item_id'         => null, // Full order refund
                 'user_id'               => $userId,
                 'refund_amount'         => $refundAmount,
-                'currency'              => 'BDT',
+                'currency'              => !empty($order->currency) ? strtoupper(trim((string)$order->currency)) : (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT'),
                 'destination'           => 'wallet', // Strictly wallet
                 'wallet_transaction_id' => (int)$walletTx->id,
                 'reason'                => $cleanReason,

@@ -282,7 +282,7 @@ class AdminOrderController
                 'favorite_pay_tx_id' => null,
                 'wallet_tx_id'       => null,
                 'amount_paid'        => $order->total_amount,
-                'currency'           => $order->currency ?? 'BDT',
+                'currency'           => $order->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT'),
                 'status'             => 'completed',
                 'created_at'         => date('Y-m-d H:i:s'),
                 'updated_at'         => date('Y-m-d H:i:s'),
@@ -343,7 +343,8 @@ class AdminOrderController
             $this->refundService->processRefund($id, $reason, $userId, true);
             $this->orderService->getOrderRepository()->updateOrderStatus($id, OrderLifecycleState::STATUS_CANCELLED);
             $this->orderService->getOrderRepository()->updateFulfillmentStatus($id, OrderLifecycleState::FULFILLMENT_CANCELLED);
-            return "Order #{$order->order_number} cancelled. Payment of ৳" . number_format($paidAmount, 2, '.', '') . " refunded to customer wallet.";
+            $sym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($order->currency ?? null) : '৳';
+            return "Order #{$order->order_number} cancelled. Payment of {$sym}" . number_format($paidAmount, 2, '.', '') . " refunded to customer wallet.";
         }
 
         $this->orderService->updateStatus($id, OrderLifecycleState::STATUS_CANCELLED);
@@ -540,7 +541,8 @@ class AdminOrderController
 
         try {
             $refund = $this->refundService->processRefund($id, $reason, $actorUserId, true);
-            $_SESSION['flash_success'] = "Refund of ৳{$refund->refund_amount} processed successfully to customer wallet.";
+            $sym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($refund->currency ?? null) : '৳';
+            $_SESSION['flash_success'] = "Refund of {$sym}{$refund->refund_amount} processed successfully to customer wallet.";
         } catch (Throwable $e) {
             $_SESSION['flash_error'] = "Refund failed: " . $e->getMessage();
         }

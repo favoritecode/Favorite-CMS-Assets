@@ -8,15 +8,29 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.9 |
-| **Package File** | Favorite-Digital-v1.0.9.zip / Favorite-Digital.zip |
-| **Package Size** | 254,568 bytes |
+| **Release Version** | 1.0.10 |
+| **Package File** | Favorite-Digital-v1.0.10.zip / Favorite-Digital.zip |
+| **Package Size** | 257,169 bytes |
 | **ZIP Entries** | 123 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `bda7fe382b00c4dad66edf29e0f61d9d3759b6648a53e9b01238494ba9a108ee` |
+| **SHA-256 Checksum** | `63d0cbbfeab972d1042a8b2cf4832aba22e13de940723140d15677b457be508a` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12 and PHP 8.3) |
+
+---
+
+## What's New in v1.0.10
+
+1. **[Primary Currency Denomination Synchronization]**:
+   - Registered listener on `currency.primary_changed` hook to update published product prices and active customer wallets to the new Primary Currency denomination without altering numeric amounts.
+   - Newly created products, services, bundles, and membership tiers dynamically inherit the active Primary Currency as their base currency fallback.
+
+2. **[Dynamic Currency Symbols & Elimination of Hardcoded Taka]**:
+   - Replaced all hardcoded `৳` and `BDT` symbols across customer views (Storefront, Checkout, Wallet, Manual Recharge, Refund History) and admin management screens (Products, Services, Packages, Orders) with dynamic `Currency::getSymbol()` lookups.
+
+3. **[Preserved Accounting & Membership Separation]**:
+   - Membership purchases via Wallet Balance continue to deduct funds cleanly with zero duplicate wallet credits, fully compatible with arbitrary primary currencies (BDT, INR, USD, EUR, GBP).
 
 ---
 

@@ -550,7 +550,7 @@ class CustomerAccountService
             'all_memberships'     => $allMemberships,
             'covered_perks'       => $coveredPerks,
             'wallet'              => $wallet,
-            'site_currency'       => $wallet['currency'] ?? 'BDT',
+            'site_currency'       => $wallet['currency'] ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT'),
         ];
     }
 
@@ -600,10 +600,11 @@ class CustomerAccountService
      */
     public function getWalletSummary(int $userId): array
     {
+        $primaryCurr = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
         if ($userId <= 0) {
             return [
                 'balance'  => '0.00',
-                'currency' => 'BDT',
+                'currency' => $primaryCurr,
             ];
         }
 
@@ -612,7 +613,7 @@ class CustomerAccountService
 
         return [
             'balance'  => $balance,
-            'currency' => (string)($wallet->currency ?? 'BDT'),
+            'currency' => (string)($wallet->currency ?? $primaryCurr),
         ];
     }
 

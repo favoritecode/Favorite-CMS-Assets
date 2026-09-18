@@ -624,6 +624,26 @@ final class FavoriteDigitalPlugin
                     $this->onDeactivate();
                 }
             });
+
+            add_action('currency.primary_changed', function (array $data): void {
+                $newCurrency = $data['new'] ?? null;
+                if (!empty($newCurrency) && $this->app->has(Database::class)) {
+                    try {
+                        $db = $this->app->make(Database::class);
+                        if (method_exists($db, 'registerPrefixableTables')) {
+                            $db->registerPrefixableTables(self::TABLES);
+                        }
+                        $clean = strtoupper(trim((string)$newCurrency));
+                        if ($db->tableExists('favorite_digital_products')) {
+                            $db->execute("UPDATE favorite_digital_products SET currency = ?", [$clean]);
+                        }
+                        if ($db->tableExists('favorite_digital_wallets')) {
+                            $db->execute("UPDATE favorite_digital_wallets SET currency = ?", [$clean]);
+                        }
+                    } catch (\Throwable) {
+                    }
+                }
+            });
         }
 
         $this->registerAccountMenuItems();
@@ -637,7 +657,44 @@ final class FavoriteDigitalPlugin
             }
         }
 
+        // Listen for global primary currency denomination changes
+        if (function_exists('add_action')) {
+            add_action('currency.primary_changed', [self::class, 'handlePrimaryCurrencyChanged']);
+        } elseif (class_exists(\FavoriteCMS\Core\Hook::class)) {
+            \FavoriteCMS\Core\Hook::addAction('currency.primary_changed', [self::class, 'handlePrimaryCurrencyChanged']);
+        }
+
         $this->booted = true;
+    }
+
+    public static function handlePrimaryCurrencyChanged(array $data): void
+    {
+        $newCurrency = $data['new'] ?? 'BDT';
+        $db = null;
+        if (function_exists('app')) {
+            try {
+                $app = app();
+                if ($app instanceof Application && $app->has(Database::class)) {
+                    $db = $app->make(Database::class);
+                }
+            } catch (\Throwable) {}
+        }
+        if ($db === null && self::$instance !== null && self::$instance->app->has(Database::class)) {
+            $db = self::$instance->app->make(Database::class);
+        }
+
+        if ($db instanceof Database) {
+            try {
+                $db->execute("UPDATE `favorite_digital_products` SET `currency` = :currency WHERE `status` = 'published'", [
+                    'currency' => $newCurrency,
+                ]);
+            } catch (\Throwable) {}
+            try {
+                $db->execute("UPDATE `favorite_digital_wallets` SET `currency` = :currency WHERE `status` = 'active'", [
+                    'currency' => $newCurrency,
+                ]);
+            } catch (\Throwable) {}
+        }
     }
 
     public function registerAccountMenuItems(): void

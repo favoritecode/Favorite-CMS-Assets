@@ -18,9 +18,10 @@ class CheckoutException extends RuntimeException
         return new self("User {$userId} is not authorized to checkout order '{$orderNumber}'.");
     }
 
-    public static function amountMismatch(string $expected, string $provided): self
+    public static function amountMismatch(string $expected, string $provided, ?string $currency = null): self
     {
-        return new self("Payment amount mismatch. Expected: ৳{$expected}, Provided: ৳{$provided}.");
+        $sym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currency) : ($currency ? $currency . ' ' : '');
+        return new self("Payment amount mismatch. Expected: {$sym}{$expected}, Provided: {$sym}{$provided}.");
     }
 
     public static function currencyMismatch(string $expected, string $provided): self

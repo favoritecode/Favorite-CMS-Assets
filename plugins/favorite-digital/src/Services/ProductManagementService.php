@@ -520,7 +520,7 @@ class ProductManagementService
             'original_price'   => number_format($originalPrice, 2, '.', ''),
             'discount_percent' => number_format($discountPercent, 2, '.', ''),
             'final_price'      => $finalPrice,
-            'currency'         => 'BDT',
+            'currency'         => class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT',
             'is_free'          => $isFree ? 1 : 0,
         ];
     }

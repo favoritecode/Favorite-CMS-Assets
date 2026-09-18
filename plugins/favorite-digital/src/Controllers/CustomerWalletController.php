@@ -76,8 +76,7 @@ class CustomerWalletController
         }
 
         $wallet = $this->walletRepo->getOrCreateWallet($userId);
-        $balance = $this->walletService->getBalance($userId);
-        $currency = (string)($wallet->currency ?? 'BDT');
+        $currency = (string)($wallet->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT'));
 
         // Limits preview
         $regularLimits = $this->rechargeService->getRechargeLimits('');
@@ -223,7 +222,8 @@ class CustomerWalletController
 
                     $cleanAmount = htmlspecialchars((string)($result['amount'] ?? $amount), ENT_QUOTES, 'UTF-8');
                     $cleanTrx = htmlspecialchars($trxId, ENT_QUOTES, 'UTF-8');
-                    $_SESSION['flash_success'] = "Recharge request of ৳{$cleanAmount} submitted successfully (TrxID: {$cleanTrx}). Your wallet will be credited once verified by an administrator.";
+                    $currSym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($result['currency'] ?? null) : '৳';
+                    $_SESSION['flash_success'] = "Recharge request of {$currSym}{$cleanAmount} submitted successfully (TrxID: {$cleanTrx}). Your wallet will be credited once verified by an administrator.";
                     return Response::redirect('/account/wallet');
                 }
 

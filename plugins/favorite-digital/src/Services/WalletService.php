@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FavoriteCMS\Digital\Services;
 
+use FavoriteCMS\Core\Currency;
 use FavoriteCMS\Core\Database;
 use FavoriteCMS\Digital\Exceptions\WalletException;
 use FavoriteCMS\Digital\Repositories\WalletRepository;
@@ -82,9 +83,10 @@ class WalletService
         // Synchronize deposit with Favorite Pay wallet if available (except recharges which are settled directly by Favorite Pay)
         if ($this->favPayWalletService !== null && $type !== 'recharge') {
             try {
+                $curr = class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT';
                 $this->favPayWalletService->deposit(
                     $userId,
-                    new FavoritePayMoney($amountMinor, 'BDT'),
+                    new FavoritePayMoney($amountMinor, $curr),
                     $referenceId,
                     $description
                 );
@@ -158,12 +160,14 @@ class WalletService
             if ($favPayBal->getAmount() < $amountMinor) {
                 throw WalletException::insufficientBalance(
                     $this->minorToDecimal($favPayBal->getAmount()),
-                    $this->minorToDecimal($amountMinor)
+                    $this->minorToDecimal($amountMinor),
+                    $favPayBal->getCurrency()
                 );
             }
+            $curr = $favPayBal->getCurrency() ?: (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT');
             $this->favPayWalletService->debit(
                 $userId,
-                new FavoritePayMoney($amountMinor, 'BDT'),
+                new FavoritePayMoney($amountMinor, $curr),
                 $referenceId,
                 $description
             );
@@ -239,9 +243,10 @@ class WalletService
         // Synchronize refund deposit with Favorite Pay wallet if available
         if ($this->favPayWalletService !== null) {
             try {
+                $curr = class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT';
                 $this->favPayWalletService->deposit(
                     $userId,
-                    new FavoritePayMoney($amountMinor, 'BDT'),
+                    new FavoritePayMoney($amountMinor, $curr),
                     $reversalRef,
                     $description !== '' ? $description : "Reversal for {$originalReferenceId}"
                 );

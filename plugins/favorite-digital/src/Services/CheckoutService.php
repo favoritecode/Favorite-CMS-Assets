@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FavoriteCMS\Digital\Services;
 
+use FavoriteCMS\Core\Currency;
 use FavoriteCMS\Core\Database;
 use FavoriteCMS\Digital\Domain\ProductType;
 use FavoriteCMS\Digital\Exceptions\CheckoutException;
@@ -174,7 +175,7 @@ class CheckoutService
                 'favorite_pay_tx_id' => null,
                 'wallet_tx_id'       => null,
                 'amount_paid'        => '0.00',
-                'currency'           => 'BDT',
+                'currency'           => $order->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT'),
                 'status'             => 'completed',
                 'created_at'         => date('Y-m-d H:i:s'),
                 'updated_at'         => date('Y-m-d H:i:s'),
@@ -225,7 +226,7 @@ class CheckoutService
                 'favorite_pay_tx_id' => null,
                 'wallet_tx_id'       => (string)$walletTx->id,
                 'amount_paid'        => $remaining,
-                'currency'           => 'BDT',
+                'currency'           => $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT'),
                 'status'             => 'completed',
                 'created_at'         => date('Y-m-d H:i:s'),
                 'updated_at'         => date('Y-m-d H:i:s'),
@@ -277,7 +278,8 @@ class CheckoutService
             throw CheckoutException::gatewayError("Favorite Pay service is currently unavailable.");
         }
 
-        $money = Money::fromMajorString($remaining, 'BDT');
+        $orderCurrency = $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT');
+        $money = Money::fromMajorString($remaining, $orderCurrency);
         $intent = $this->favoritePayService->createIntent(
             'favorite-digital',
             (string)$orderId,
@@ -303,7 +305,7 @@ class CheckoutService
                 'favorite_pay_tx_id' => $intent->getId(),
                 'wallet_tx_id'       => null,
                 'amount_paid'        => $remaining,
-                'currency'           => 'BDT',
+                'currency'           => $orderCurrency,
                 'status'             => 'pending',
                 'created_at'         => date('Y-m-d H:i:s'),
                 'updated_at'         => date('Y-m-d H:i:s'),
@@ -377,13 +379,14 @@ class CheckoutService
             $orderId
         );
 
+        $orderCurrency = $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT');
         $this->orderRepo->createOrderPayment([
             'order_id'           => $orderId,
             'payment_method'     => 'wallet',
             'favorite_pay_tx_id' => null,
             'wallet_tx_id'       => (string)$walletTx->id,
             'amount_paid'        => $walletAmount,
-            'currency'           => 'BDT',
+            'currency'           => $orderCurrency,
             'status'             => 'completed',
             'created_at'         => date('Y-m-d H:i:s'),
             'updated_at'         => date('Y-m-d H:i:s'),
@@ -393,7 +396,7 @@ class CheckoutService
 
         // Step 2: Initiate Favorite Pay intent for remaining
         try {
-            $money = Money::fromMajorString($gwAmount, 'BDT');
+            $money = Money::fromMajorString($gwAmount, $orderCurrency);
             $intent = $this->favoritePayService->createIntent(
                 'favorite-digital',
                 (string)$orderId,
@@ -418,7 +421,7 @@ class CheckoutService
                 'favorite_pay_tx_id' => $intent->getId(),
                 'wallet_tx_id'       => null,
                 'amount_paid'        => $gwAmount,
-                'currency'           => 'BDT',
+                'currency'           => $orderCurrency,
                 'status'             => 'pending',
                 'created_at'         => date('Y-m-d H:i:s'),
                 'updated_at'         => date('Y-m-d H:i:s'),

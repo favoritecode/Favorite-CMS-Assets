@@ -138,16 +138,20 @@
             <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
                 <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 16px 0; color: #1e1e1e; border-bottom: 1px solid #f0f0f1; padding-bottom: 8px;">Pricing Breakdown</h3>
 
+                <?php
+                $serviceCurrency = $product->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                $serviceSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($serviceCurrency) : '৳';
+                ?>
                 <?php if (!empty($product->is_free)): ?>
                     <div style="background: #e7f7ed; border: 1px solid #c3e6cb; border-radius: 4px; padding: 12px; text-align: center; margin-bottom: 12px;">
-                        <div style="font-size: 18px; font-weight: 700; color: #155724;">FREE SERVICE (৳0.00)</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #155724;">FREE SERVICE (<?= htmlspecialchars($serviceSymbol, ENT_QUOTES, 'UTF-8') ?>0.00)</div>
                         <div style="font-size: 12px; color: #155724;">Complimentary service for eligible clients</div>
                     </div>
                 <?php else: ?>
                     <div style="background: #f8f9fa; border: 1px solid #dcdcde; border-radius: 4px; padding: 14px; text-align: center; margin-bottom: 16px;">
                         <div style="font-size: 12px; color: #646970; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Current Selling Price</div>
                         <div style="font-size: 26px; font-weight: 700; color: #1e1e1e; margin: 4px 0;">
-                            ৳<?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                            <?= htmlspecialchars($serviceSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                         </div>
                         <?php if ((float)$product->discount_percent > 0): ?>
                             <span style="display: inline-block; background: #fdf2f2; color: #d63638; border: 1px solid #f8d7da; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 600;">
@@ -160,7 +164,7 @@
                         <tr style="border-bottom: 1px solid #f0f0f1;">
                             <td style="padding: 8px 0; color: #646970;">Original Price:</td>
                             <td style="padding: 8px 0; text-align: right; color: #1e1e1e; font-weight: 600;">
-                                ৳<?php echo htmlspecialchars(number_format((float)$product->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                <?= htmlspecialchars($serviceSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->original_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                             </td>
                         </tr>
                         <tr style="border-bottom: 1px solid #f0f0f1;">
@@ -172,7 +176,7 @@
                         <tr>
                             <td style="padding: 8px 0; color: #646970; font-weight: 600;">Derived Final Price:</td>
                             <td style="padding: 8px 0; text-align: right; color: #1e1e1e; font-weight: 700;">
-                                ৳<?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                                <?= htmlspecialchars($serviceSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                             </td>
                         </tr>
                     </table>

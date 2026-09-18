@@ -33,19 +33,23 @@ class WalletRepository
         return $this->formatWallet($wallet);
     }
 
-    public function getOrCreateWallet(int $userId, string $currency = 'BDT'): object
+    public function getOrCreateWallet(int $userId, ?string $currency = null): object
     {
         $wallet = $this->findWalletByUserId($userId);
         if ($wallet !== null) {
             return $wallet;
         }
 
+        $currencyCode = $currency !== null
+            ? strtoupper(trim($currency))
+            : (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+
         $now = date('Y-m-d H:i:s');
         try {
             $this->db->insert('favorite_digital_wallets', [
                 'user_id'        => $userId,
                 'balance_amount' => '0.00',
-                'currency'       => strtoupper(trim($currency)),
+                'currency'       => $currencyCode,
                 'status'         => 'active',
                 'created_at'     => $now,
                 'updated_at'     => $now,

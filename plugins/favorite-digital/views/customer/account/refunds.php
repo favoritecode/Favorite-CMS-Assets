@@ -80,9 +80,14 @@ $buildRefundsUrl = function (array $overrides = []) use ($page): string {
     <div class="summary-card">
         <div>
             <div class="metric-label">Total Refunded Credit</div>
+            <?php
+            $walletCurr = is_array($wallet) ? ($wallet['currency'] ?? null) : ($wallet->currency ?? null);
+            $walletCurr = $walletCurr ?: (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+            $walletSym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($walletCurr) : '৳';
+            ?>
             <div class="summary-metric">
-                <span class="metric-amount">৳<?= htmlspecialchars($totalRefunded, ENT_QUOTES, 'UTF-8') ?></span>
-                <span style="font-size: 14px; color: var(--muted, #64748b);">BDT</span>
+                <span class="metric-amount"><?= htmlspecialchars($walletSym, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($totalRefunded, ENT_QUOTES, 'UTF-8') ?></span>
+                <span style="font-size: 14px; color: var(--muted, #64748b);"><?= htmlspecialchars($walletCurr, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
         </div>
         <div>

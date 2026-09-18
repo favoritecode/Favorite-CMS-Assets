@@ -259,20 +259,24 @@ $expiryDays = $old['download_expiry_days'] ?? ($details->download_expiry_days ??
             <!-- Right Column: Pricing & Publication -->
             <div style="display: flex; flex-direction: column; gap: 20px;">
                 <!-- Pricing Card -->
+                <?php
+                $productCurrency = $product->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                $productSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($productCurrency) : '৳';
+                ?>
                 <div style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px; box-shadow: 0 1px 1px rgba(0,0,0,0.04);">
                     <h3 style="font-size: 15px; font-weight: 600; margin: 0 0 16px 0; color: #1e1e1e; border-bottom: 1px solid #f0f0f1; padding-bottom: 10px;">Pricing & Discounts</h3>
 
                     <div style="margin-bottom: 14px;">
                         <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; color: #1e1e1e; cursor: pointer;">
                             <input type="checkbox" name="is_free" id="fd-is-free" value="1" <?php echo $isFree ? 'checked' : ''; ?>>
-                            Free Product (৳0.00)
+                            Free Product (<?= htmlspecialchars($productSymbol, ENT_QUOTES, 'UTF-8') ?>0.00)
                         </label>
                     </div>
 
                     <div id="fd-pricing-fields">
                         <div style="margin-bottom: 14px;">
                             <label style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #1e1e1e;">
-                                Catalog Original Price (৳)
+                                Catalog Original Price (<?= htmlspecialchars($productSymbol, ENT_QUOTES, 'UTF-8') ?>)
                             </label>
                             <input type="number" step="0.01" min="0" name="original_price" id="fd-original-price" value="<?php echo htmlspecialchars((string)$origPrice, ENT_QUOTES, 'UTF-8'); ?>" style="width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 14px;">
                         </div>
@@ -289,7 +293,7 @@ $expiryDays = $old['download_expiry_days'] ?? ($details->download_expiry_days ??
                     <div style="background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; padding: 12px; margin-top: 8px;">
                         <div style="font-size: 12px; color: #646970; margin-bottom: 2px;">Calculated Selling Price:</div>
                         <div id="fd-selling-price" style="font-size: 20px; font-weight: 700; color: #1e1e1e;">
-                            ৳<?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
+                            <?= htmlspecialchars($productSymbol, ENT_QUOTES, 'UTF-8') ?><?php echo htmlspecialchars(number_format((float)$product->final_price, 2), ENT_QUOTES, 'UTF-8'); ?>
                         </div>
                         <div id="fd-discount-badge" style="font-size: 11px; color: #d63638; font-weight: 600; margin-top: 2px; display: none;"></div>
                     </div>
@@ -340,9 +344,11 @@ $expiryDays = $old['download_expiry_days'] ?? ($details->download_expiry_days ??
     var badgeDisplay = document.getElementById('fd-discount-badge');
     var pricingFields = document.getElementById('fd-pricing-fields');
 
+    var currSymbol = <?php echo json_encode($productSymbol); ?>;
+
     function calculateSellingPrice() {
         if (isFreeInput.checked) {
-            priceDisplay.textContent = '৳0.00 (Free)';
+            priceDisplay.textContent = currSymbol + '0.00 (Free)';
             badgeDisplay.style.display = 'none';
             pricingFields.style.opacity = '0.5';
             return;
@@ -357,10 +363,10 @@ $expiryDays = $old['download_expiry_days'] ?? ($details->download_expiry_days ??
         if (orig < 0) orig = 0;
 
         var finalP = orig * (1 - (disc / 100));
-        priceDisplay.textContent = '৳' + finalP.toFixed(2);
+        priceDisplay.textContent = currSymbol + finalP.toFixed(2);
 
         if (disc > 0) {
-            badgeDisplay.textContent = disc.toFixed(2) + '% Discount Applied (Save ৳' + (orig - finalP).toFixed(2) + ')';
+            badgeDisplay.textContent = disc.toFixed(2) + '% Discount Applied (Save ' + currSymbol + (orig - finalP).toFixed(2) + ')';
             badgeDisplay.style.display = 'block';
         } else {
             badgeDisplay.style.display = 'none';

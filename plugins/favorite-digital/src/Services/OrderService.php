@@ -81,8 +81,8 @@ class OrderService
         $preparedItems = [];
         $totalSubtotal = 0.00;
         $totalDiscount = 0.00;
-        $totalAmount   = 0.00;
-        $orderCurrency = 'BDT';
+        $primaryCurrency = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
+        $orderCurrency   = $primaryCurrency;
 
         // 3. Authoritative item validation and pricing calculation
         foreach ($items as $index => $itemRaw) {
@@ -137,7 +137,7 @@ class OrderService
             $origPriceFloat   = (float)$product->original_price;
             $discountPctFloat = (float)$product->discount_percent;
             $isFreeBool       = (bool)$product->is_free;
-            $currency         = !empty($product->currency) ? strtoupper(trim((string)$product->currency)) : 'BDT';
+            $currency         = !empty($product->currency) ? strtoupper(trim((string)$product->currency)) : $primaryCurrency;
             $orderCurrency    = $currency;
 
             $finalPriceStr = ProductPricingCalculator::deriveFinalPrice(

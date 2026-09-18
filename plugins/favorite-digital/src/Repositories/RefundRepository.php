@@ -31,7 +31,7 @@ class RefundRepository
             $data['destination'] = 'wallet';
         }
         if (empty($data['currency'])) {
-            $data['currency'] = 'BDT';
+            $data['currency'] = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
         }
         if (empty($data['status'])) {
             $data['status'] = 'completed';

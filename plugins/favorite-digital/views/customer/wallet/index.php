@@ -19,6 +19,7 @@
  * @var string|null $flashError
  * @var string|null $flashSuccess
  */
+$currencySymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($currency) : '৳';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -466,7 +467,7 @@ include __DIR__ . '/../account/nav.php';
                     <div class="fav-form-group">
                         <label for="recharge_amount" class="fav-label">Recharge Amount (<?= htmlspecialchars($currency, ENT_QUOTES, 'UTF-8') ?>)</label>
                         <div class="fav-input-wrap">
-                            <span class="fav-input-prefix">৳</span>
+                            <span class="fav-input-prefix"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?></span>
                             <input 
                                 type="text" 
                                 id="recharge_amount" 
@@ -479,16 +480,16 @@ include __DIR__ . '/../account/nav.php';
                             >
                         </div>
                         <div class="fav-quick-amounts">
-                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('100.00')">৳100</button>
-                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('500.00')">৳500</button>
-                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('1000.00')">৳1,000</button>
-                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('2000.00')">৳2,000</button>
-                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('5000.00')">৳5,000</button>
+                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('100.00')"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?>100</button>
+                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('500.00')"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?>500</button>
+                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('1000.00')"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?>1,000</button>
+                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('2000.00')"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?>2,000</button>
+                            <button type="button" class="fav-quick-btn" onclick="setRechargeAmount('5000.00')"><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?>5,000</button>
                         </div>
                         <p style="font-size: 12px; color: var(--muted, #64748b); margin: 6px 0 0;">
-                            Limits: Min ৳<?= htmlspecialchars($regularLimits['min'], ENT_QUOTES, 'UTF-8') ?> — Max ৳<?= htmlspecialchars($regularLimits['max'], ENT_QUOTES, 'UTF-8') ?>
+                            Limits: Min <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($regularLimits['min'], ENT_QUOTES, 'UTF-8') ?> — Max <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($regularLimits['max'], ENT_QUOTES, 'UTF-8') ?>
                             <?php if ($binanceLimits): ?>
-                                (Binance Pay Min: ৳<?= htmlspecialchars($binanceLimits['min'], ENT_QUOTES, 'UTF-8') ?> eq. 1 USD)
+                                (Binance Pay Min: <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($binanceLimits['min'], ENT_QUOTES, 'UTF-8') ?> eq. 1 USD)
                             <?php endif; ?>
                         </p>
                     </div>
@@ -604,10 +605,10 @@ include __DIR__ . '/../account/nav.php';
                                      </span>
                                  </td>
                                  <td class="<?= $isCredit ? 'fav-amount-credit' : 'fav-amount-debit' ?>">
-                                     <?= $isCredit ? '+' : '-' ?>৳<?= htmlspecialchars($tx->amount, ENT_QUOTES, 'UTF-8') ?>
+                                     <?= $isCredit ? '+' : '-' ?><?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($tx->amount, ENT_QUOTES, 'UTF-8') ?>
                                  </td>
                                  <td style="font-weight: 600;">
-                                     ৳<?= htmlspecialchars($tx->balance_after, ENT_QUOTES, 'UTF-8') ?>
+                                     <?= htmlspecialchars($currencySymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($tx->balance_after, ENT_QUOTES, 'UTF-8') ?>
                                  </td>
                                  <td style="max-width: 320px;">
                                      <div style="font-weight: 600; font-size: 13px; color: var(--heading, #0f172a);">
@@ -678,7 +679,7 @@ include __DIR__ . '/../account/nav.php';
                                     <?= htmlspecialchars(ucwords(str_replace(['_', '-'], ' ', $rc->gateway_id)), ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td style="font-weight: 700; color: var(--success, #059669);">
-                                    +৳<?= htmlspecialchars($rc->wallet_amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($rc->wallet_currency, ENT_QUOTES, 'UTF-8') ?>
+                                    +<?= htmlspecialchars(class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($rc->wallet_currency) : '৳', ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($rc->wallet_amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($rc->wallet_currency, ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td style="font-weight: 600;">
                                     <?= htmlspecialchars($rc->charge_amount, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($rc->charge_currency, ENT_QUOTES, 'UTF-8') ?>

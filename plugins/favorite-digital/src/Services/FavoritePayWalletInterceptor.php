@@ -113,7 +113,8 @@ class FavoritePayWalletInterceptor implements WalletServiceInterface
             // Check if this is a store order purchase from favorite-digital (not a wallet recharge)
             if ($sourcePlugin === 'favorite-digital' && !str_starts_with($sourceRef, 'wrc_')) {
                 $userId = (int)($intentInfo['user_id'] ?? 0);
-                $currBalance = $userId > 0 ? $this->inner->getBalance($userId) : new Money(0, 'BDT');
+                $primaryCurr = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
+                $currBalance = $userId > 0 ? $this->inner->getBalance($userId) : new Money(0, $primaryCurr);
 
                 return new WalletLedgerEntry(
                     'led_settle_' . bin2hex(random_bytes(8)),
@@ -185,7 +186,7 @@ class FavoritePayWalletInterceptor implements WalletServiceInterface
         if (method_exists($this->inner, 'getWalletCurrency') || is_callable([$this->inner, 'getWalletCurrency'])) {
             return $this->inner->getWalletCurrency($userId);
         }
-        return 'BDT';
+        return class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
     }
 
     public function getPrimaryCurrency(): string
@@ -193,7 +194,7 @@ class FavoritePayWalletInterceptor implements WalletServiceInterface
         if (method_exists($this->inner, 'getPrimaryCurrency') || is_callable([$this->inner, 'getPrimaryCurrency'])) {
             return $this->inner->getPrimaryCurrency();
         }
-        return 'BDT';
+        return class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
     }
 
     public function hasActivity(): bool

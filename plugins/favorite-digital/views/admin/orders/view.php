@@ -85,9 +85,13 @@
 
             <div class="postbox" style="padding: 15px; margin-top: 20px;">
                 <h2>Payment Settlements</h2>
+                <?php
+                $orderCurrency = $order->currency ?? (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
+                $orderSymbol = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($orderCurrency) : '৳';
+                ?>
                 <p>
-                    <strong>Total Settled:</strong> ৳<?= htmlspecialchars($paidFormatted, ENT_QUOTES, 'UTF-8') ?> BDT &nbsp;|&nbsp;
-                    <strong>Remaining Balance:</strong> ৳<?= htmlspecialchars($remainingFormatted, ENT_QUOTES, 'UTF-8') ?> BDT
+                    <strong>Total Settled:</strong> <?= htmlspecialchars($orderSymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($paidFormatted, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($orderCurrency, ENT_QUOTES, 'UTF-8') ?> &nbsp;|&nbsp;
+                    <strong>Remaining Balance:</strong> <?= htmlspecialchars($orderSymbol, ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars($remainingFormatted, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($orderCurrency, ENT_QUOTES, 'UTF-8') ?>
                 </p>
 
                 <?php if (!empty($order->payments)): ?>
@@ -112,7 +116,7 @@
                                             <?= htmlspecialchars(ucfirst((string)$pay->status), ENT_QUOTES, 'UTF-8') ?>
                                         </span>
                                     </td>
-                                    <td style="text-align: right; font-weight: bold;">৳<?= htmlspecialchars((string)$pay->amount_paid, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td style="text-align: right; font-weight: bold;"><?= htmlspecialchars(class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($pay->currency ?? $orderCurrency) : '৳', ENT_QUOTES, 'UTF-8') ?><?= htmlspecialchars((string)$pay->amount_paid, ENT_QUOTES, 'UTF-8') ?></td>
                                     <td>
                                         <?php if (!empty($pay->favorite_pay_tx_id)): ?>
                                             <code>FP: <?= htmlspecialchars((string)$pay->favorite_pay_tx_id, ENT_QUOTES, 'UTF-8') ?></code>
