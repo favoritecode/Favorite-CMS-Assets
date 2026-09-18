@@ -19,7 +19,7 @@ Without Favorite Digital, the theme remains fully usable and shows clear categor
 
 ## Customization & Advanced Theme Customizer
 
-Favorite Web 1.1.0 includes an Advanced Theme Customizer accessible via **Admin → Appearance → Customize**:
+Favorite Web 1.1.1 includes an Advanced Theme Customizer accessible via **Admin → Appearance → Customize**:
 
 - **Site Identity**: Site title, tagline, custom logo (with adjustable width), and favicon using Core Media Library.
 - **Header & Navigation**: Sticky header toggle, search bar toggle, store action button toggle, dark mode toggle.
@@ -51,7 +51,7 @@ The theme supports the Core Customizer, menus, widget regions, SEO head output, 
 
 ## Source
 
-Theme version: `1.1.0`
+Theme version: `1.1.1`
 
 Official website: <https://www.favoriteweb.net/>
 

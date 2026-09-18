@@ -633,10 +633,25 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
             inset: 0;
             background: rgba(0, 0, 0, 0.6);
             z-index: 99999;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+        .fw-modal-backdrop.is-open {
+            display: flex !important;
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+        }
+        .fw-modal-backdrop[hidden] {
+            display: none !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
         }
         .fw-modal {
             background: var(--admin-surface, #ffffff);
@@ -1478,11 +1493,11 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
     </div>
 
     <!-- Universal Media Picker Modal -->
-    <div class="fw-modal-backdrop" id="fw-media-modal" hidden>
+    <div class="fw-modal-backdrop" id="fw-media-modal" role="dialog" aria-modal="true" aria-labelledby="fw-modal-title" hidden style="display: none;">
         <div class="fw-modal">
             <div class="fw-modal-header">
-                <h3>Select or Upload Media</h3>
-                <button type="button" class="fw-modal-close" id="fw-modal-close-btn">&times;</button>
+                <h3 id="fw-modal-title">Select or Upload Media</h3>
+                <button type="button" class="fw-modal-close" id="fw-modal-close-btn" aria-label="Close modal">&times;</button>
             </div>
             <div class="fw-modal-tabs">
                 <button type="button" class="fw-modal-tab-btn active" data-tab="library">Media Library</button>
@@ -1893,12 +1908,39 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
     var uploadProgress = document.getElementById('fw-upload-progress');
     var customUrlInput = document.getElementById('fw-custom-url-input');
     var insertUrlBtn = document.getElementById('fw-insert-url-btn');
+    var lastActiveTrigger = null;
 
-    function openMediaModal(targetInputId, previewBoxId) {
+    function openMediaModal(targetInputId, previewBoxId, triggerEl) {
+        lastActiveTrigger = triggerEl || document.activeElement;
         currentActiveTargetInputId = targetInputId;
         currentActivePreviewBoxId = previewBoxId;
         if (mediaModal) {
             mediaModal.hidden = false;
+            mediaModal.classList.add('is-open');
+            mediaModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            // Reset tabs to Library tab
+            if (modalTabBtns.length > 0) {
+                modalTabBtns.forEach(function(b) { b.classList.remove('active'); });
+                modalTabBtns[0].classList.add('active');
+            }
+            var tabLib = document.getElementById('fw-tab-library');
+            var tabUpload = document.getElementById('fw-tab-upload');
+            var tabUrl = document.getElementById('fw-tab-url');
+            if (tabLib) tabLib.style.display = 'block';
+            if (tabUpload) tabUpload.style.display = 'none';
+            if (tabUrl) tabUrl.style.display = 'none';
+
+            // Set focus inside modal for accessibility
+            setTimeout(function() {
+                if (librarySearch) {
+                    librarySearch.focus();
+                } else if (modalCloseBtn) {
+                    modalCloseBtn.focus();
+                }
+            }, 60);
+
             loadMediaLibrary('');
         }
     }
@@ -1906,29 +1948,62 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
     function closeMediaModal() {
         if (mediaModal) {
             mediaModal.hidden = true;
+            mediaModal.classList.remove('is-open');
+            mediaModal.style.display = 'none';
+            document.body.style.overflow = '';
             currentActiveTargetInputId = null;
             currentActivePreviewBoxId = null;
+
+            // Restore focus to triggering element
+            if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+                try {
+                    lastActiveTrigger.focus();
+                } catch (e) {}
+            }
         }
     }
 
     if (modalCloseBtn) {
-        modalCloseBtn.addEventListener('click', closeMediaModal);
-    }
-    if (mediaModal) {
-        mediaModal.addEventListener('click', function(e) {
-            if (e.target === mediaModal) closeMediaModal();
+        modalCloseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeMediaModal();
         });
     }
 
+    if (mediaModal) {
+        mediaModal.addEventListener('click', function(e) {
+            if (e.target === mediaModal) {
+                e.preventDefault();
+                e.stopPropagation();
+                closeMediaModal();
+            }
+        });
+    }
+
+    // ESC Key Listener for Modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.key === 'Esc' || e.keyCode === 27) {
+            if (mediaModal && (!mediaModal.hidden || mediaModal.classList.contains('is-open') || mediaModal.style.display !== 'none')) {
+                e.preventDefault();
+                closeMediaModal();
+            }
+        }
+    });
+
     // Modal Tabs
     modalTabBtns.forEach(function(tabBtn) {
-        tabBtn.addEventListener('click', function() {
+        tabBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             modalTabBtns.forEach(function(b) { b.classList.remove('active'); });
             tabBtn.classList.add('active');
             var tab = tabBtn.getAttribute('data-tab');
-            document.getElementById('fw-tab-library').style.display = (tab === 'library' ? 'block' : 'none');
-            document.getElementById('fw-tab-upload').style.display = (tab === 'upload' ? 'block' : 'none');
-            document.getElementById('fw-tab-url').style.display = (tab === 'url' ? 'block' : 'none');
+            var tabLib = document.getElementById('fw-tab-library');
+            var tabUpload = document.getElementById('fw-tab-upload');
+            var tabUrl = document.getElementById('fw-tab-url');
+            if (tabLib) tabLib.style.display = (tab === 'library' ? 'block' : 'none');
+            if (tabUpload) tabUpload.style.display = (tab === 'upload' ? 'block' : 'none');
+            if (tabUrl) tabUrl.style.display = (tab === 'url' ? 'block' : 'none');
         });
     });
 
@@ -1936,11 +2011,13 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
     document.addEventListener('click', function(e) {
         var openBtn = e.target.closest('.fw-open-media-modal');
         if (openBtn) {
-            openMediaModal(openBtn.getAttribute('data-target'), openBtn.getAttribute('data-preview'));
+            e.preventDefault();
+            openMediaModal(openBtn.getAttribute('data-target'), openBtn.getAttribute('data-preview'), openBtn);
             return;
         }
         var clearBtn = e.target.closest('.fw-clear-media');
         if (clearBtn) {
+            e.preventDefault();
             var targetInput = document.getElementById(clearBtn.getAttribute('data-target'));
             var previewBox = document.getElementById(clearBtn.getAttribute('data-preview'));
             if (targetInput) targetInput.value = '';
@@ -1967,11 +2044,22 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
 
     // Insert URL Tab
     if (insertUrlBtn && customUrlInput) {
-        insertUrlBtn.addEventListener('click', function() {
+        insertUrlBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             var url = customUrlInput.value.trim();
             if (url) {
                 selectMedia(url);
                 customUrlInput.value = '';
+            }
+        });
+        customUrlInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var url = customUrlInput.value.trim();
+                if (url) {
+                    selectMedia(url);
+                    customUrlInput.value = '';
+                }
             }
         });
     }
