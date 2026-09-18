@@ -9,8 +9,8 @@ $baseCurrency = $payment['base_currency'] ?? 'BDT';
 $chargeAmount = (int)($payment['charge_amount'] ?? $baseAmount);
 $chargeCurrency = $payment['charge_currency'] ?? $baseCurrency;
 $gatewayTitle = $payment['gateway_title'] ?? 'Online Payment';
-$createdAt = $payment['created_at'] ?? '';
-$completedAt = $payment['completed_at'] ?? null;
+$createdAt = !empty($payment['created_at']) ? fpay_format_datetime($payment['created_at']) : '';
+$completedAt = !empty($payment['completed_at']) ? fpay_format_datetime($payment['completed_at']) : null;
 $walletSettled = !empty($payment['wallet_settled']);
 $attempts = $payment['attempts'] ?? [];
 ?>
@@ -109,7 +109,7 @@ $attempts = $payment['attempts'] ?? [];
                                     <?php echo htmlspecialchars(strtoupper($att['status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                             </td>
-                            <td style="color: var(--muted, #64748b); font-size: 13px;"><?php echo htmlspecialchars($att['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td style="color: var(--muted, #64748b); font-size: 13px;"><?php echo htmlspecialchars(fpay_format_datetime($att['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

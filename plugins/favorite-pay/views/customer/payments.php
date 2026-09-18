@@ -81,7 +81,7 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                         $currency = $p['base_currency'] ?? 'BDT';
                         $status = strtolower($p['status'] ?? 'pending');
                         $gw = $p['gateway_id'] ?? $p['payment_method_type'] ?? 'Payment';
-                        $date = substr((string)($p['created_at'] ?? ''), 0, 16);
+                        $date = fpay_format_datetime($p['created_at'] ?? '', 'd M Y, h:i A');
                         $isSettled = ($status === 'succeeded');
                     ?>
                         <tr>

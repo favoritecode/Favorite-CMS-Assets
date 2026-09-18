@@ -112,7 +112,7 @@ $badgeClass = match ($st) {
                 </tr>
                 <tr>
                     <td style="color: var(--wp-text-muted);">Submitted At:</td>
-                    <td><?php echo htmlspecialchars((string)($attempt['created_at'] ?? 'N/A'), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars(!empty($attempt['created_at']) ? fpay_format_datetime($attempt['created_at']) : 'N/A', ENT_QUOTES, 'UTF-8'); ?></td>
                 </tr>
             </table>
         </div>
@@ -205,7 +205,7 @@ $badgeClass = match ($st) {
                 <tr>
                     <td style="color: var(--wp-text-muted);">Verified At:</td>
                     <td>
-                        <?php echo htmlspecialchars((string)($attempt['verified_at'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?>
+                        <?php echo htmlspecialchars(!empty($attempt['verified_at']) ? fpay_format_datetime($attempt['verified_at']) : '—', ENT_QUOTES, 'UTF-8'); ?>
                     </td>
                 </tr>
                 <?php if (!empty($attempt['operator_notes'])): ?>

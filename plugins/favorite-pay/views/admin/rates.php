@@ -36,8 +36,8 @@ if (!empty($rates)) {
                     'quote_currency' => $q,
                     'pair'           => $pair,
                     'rate'           => $rateValTrimmed,
-                    'effective_at'   => (string)($r['effective_at'] ?? 'Immediately'),
-                    'expires_at'     => (string)($r['expires_at'] ?? 'Indefinite'),
+                    'effective_at'   => !empty($r['effective_at']) ? fpay_format_datetime($r['effective_at']) : 'Immediately',
+                    'expires_at'     => !empty($r['expires_at']) ? fpay_format_datetime($r['expires_at']) : 'Indefinite',
                     'source'         => (string)($r['source'] ?? 'operator'),
                 ];
                 $activeRates[] = $r;
@@ -373,8 +373,8 @@ $currentSavedRateValue = $currentSavedRate ? ($currentSavedRate['rate'] ?? $curr
                                 </td>
                                 <td>
                                     <div style="font-size: 11px; line-height: 1.5;">
-                                        <div><strong>From:</strong> <?php echo htmlspecialchars($row['effective_at'] ?? 'N/A', ENT_QUOTES, 'UTF-8'); ?></div>
-                                        <div><strong>Until:</strong> <?php echo !empty($row['expires_at']) ? htmlspecialchars($row['expires_at'], ENT_QUOTES, 'UTF-8') : '<span style="color: var(--wp-text-muted);">Indefinite</span>'; ?></div>
+                                        <div><strong>From:</strong> <?php echo !empty($row['effective_at']) ? htmlspecialchars(fpay_format_datetime($row['effective_at']), ENT_QUOTES, 'UTF-8') : 'N/A'; ?></div>
+                                        <div><strong>Until:</strong> <?php echo !empty($row['expires_at']) ? htmlspecialchars(fpay_format_datetime($row['expires_at']), ENT_QUOTES, 'UTF-8') : '<span style="color: var(--wp-text-muted);">Indefinite</span>'; ?></div>
                                     </div>
                                 </td>
                                 <td>

@@ -128,7 +128,7 @@ $currentPay = htmlspecialchars($filters['payment_id'] ?? '', ENT_QUOTES, 'UTF-8'
                             $targetUid = (int)($row['target_user_id'] ?? 0);
                             $desc = htmlspecialchars((string)$row['description'], ENT_QUOTES, 'UTF-8');
                             $ip = htmlspecialchars((string)($row['ip_address'] ?? '—'), ENT_QUOTES, 'UTF-8');
-                            $created = htmlspecialchars((string)$row['created_at'], ENT_QUOTES, 'UTF-8');
+                            $created = htmlspecialchars(fpay_format_datetime((string)$row['created_at']), ENT_QUOTES, 'UTF-8');
 
                             $actorBadgeColor = match($actorType) {
                                 'admin'    => ['bg' => '#e0e7ff', 'text' => '#4338ca'],

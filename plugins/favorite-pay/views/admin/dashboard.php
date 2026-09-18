@@ -490,7 +490,7 @@ $wdCounts = ($withdrawalSummary !== null) ? ($withdrawalSummary['counts'] ?? [])
                         ?>
                             <tr>
                                 <td style="color: #64748b; font-size: 12px; white-space: nowrap;">
-                                    <?php echo htmlspecialchars($e->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime($e->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                                 <td>
                                     <a href="/admin/page/favorite-pay-dashboard?action=customer&user_id=<?php echo (int)$e->getUserId(); ?>" style="text-decoration: none; font-weight: 600; color: #2563eb;">

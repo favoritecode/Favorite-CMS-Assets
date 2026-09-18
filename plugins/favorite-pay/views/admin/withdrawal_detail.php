@@ -82,12 +82,12 @@ $currentMonth = substr($withdrawal->getCreatedAt(), 0, 7);
             <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">WITHDRAWAL REQUEST</div>
             <h2 style="margin: 0 0 6px; font-family: monospace; font-size: 24px; color: #0f172a;"><?php echo htmlspecialchars($withdrawal->getId(), ENT_QUOTES, 'UTF-8'); ?></h2>
             <div style="font-size: 13px; color: #64748b;">
-                Requested on <strong><?php echo htmlspecialchars($withdrawal->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?></strong>
+                Requested on <strong><?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?></strong>
                 <?php if ($withdrawal->getUpdatedAt()): ?>
-                    &bull; Updated: <?php echo htmlspecialchars($withdrawal->getUpdatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                    &bull; Updated: <?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getUpdatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                 <?php endif; ?>
                 <?php if ($withdrawal->getProcessedAt()): ?>
-                    &bull; Finalized: <strong style="color: #15803d;"><?php echo htmlspecialchars($withdrawal->getProcessedAt(), ENT_QUOTES, 'UTF-8'); ?></strong>
+                    &bull; Finalized: <strong style="color: #15803d;"><?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getProcessedAt()), ENT_QUOTES, 'UTF-8'); ?></strong>
                 <?php endif; ?>
             </div>
         </div>
@@ -420,7 +420,7 @@ $currentMonth = substr($withdrawal->getCreatedAt(), 0, 7);
                         $opActorType = strtolower((string)($op['actor_type'] ?? 'system'));
                         $opDesc = htmlspecialchars((string)$op['description'], ENT_QUOTES, 'UTF-8');
                         $opIp = htmlspecialchars((string)($op['ip_address'] ?? '—'), ENT_QUOTES, 'UTF-8');
-                        $opTime = htmlspecialchars((string)$op['created_at'], ENT_QUOTES, 'UTF-8');
+                        $opTime = htmlspecialchars(fpay_format_datetime((string)$op['created_at']), ENT_QUOTES, 'UTF-8');
                     ?>
                         <tr>
                             <td style="color: #64748b; font-size: 12px; white-space: nowrap;"><?php echo $opTime; ?></td>

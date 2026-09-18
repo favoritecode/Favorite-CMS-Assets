@@ -241,7 +241,7 @@ $exportQuery = http_build_query([
                 $netDec = \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($item->getNetAmount()->getAmount(), 2);
                 ?>
                 <tr>
-                    <td style="color: #64748b; font-size: 12px;"><?php echo htmlspecialchars($item->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td style="color: #64748b; font-size: 12px;"><?php echo htmlspecialchars(fpay_format_datetime($item->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?></td>
                     <td>
                         <a href="/admin/page/favorite-pay-withdrawals?id=<?php echo urlencode($item->getId()); ?>" style="font-family: monospace; font-weight: 700; color: #2563eb; text-decoration: none;">
                             <?php echo htmlspecialchars($item->getId(), ENT_QUOTES, 'UTF-8'); ?>

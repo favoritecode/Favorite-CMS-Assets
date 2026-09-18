@@ -21,7 +21,7 @@ $withdrawalId = htmlspecialchars((string)($log['withdrawal_id'] ?? ''), ENT_QUOT
 $paymentId = htmlspecialchars((string)($log['payment_id'] ?? ''), ENT_QUOTES, 'UTF-8');
 $ip = htmlspecialchars((string)($log['ip_address'] ?? '—'), ENT_QUOTES, 'UTF-8');
 $userAgent = htmlspecialchars((string)($log['user_agent'] ?? '—'), ENT_QUOTES, 'UTF-8');
-$createdAt = htmlspecialchars((string)$log['created_at'], ENT_QUOTES, 'UTF-8');
+$createdAt = htmlspecialchars(fpay_format_datetime((string)$log['created_at']), ENT_QUOTES, 'UTF-8');
 $meta = $log['metadata_parsed'] ?? [];
 
 $isSettings = ($subjectType === 'settings' || $action === 'settings.updated');

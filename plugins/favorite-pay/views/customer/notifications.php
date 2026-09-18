@@ -102,7 +102,7 @@
                                     <span style="background:var(--accent-soft, #dbeafe); color:var(--accent, #1e40af); font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px;">NEW</span>
                                 <?php endif; ?>
                                 <span style="font-size:12px; color:var(--muted, #94a3b8);">
-                                    <?php echo htmlspecialchars((string)($n['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime((string)($n['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                                 </span>
                             </div>
                             <p style="margin:6px 0 0; font-size:14px; color:var(--text, #334155); line-height:1.5;">

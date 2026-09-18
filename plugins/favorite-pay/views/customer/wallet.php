@@ -251,7 +251,7 @@ $baseCurrency = $currency ?? 'BDT';
                 ?>
                     <tr>
                         <td style="font-size: 12px; color: var(--muted, #64748b); white-space: nowrap;">
-                            <?php echo htmlspecialchars($r['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                            <?php echo htmlspecialchars(fpay_format_datetime($r['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
                             <a href="/account/payments/<?php echo urlencode($txId); ?>" style="font-family: monospace; font-size: 12px; font-weight: 600; color: var(--accent, #2563eb); text-decoration: none;">
@@ -407,7 +407,7 @@ $baseCurrency = $currency ?? 'BDT';
                 ?>
                     <tr>
                         <td style="color: var(--muted, #64748b); white-space: nowrap; font-size: 13px;">
-                            <?php echo htmlspecialchars($entry->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                            <?php echo htmlspecialchars(fpay_format_datetime($entry->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
                             <span class="fpay-badge <?php echo $isCredit ? 'fpay-badge-success' : ($type === 'hold' ? 'fpay-badge-warning' : 'fpay-badge-failed'); ?>">

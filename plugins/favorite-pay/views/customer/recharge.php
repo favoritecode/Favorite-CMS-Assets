@@ -162,7 +162,7 @@
                         ?>
                             <tr>
                                 <td style="font-size: 12px; color: var(--muted, #64748b); white-space: nowrap;">
-                                    <?php echo htmlspecialchars($r['created_at'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime($r['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                                 <td>
                                     <a href="/account/payments/<?php echo urlencode($txId); ?>" style="font-family: monospace; font-size: 12px; font-weight: 600; color: var(--accent, #2563eb); text-decoration: none;">

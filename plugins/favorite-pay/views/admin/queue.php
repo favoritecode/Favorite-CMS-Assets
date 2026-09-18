@@ -157,7 +157,7 @@ $statusLabels = [
                                     </a>
                                 </strong>
                                 <div style="font-size: 11px; color: var(--wp-text-muted); margin-top: 2px;">
-                                    <?php echo htmlspecialchars((string)($item['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime((string)($item['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                                 </div>
                             </td>
                             <td style="font-family: monospace; font-size: 12px; color: #334155;">

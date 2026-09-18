@@ -162,7 +162,7 @@ $canCancel = in_array($stVal, ['pending', 'approved'], true);
                         </div>
                         <div class="fpay-step-label"><?php echo htmlspecialchars($stp['label'], ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php if (!empty($stp['date'])): ?>
-                            <div class="fpay-step-date"><?php echo htmlspecialchars(substr($stp['date'], 0, 10), ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="fpay-step-date"><?php echo htmlspecialchars(fpay_format_date($stp['date'], 'd M Y'), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -204,12 +204,12 @@ $canCancel = in_array($stVal, ['pending', 'approved'], true);
         <div style="border-top: 1px solid var(--border, #f1f5f9); padding-top: 18px; margin-bottom: 24px;">
             <h3 style="font-size: 15px; font-weight: 700; color: var(--heading, #1e293b); margin: 0 0 12px;">Activity Dates</h3>
             <div style="font-size: 13px; color: var(--muted, #64748b); line-height: 1.8;">
-                <div>Submitted: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars($withdrawal->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+                <div>Submitted: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <?php if ($withdrawal->getUpdatedAt()): ?>
-                    <div>Last update: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars($withdrawal->getUpdatedAt(), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+                    <div>Last update: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getUpdatedAt()), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <?php endif; ?>
                 <?php if ($withdrawal->getProcessedAt()): ?>
-                    <div>Completed: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars($withdrawal->getProcessedAt(), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+                    <div>Completed: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars(fpay_format_datetime($withdrawal->getProcessedAt()), ENT_QUOTES, 'UTF-8'); ?></strong></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -232,7 +232,7 @@ $canCancel = in_array($stVal, ['pending', 'approved'], true);
                                 </div>
                             </div>
                             <div style="font-size: 12px; color: var(--muted, #94a3b8); white-space: nowrap;">
-                                <?php echo htmlspecialchars((string)($notif['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                <?php echo htmlspecialchars(fpay_format_datetime((string)($notif['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>
                             </div>
                         </div>
                     <?php endforeach; ?>

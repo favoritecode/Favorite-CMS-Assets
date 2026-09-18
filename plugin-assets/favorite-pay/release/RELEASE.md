@@ -8,15 +8,27 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.12` |
-| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.12.zip` |
-| **Package Size** | 253,598 bytes |
-| **SHA-256 Checksum** | `d4936f5162fbf82a439a179e99744099c654f0063f6bd11d6e920e580d9c3b5b` |
+| **Release Version** | `v1.0.13` |
+| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.13.zip` |
+| **Package Size** | 252,900 bytes |
+| **SHA-256 Checksum** | `0b36db2fec363e78ba4ff81013136d7f6bb4244568261b35222ea0f4d3b347d3` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-pay` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
-| **Entries** | 129 entries |
+| **Entries** | 108 entries |
+
+---
+
+## What's New in v1.0.13
+
+1. **[Site Timezone Alignment]**:
+   - Dynamic conversion of stored UTC timestamps into Core's configured Site Timezone across all customer and admin views via `fpay_format_datetime()` and `fpay_format_date()`.
+   - Non-destructive display conversion delegating directly to Core `format_date()` / `\FavoriteCMS\Core\DateTime::format()`, reading from `Setting::get('general', 'timezone')`.
+   - Stored database values and schema remain in strict UTC with zero database mutations.
+
+2. **[Financial Safety & Display Consistency]**:
+   - Consistent human-readable timestamps on customer transaction history, payment receipts, withdrawal tracking, and admin review/audit screens.
 
 ---
 

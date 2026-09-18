@@ -166,7 +166,7 @@ $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
                     ?>
                     <tr>
                         <td style="color: var(--muted, #64748b); white-space: nowrap;">
-                            <?php echo htmlspecialchars($item->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                            <?php echo htmlspecialchars(fpay_format_datetime($item->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                         <td>
                             <strong style="font-family: monospace; color: var(--heading, #0f172a);"><?php echo htmlspecialchars($item->getId(), ENT_QUOTES, 'UTF-8'); ?></strong>

@@ -54,7 +54,7 @@ $refId = $entry->getReferenceId();
         <div style="padding: 14px; background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 6px;">
             <div style="font-size: 11px; font-weight: 600; color: var(--muted, #64748b); text-transform: uppercase;">Timestamp</div>
             <div style="font-size: 13px; color: var(--heading, #0f172a); margin-top: 4px; font-weight: 500;">
-                <?php echo htmlspecialchars($entry->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                <?php echo htmlspecialchars(fpay_format_datetime($entry->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
             </div>
         </div>
 

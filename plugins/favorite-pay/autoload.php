@@ -21,3 +21,6 @@ spl_autoload_register(function (string $class): void {
         require_once $file;
     }
 });
+
+// Global helpers
+require_once __DIR__ . '/src/Support/TimezoneHelper.php';

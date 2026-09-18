@@ -151,7 +151,7 @@ $uStatus = strtolower((string)$status);
                         ?>
                             <tr>
                                 <td style="color: #64748b; font-size: 12px; white-space: nowrap;">
-                                    <?php echo htmlspecialchars($e->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime($e->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                                 <td>
                                     <span style="display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: <?php echo $isCredit ? '#dcfce7' : ($type === 'hold' ? '#fef3c7' : '#fee2e2'); ?>; color: <?php echo $isCredit ? '#15803d' : ($type === 'hold' ? '#b45309' : '#b91c1c'); ?>;">
@@ -218,7 +218,7 @@ $uStatus = strtolower((string)$status);
                         ?>
                             <tr>
                                 <td style="color: #64748b; font-size: 12px; white-space: nowrap;">
-                                    <?php echo htmlspecialchars($rc['created_at'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(!empty($rc['created_at']) ? fpay_format_datetime($rc['created_at']) : '—', ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                                 <td style="font-family: monospace; font-size: 12px; color: #334155;">
                                     <?php echo htmlspecialchars($rc['transaction_id'] ?? '—', ENT_QUOTES, 'UTF-8'); ?>
@@ -292,7 +292,7 @@ $uStatus = strtolower((string)$status);
                         ?>
                             <tr>
                                 <td style="color: #64748b; font-size: 12px; white-space: nowrap;">
-                                    <?php echo htmlspecialchars($w->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(fpay_format_datetime($w->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                                 </td>
                                 <td style="font-family: monospace; font-size: 12px; color: #334155;">
                                     <?php echo htmlspecialchars($w->getId(), ENT_QUOTES, 'UTF-8'); ?>

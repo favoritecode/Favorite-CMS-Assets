@@ -106,7 +106,7 @@ $buildPageUrl = function(int $targetPage) use ($queryParams) {
                     ?>
                         <tr>
                             <td style="color: var(--muted, #64748b); white-space: nowrap; font-size: 13px;">
-                                <?php echo htmlspecialchars($entry->getCreatedAt(), ENT_QUOTES, 'UTF-8'); ?>
+                                <?php echo htmlspecialchars(fpay_format_datetime($entry->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?>
                             </td>
                             <td>
                                 <?php if ($refType === 'payment' && !empty($refId)): ?>
