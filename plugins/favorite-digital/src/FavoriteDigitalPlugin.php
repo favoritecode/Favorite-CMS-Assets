@@ -46,6 +46,7 @@ final class FavoriteDigitalPlugin
     private static ?self $instance = null;
     private Application $app;
     private bool $booted = false;
+    public static bool $walletPillRenderedByTheme = false;
 
     public function __construct(Application $app)
     {
@@ -63,6 +64,7 @@ final class FavoriteDigitalPlugin
     public static function reset(): void
     {
         self::$instance = null;
+        self::$walletPillRenderedByTheme = false;
     }
 
     public static function bootstrap(Application $app): self
@@ -664,6 +666,13 @@ final class FavoriteDigitalPlugin
             \FavoriteCMS\Core\Hook::addAction('currency.primary_changed', [self::class, 'handlePrimaryCurrencyChanged']);
         }
 
+        // Listen for account menu render to inject Premium indicator and wallet fallback
+        if (function_exists('add_filter')) {
+            add_filter('render_account_menu', [$this, 'filterRenderAccountMenu'], 10, 4);
+        } elseif (class_exists(\FavoriteCMS\Core\Hook::class)) {
+            \FavoriteCMS\Core\Hook::addFilter('render_account_menu', [$this, 'filterRenderAccountMenu'], 10, 4);
+        }
+
         $this->booted = true;
     }
 
@@ -711,6 +720,76 @@ final class FavoriteDigitalPlugin
             'order'  => 12,
             'plugin' => 'favorite-digital',
         ]);
+    }
+
+    /**
+     * Filter render_account_menu HTML to inject:
+     * 1. Small diamond indicator beside profile icon if user has ACTIVE Premium Membership.
+     * 2. Wallet balance indicator immediately left of profile menu if not already rendered by theme.
+     *
+     * @param string $html
+     * @param array $items
+     * @param object|null $user
+     * @param array $options
+     * @return string
+     */
+    public function filterRenderAccountMenu(string $html, array $items, ?object $user, array $options = []): string
+    {
+        if ($user === null || empty($user->id)) {
+            return $html;
+        }
+
+        $userId = (int)$user->id;
+
+        // 1. Fallback wallet pill if theme didn't render it directly
+        if (!self::$walletPillRenderedByTheme) {
+            $formattedBalance = function_exists('fdig_get_wallet_balance')
+                ? fdig_get_wallet_balance($userId)
+                : null;
+
+            if ($formattedBalance !== null) {
+                $walletUrl = function_exists('site_path')
+                    ? site_path('/account/wallet')
+                    : (function_exists('fw_url') ? fw_url('/account/wallet') : '/account/wallet');
+
+                $walletPill = '<a class="header-wallet-pill" href="' . htmlspecialchars($walletUrl, ENT_QUOTES, 'UTF-8') . '" title="My Wallet Balance">'
+                    . '<svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="16" cy="15" r="1"/></svg>'
+                    . '<span class="header-wallet-amount">' . htmlspecialchars($formattedBalance, ENT_QUOTES, 'UTF-8') . '</span>'
+                    . '</a>';
+
+                $html = $walletPill . "\n" . $html;
+            }
+        }
+
+        // Reset theme render flag
+        self::$walletPillRenderedByTheme = false;
+
+        // 2. Active Premium Membership diamond indicator
+        $isPremium = function_exists('fdig_is_premium_active')
+            ? fdig_is_premium_active($userId)
+            : false;
+
+        if ($isPremium) {
+            $diamondIcon = '<span class="cms-premium-badge" title="Active Premium Member" aria-label="Active Premium Member" style="display:inline-flex;align-items:center;justify-content:center;color:#f59e0b;margin-left:0.25rem;vertical-align:middle;">'
+                . '<svg class="icon icon-premium-diamond" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                . '<path d="M6 3h12l4 6-10 12L2 9l4-6z" fill="#f59e0b" fill-opacity="0.25"/>'
+                . '<path d="M11 3 8 9l4 13 4-13-3-6"/>'
+                . '<path d="M2 9h20"/>'
+                . '</svg>'
+                . '</span>';
+
+            $chevronPos = strpos($html, '<svg class="cms-account-chevron"');
+            if ($chevronPos !== false) {
+                $html = substr_replace($html, $diamondIcon . "\n                ", $chevronPos, 0);
+            } else {
+                $btnClosePos = strpos($html, '</button>');
+                if ($btnClosePos !== false) {
+                    $html = substr_replace($html, "\n                " . $diamondIcon, $btnClosePos, 0);
+                }
+            }
+        }
+
+        return $html;
     }
 
     public function interceptFavoritePayWallet(): void

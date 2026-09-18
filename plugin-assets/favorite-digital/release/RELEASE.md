@@ -8,15 +8,33 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.10 |
-| **Package File** | Favorite-Digital-v1.0.10.zip / Favorite-Digital.zip |
-| **Package Size** | 257,169 bytes |
-| **ZIP Entries** | 123 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `63d0cbbfeab972d1042a8b2cf4832aba22e13de940723140d15677b457be508a` |
+| **Release Version** | 1.0.11 |
+| **Package File** | Favorite-Digital-v1.0.11.zip / Favorite-Digital.zip |
+| **Package Size** | 259,530 bytes |
+| **ZIP Entries** | 124 entries (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `391e4a6c92b599408e8881283cb77378ca22a88cdc83d927ad84bdf0debe467a` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12 and PHP 8.3) |
+
+---
+
+## What's New in v1.0.11
+
+1. **Active Premium Membership Indicator**:
+   - Added compact gold diamond indicator beside the profile icon when the authenticated user has an active premium membership.
+   - Checked server-side and automatically hidden when absent, expired, cancelled, inactive, or for guest visitors.
+
+2. **Favorite Digital Wallet Balance Indicator**:
+   - Added user's spendable wallet balance indicator immediately to the left of the profile icon.
+   - Follows Core's active Primary Currency formatter (`Currency::format()` / `format_currency()`).
+   - Links directly to `/account/wallet` and displays only for authenticated users when Favorite Digital is installed.
+
+3. **Dropdown Menu & Theme Integrity**:
+   - Profile dropdown options and behavior remain 100% unchanged.
+   - Favorite Web theme source remains 100% untouched via pluggable helper and hook deduplication.
+   - Zero database migration, schema, or financial/business logic changes.
 
 ---
 

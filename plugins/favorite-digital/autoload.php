@@ -29,4 +29,5 @@ if (!class_exists('FavoriteCMS\\Plugins\\FavoriteDigitalPlugin', false)) {
 
 // Global helpers
 require_once __DIR__ . '/src/Support/TimezoneHelper.php';
+require_once __DIR__ . '/src/Support/HeaderHelper.php';
 
