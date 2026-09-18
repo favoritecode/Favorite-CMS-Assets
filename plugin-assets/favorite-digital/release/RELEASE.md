@@ -8,15 +8,25 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.8 |
-| **Package File** | Favorite-Digital-v1.0.8.zip / Favorite-Digital.zip |
-| **Package Size** | 253,462 bytes |
+| **Release Version** | 1.0.9 |
+| **Package File** | Favorite-Digital-v1.0.9.zip / Favorite-Digital.zip |
+| **Package Size** | 254,568 bytes |
 | **ZIP Entries** | 123 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `ede1fa7429b4b87cb0fdd815aab19a41efab2ba3b255a15875e76dde6bb9626f` |
+| **SHA-256 Checksum** | `bda7fe382b00c4dad66edf29e0f61d9d3759b6648a53e9b01238494ba9a108ee` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
-| **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
+| **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12 and PHP 8.3) |
+
+---
+
+## What's New in v1.0.9
+
+1. **[FavoritePayWalletInterceptor Transparent Proxy Delegation Fix]**:
+   - Fixed live HTTP 500 regression on `/account/wallet` caused by `FavoritePayWalletInterceptor` missing concrete `WalletService` methods.
+   - Implemented explicit delegation for `getWalletCurrency(int $userId): string`, `getPrimaryCurrency(): string`, `hasActivity(): bool`, `hasWallets(): bool`, and `hasLedgerEntries(): bool`.
+   - Implemented dynamic magic forwarding via `__call()`, `__get()`, and `__isset()` to transparently forward any unhandled calls or property accesses directly to the inner `WalletService`.
+   - Maintained all intended accounting separation and membership business logic without side effects.
 
 ---
 

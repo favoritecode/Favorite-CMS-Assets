@@ -178,6 +178,73 @@ class FavoritePayWalletInterceptor implements WalletServiceInterface
     }
 
     /**
+     * Pass-through for Favorite Pay's concrete WalletService methods.
+     */
+    public function getWalletCurrency(int $userId): string
+    {
+        if (method_exists($this->inner, 'getWalletCurrency') || is_callable([$this->inner, 'getWalletCurrency'])) {
+            return $this->inner->getWalletCurrency($userId);
+        }
+        return 'BDT';
+    }
+
+    public function getPrimaryCurrency(): string
+    {
+        if (method_exists($this->inner, 'getPrimaryCurrency') || is_callable([$this->inner, 'getPrimaryCurrency'])) {
+            return $this->inner->getPrimaryCurrency();
+        }
+        return 'BDT';
+    }
+
+    public function hasActivity(): bool
+    {
+        if (method_exists($this->inner, 'hasActivity') || is_callable([$this->inner, 'hasActivity'])) {
+            return (bool)$this->inner->hasActivity();
+        }
+        return false;
+    }
+
+    public function hasWallets(): bool
+    {
+        if (method_exists($this->inner, 'hasWallets') || is_callable([$this->inner, 'hasWallets'])) {
+            return (bool)$this->inner->hasWallets();
+        }
+        return false;
+    }
+
+    public function hasLedgerEntries(): bool
+    {
+        if (method_exists($this->inner, 'hasLedgerEntries') || is_callable([$this->inner, 'hasLedgerEntries'])) {
+            return (bool)$this->inner->hasLedgerEntries();
+        }
+        return false;
+    }
+
+    /**
+     * Transparent proxy to delegate any unhandled methods to the inner service.
+     */
+    public function __call(string $method, array $arguments): mixed
+    {
+        return $this->inner->{$method}(...$arguments);
+    }
+
+    /**
+     * Transparent proxy to delegate dynamic property access to the inner service.
+     */
+    public function __get(string $name): mixed
+    {
+        return $this->inner->{$name};
+    }
+
+    /**
+     * Transparent proxy to delegate dynamic property existence check to the inner service.
+     */
+    public function __isset(string $name): bool
+    {
+        return isset($this->inner->{$name});
+    }
+
+    /**
      * @return array{source_plugin: string, source_reference: string, user_id: int}|null
      */
     protected function resolvePaymentIntentInfo(string $transactionId): ?array
