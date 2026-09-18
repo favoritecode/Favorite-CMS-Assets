@@ -42,4 +42,5 @@ Thumbs.db
 
 # Allow verified theme release packages
 !theme-assets/favorite-multimedia/release/*.zip
+!theme-assets/favorite-web/release/*.zip
 

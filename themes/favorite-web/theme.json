@@ -1,0 +1,52 @@
+{
+    "id": "favorite-web",
+    "name": "Favorite Web Official",
+    "version": "1.1.0",
+    "author": "Favorite Web",
+    "author_url": "https://www.favoriteweb.net/",
+    "description": "The official Favorite Web business, services, digital products, membership, and publishing theme for Favorite CMS.",
+    "license": "MIT",
+    "requires_core": "1.0.10",
+    "features": {
+        "customer_shell": true
+    },
+    "menu_locations": {
+        "primary": "Primary Header Navigation",
+        "footer": "Footer Menu"
+    },
+    "regions": [
+        {"id": "sidebar-primary", "name": "Primary Sidebar", "description": "Sidebar beside articles, archives, search results, and pages."},
+        {"id": "homepage-after-hero", "name": "Homepage After Hero", "description": "Optional promotional or announcement content below the homepage hero."},
+        {"id": "footer-1", "name": "Footer Column 1", "description": "First footer widget column."},
+        {"id": "footer-2", "name": "Footer Column 2", "description": "Second footer widget column."},
+        {"id": "footer-3", "name": "Footer Column 3", "description": "Third footer widget column."},
+        {"id": "header-right", "name": "Header Right", "description": "Optional widget area in the header."}
+    ],
+    "sections": [
+        {"id": "hero", "name": "Hero Banner", "description": "Primary headline, store and service actions, and brand highlights.", "enabled": true},
+        {"id": "trust-stats", "name": "Trust & Performance Metrics", "description": "Key business statistics, uptime, satisfaction, and milestones.", "enabled": true},
+        {"id": "about", "name": "About & Value Narrative", "description": "Company mission, key capability pillars, and call to action.", "enabled": true},
+        {"id": "services", "name": "Professional Services", "description": "Official service categories offered by Favorite Web.", "enabled": true},
+        {"id": "digital-products", "name": "Digital Products", "description": "Published digital products supplied by Favorite Digital when active.", "enabled": true},
+        {"id": "packages", "name": "Packages & Solutions", "description": "Turnkey solutions, feature bundles, and pricing tiers.", "enabled": true},
+        {"id": "memberships", "name": "Membership Plans", "description": "Published membership plans supplied by Favorite Digital when active.", "enabled": true},
+        {"id": "latest-posts", "name": "Latest Articles", "description": "Latest tutorials, guides, and updates from the CMS.", "enabled": true},
+        {"id": "cta", "name": "Call to Action Banner", "description": "High-conversion bottom banner for engagement and signups.", "enabled": true}
+    ],
+    "default_widgets": {
+        "sidebar-primary": [
+            {"widget": "search", "settings": {"title": "Search", "placeholder": "What are you looking for?"}},
+            {"widget": "recent_posts", "settings": {"title": "Latest Guides", "number": 5, "show_date": true, "show_thumb": true}},
+            {"widget": "categories", "settings": {"title": "Browse Topics", "show_count": true, "hide_empty": false}}
+        ],
+        "footer-1": [
+            {"widget": "custom_html", "settings": {"title": "Favorite Web", "content": "<p>Tutorials, smart web tools, digital products, and professional services to help you learn, create, and grow online.</p>"}}
+        ],
+        "footer-2": [
+            {"widget": "categories", "settings": {"title": "Explore", "show_count": true}}
+        ],
+        "footer-3": [
+            {"widget": "recent_posts", "settings": {"title": "Recent Updates", "number": 3, "show_date": true}}
+        ]
+    }
+}
