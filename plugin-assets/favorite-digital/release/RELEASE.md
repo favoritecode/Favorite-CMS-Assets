@@ -8,15 +8,32 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.7 |
-| **Package File** | Favorite-Digital-v1.0.7.zip / Favorite-Digital.zip |
-| **Package Size** | 243,436 bytes |
-| **ZIP Entries** | 96 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `7fb63ff102fb43eda17d9e18624f904ae6393ca179fd2cac4a4151da6ad37f58` |
+| **Release Version** | 1.0.8 |
+| **Package File** | Favorite-Digital-v1.0.8.zip / Favorite-Digital.zip |
+| **Package Size** | 253,462 bytes |
+| **ZIP Entries** | 123 entries (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `ede1fa7429b4b87cb0fdd815aab19a41efab2ba3b255a15875e76dde6bb9626f` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
+
+---
+
+## What's New in v1.0.8
+
+1. **[Membership & Wallet Accounting Separation]**:
+   - Complete architectural separation of membership status/entitlements from spendable wallet balance.
+   - Membership purchases via Wallet Balance cleanly deduct funds and activate membership without duplicate credit back.
+   - Membership purchases via external gateways/manual payments activate membership with 0.00 wallet balance impact.
+   - Introduced `FavoritePayWalletInterceptor` decorating `WalletServiceInterface` to bypass spendable wallet credits for digital purchases while delegating genuine wallet recharges (`wrc_*`).
+   - Integrated idempotent `WalletReconciliationService` to automatically compensate prior erroneous membership purchase credits.
+
+2. **[Customer Membership UX & Profile Navigation]**:
+   - Registered dedicated "Membership" (`digital_membership`) navigation item in customer profile dropdown at `order: 12` (between Profile at 10 and Wallet at 14).
+   - Redesigned `/account/membership` using `CustomerThemeShell` native card layout without standalone HTML wrappers.
+   - Displays ACTIVE badge, plan title, purchase/start/expiry dates in Core site timezone, remaining days countdown, and auto-renewal toggle with CSRF protection (`POST /account/membership/toggle-auto-renew`).
+   - Provides clear empty state with CTA button linking directly to membership plans when inactive.
 
 ---
 

@@ -97,4 +97,43 @@ final class MembershipPeriodCalculator
         // Fresh or expired membership: start from now
         return self::calculatePeriodExpiry($nowImmutable, $unit, $count);
     }
+
+    /**
+     * Calculate remaining days until expiry.
+     * Returns 0 if already expired, or integer number of full or partial days remaining.
+     */
+    public static function calculateRemainingDays(DateTimeInterface $expiresAt, ?DateTimeInterface $now = null): int
+    {
+        $nowDt = $now ? DateTimeImmutable::createFromInterface($now) : new DateTimeImmutable('now');
+        $expiryDt = DateTimeImmutable::createFromInterface($expiresAt);
+
+        if ($expiryDt <= $nowDt) {
+            return 0;
+        }
+
+        $diff = $nowDt->diff($expiryDt);
+        $days = (int)$diff->days;
+        if ($days === 0 && ($diff->h > 0 || $diff->i > 0 || $diff->s > 0)) {
+            return 1;
+        }
+        if ($diff->h > 0 || $diff->i > 0 || $diff->s > 0) {
+            $days++;
+        }
+        return max(0, $days);
+    }
+
+    /**
+     * Format remaining days into customer-friendly display text.
+     */
+    public static function formatRemainingDays(int $days): string
+    {
+        if ($days <= 0) {
+            return 'Expires today';
+        }
+        if ($days === 1) {
+            return '1 day remaining';
+        }
+        return "{$days} days remaining";
+    }
 }
+

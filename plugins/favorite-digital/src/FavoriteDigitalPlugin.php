@@ -193,10 +193,21 @@ final class FavoriteDigitalPlugin
             return new Repositories\WalletRepository($app->make(Database::class));
         });
 
+        $this->app->singleton(Services\WalletReconciliationService::class, function ($app): Services\WalletReconciliationService {
+            return new Services\WalletReconciliationService(
+                $app->has(Database::class) ? $app->make(Database::class) : null
+            );
+        });
+
         $this->app->singleton(Services\WalletService::class, function ($app): Services\WalletService {
+            $favPayWallet = null;
+            if ($app->has(\FavoriteCMS\Pay\Contracts\WalletServiceInterface::class)) {
+                $favPayWallet = $app->make(\FavoriteCMS\Pay\Contracts\WalletServiceInterface::class);
+            }
             return new Services\WalletService(
                 $app->make(Repositories\WalletRepository::class),
-                $app->has(Database::class) ? $app->make(Database::class) : null
+                $app->has(Database::class) ? $app->make(Database::class) : null,
+                $favPayWallet
             );
         });
 
@@ -498,6 +509,11 @@ final class FavoriteDigitalPlugin
                 return $controller->membership($request);
             });
 
+            add_route('POST', '/account/membership/toggle-auto-renew', function (Request $request) {
+                $controller = $this->app->make(Controllers\CustomerAccountController::class);
+                return $controller->toggleAutoRenew($request);
+            });
+
             add_route('GET', '/account/refunds', function (Request $request) {
                 $controller = $this->app->make(Controllers\CustomerAccountController::class);
                 return $controller->refunds($request);
@@ -585,6 +601,18 @@ final class FavoriteDigitalPlugin
                 }
             });
 
+            add_action('account_menu_init', function (): void {
+                $this->registerAccountMenuItems();
+            });
+
+            add_action('plugins.loaded', function (): void {
+                $this->interceptFavoritePayWallet();
+            });
+
+            add_action('favorite.pay.payment.succeeded', function (array $data): void {
+                $this->interceptFavoritePayWallet();
+            }, 5);
+
             add_action('plugin.activated', function (string $pluginId): void {
                 if ($pluginId === 'favorite-digital') {
                     $this->onActivate();
@@ -598,7 +626,50 @@ final class FavoriteDigitalPlugin
             });
         }
 
+        $this->registerAccountMenuItems();
+        $this->interceptFavoritePayWallet();
+
+        // Run safe narrow reconciliation for historical membership credits
+        if ($this->app->has(Services\WalletReconciliationService::class)) {
+            try {
+                $this->app->make(Services\WalletReconciliationService::class)->reconcile();
+            } catch (\Throwable) {
+            }
+        }
+
         $this->booted = true;
+    }
+
+    public function registerAccountMenuItems(): void
+    {
+        if (!function_exists('register_account_menu_item')) {
+            return;
+        }
+
+        register_account_menu_item([
+            'id'     => 'digital_membership',
+            'label'  => 'Membership',
+            'url'    => '/account/membership',
+            'icon'   => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l3 6 3-6 3 6 3-6v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V3z"></path></svg>',
+            'order'  => 12,
+            'plugin' => 'favorite-digital',
+        ]);
+    }
+
+    public function interceptFavoritePayWallet(): void
+    {
+        if (!interface_exists(\FavoriteCMS\Pay\Contracts\WalletServiceInterface::class)) {
+            return;
+        }
+
+        $abstract = \FavoriteCMS\Pay\Contracts\WalletServiceInterface::class;
+        if ($this->app->has($abstract)) {
+            $inner = $this->app->make($abstract);
+            if ($inner instanceof \FavoriteCMS\Pay\Contracts\WalletServiceInterface && !($inner instanceof Services\FavoritePayWalletInterceptor)) {
+                $interceptor = new Services\FavoritePayWalletInterceptor($inner, $this->app);
+                $this->app->instance($abstract, $interceptor);
+            }
+        }
     }
 
     public function isFavoritePayAvailable(): bool
