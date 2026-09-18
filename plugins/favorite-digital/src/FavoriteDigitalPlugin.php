@@ -69,6 +69,9 @@ final class FavoriteDigitalPlugin
 
     public static function bootstrap(Application $app): self
     {
+        if (self::$instance !== null) {
+            return self::$instance;
+        }
         $plugin = new self($app);
         $plugin->register();
         $plugin->boot();
@@ -742,7 +745,12 @@ final class FavoriteDigitalPlugin
         $userId = (int)$user->id;
 
         // 1. Fallback wallet pill if theme didn't render it directly
-        if (!self::$walletPillRenderedByTheme) {
+        // If theme already rendered it (or active theme is favorite-web which renders it in header.php),
+        // or if $html already contains the wallet pill, do not add another one.
+        $themeAlreadyRendered = self::$walletPillRenderedByTheme
+            || (function_exists('active_theme_id') && active_theme_id() === 'favorite-web');
+
+        if (!$themeAlreadyRendered && !str_contains($html, 'header-wallet-pill')) {
             $formattedBalance = function_exists('fdig_get_wallet_balance')
                 ? fdig_get_wallet_balance($userId)
                 : null;
@@ -761,15 +769,13 @@ final class FavoriteDigitalPlugin
             }
         }
 
-        // Reset theme render flag
-        self::$walletPillRenderedByTheme = false;
-
         // 2. Active Premium Membership diamond indicator
         $isPremium = function_exists('fdig_is_premium_active')
             ? fdig_is_premium_active($userId)
             : false;
 
-        if ($isPremium) {
+        // Only inject if active AND not already injected in $html
+        if ($isPremium && !str_contains($html, 'cms-premium-badge')) {
             $diamondIcon = '<span class="cms-premium-badge" title="Active Premium Member" aria-label="Active Premium Member" style="display:inline-flex;align-items:center;justify-content:center;color:#f59e0b;margin-left:0.25rem;vertical-align:middle;">'
                 . '<svg class="icon icon-premium-diamond" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
                 . '<path d="M6 3h12l4 6-10 12L2 9l4-6z" fill="#f59e0b" fill-opacity="0.25"/>'

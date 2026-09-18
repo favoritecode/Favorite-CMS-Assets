@@ -8,15 +8,40 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.11 |
-| **Package File** | Favorite-Digital-v1.0.11.zip / Favorite-Digital.zip |
-| **Package Size** | 259,530 bytes |
+| **Release Version** | 1.0.12 |
+| **Package File** | Favorite-Digital-v1.0.12.zip / Favorite-Digital.zip |
+| **Package Size** | 259,680 bytes |
 | **ZIP Entries** | 124 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `391e4a6c92b599408e8881283cb77378ca22a88cdc83d927ad84bdf0debe467a` |
+| **SHA-256 Checksum** | `f35e20ef5f0df9f1fdeba3c4b5033657dda3de0d141e791d23d5cd5483b18d43` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12 and PHP 8.3) |
+
+---
+
+## What's New in v1.0.12
+
+1. **Fixed Duplicate Wallet Balance Indicator**:
+   - Fixed duplicate wallet pill rendering by respecting theme-level header balance handling and preventing filter re-injection.
+
+2. **Fixed Duplicate Premium Membership Diamond Indicator**:
+   - Added strict string occurrence idempotency checks (`!str_contains($html, 'cms-premium-badge')`) ensuring exactly one diamond icon is rendered.
+
+3. **Idempotent Header Rendering Safeguards**:
+   - Preserved theme render state throughout request lifecycle, preventing duplicate pills across repeated menu renders (e.g. desktop header and mobile drawer).
+
+4. **Plugin Bootstrap Singleton Protection**:
+   - Added singleton instance check in `FavoriteDigitalPlugin::bootstrap()` to prevent duplicate plugin instantiation and duplicate hook callback registrations.
+
+5. **Profile Dropdown Unchanged**:
+   - Profile dropdown options, links, order, and permissions remain 100% untouched.
+
+6. **Favorite Web Theme Untouched**:
+   - Zero modifications to `themes/favorite-web` theme source code.
+
+7. **Zero Financial / Database / Business Logic Mutations**:
+   - No database migration or financial/business logic changes.
 
 ---
 

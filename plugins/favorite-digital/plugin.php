@@ -3,7 +3,7 @@
  * Plugin Name: Favorite Digital
  * Plugin URI: https://github.com/favoritecode/Favorite-CMS-Universal
  * Description: Official digital products, downloadable files, services, bundles, and membership access management plugin for Favorite CMS.
- * Version: 1.0.11
+ * Version: 1.0.12
  * Author: Favorite CMS Team
  */
 
