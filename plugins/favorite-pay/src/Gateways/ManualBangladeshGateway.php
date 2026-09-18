@@ -76,7 +76,20 @@ class ManualBangladeshGateway implements PaymentGatewayInterface, ConfigurableGa
 
     public function getSupportedCurrencies(): array
     {
-        return $this->supportedCurrencies;
+        $primary = class_exists(\FavoriteCMS\Core\Currency::class)
+            ? \FavoriteCMS\Core\Currency::getPrimaryCurrency()
+            : 'BDT';
+
+        if (!empty($this->supportedCurrencies)) {
+            if (!in_array($primary, $this->supportedCurrencies, true)) {
+                return array_values(array_unique(array_merge($this->supportedCurrencies, [$primary])));
+            }
+            return $this->supportedCurrencies;
+        }
+
+        return class_exists(\FavoriteCMS\Core\Currency::class)
+            ? \FavoriteCMS\Core\Currency::getSupportedCodes()
+            : ['BDT', 'USD', 'EUR', 'GBP', 'INR'];
     }
 
     public function isConfigured(): bool
@@ -123,7 +136,7 @@ class ManualBangladeshGateway implements PaymentGatewayInterface, ConfigurableGa
         }
 
         $currency = $intent->getChargeAmount()->getCurrency();
-        if (!in_array($currency, $this->supportedCurrencies, true)) {
+        if (!in_array($currency, $this->getSupportedCurrencies(), true)) {
             throw new InvalidArgumentException("Currency '{$currency}' is not supported by gateway '{$this->id}'.");
         }
 

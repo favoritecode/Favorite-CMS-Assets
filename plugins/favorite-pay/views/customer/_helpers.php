@@ -1,18 +1,31 @@
 <?php
 if (!function_exists('fpay_format_money')) {
-    function fpay_format_money(int|float|string $minorUnits, string $currency = 'BDT'): string {
+    function fpay_format_money(int|float|string $minorUnits, ?string $currency = null): string {
+        $curr = $currency !== null && trim($currency) !== '' 
+            ? strtoupper(trim($currency)) 
+            : (class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT');
         $units = (int)round((float)$minorUnits);
-        $decimals = in_array(strtoupper($currency), ['JPY', 'KRW'], true) ? 0 : 2;
+        $decimals = class_exists(\FavoriteCMS\Core\Currency::class) 
+            ? \FavoriteCMS\Core\Currency::getDecimals($curr) 
+            : (in_array($curr, ['JPY', 'KRW'], true) ? 0 : 2);
         $major = $units / (10 ** $decimals);
-        $symbol = match (strtoupper($currency)) {
-            'BDT' => '৳',
-            'USD', 'USDT', 'USDC' => '$',
-            'EUR' => '€',
-            'GBP' => '£',
-            default => strtoupper($currency) . ' ',
-        };
+
+        if (class_exists(\FavoriteCMS\Core\Currency::class)) {
+            $symbol = \FavoriteCMS\Core\Currency::getSymbol($curr);
+        } else {
+            $symbol = match ($curr) {
+                'BDT' => '৳',
+                'INR' => '₹',
+                'USD', 'USDT', 'USDC' => '$',
+                'EUR' => '€',
+                'GBP' => '£',
+                'JPY' => '¥',
+                default => $curr . ' ',
+            };
+        }
+
         $formatted = number_format($major, $decimals);
-        return $symbol . $formatted . ($symbol === '$' && in_array(strtoupper($currency), ['USDT', 'USDC'], true) ? ' ' . $currency : '');
+        return $symbol . $formatted . ($symbol === '$' && in_array($curr, ['USDT', 'USDC'], true) ? ' ' . $curr : '');
     }
 }
 ?>

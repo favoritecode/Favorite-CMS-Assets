@@ -8,15 +8,31 @@ This directory contains the authoritative, verified production release archive a
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | `v1.0.13` |
-| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.13.zip` |
-| **Package Size** | 252,900 bytes |
-| **SHA-256 Checksum** | `0b36db2fec363e78ba4ff81013136d7f6bb4244568261b35222ea0f4d3b347d3` |
+| **Release Version** | `v1.0.14` |
+| **Package File** | `Favorite-Pay.zip` / `Favorite-Pay-v1.0.14.zip` |
+| **Package Size** | 255,486 bytes |
+| **SHA-256 Checksum** | `04a2ba4c6c5c4f990f2fab4702c9371229bed19f44af2d82b58f8dea47d53baa` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Core (`Favorite-CMS-Universal`) |
 | **Plugin Identifier** | `favorite-pay` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
-| **Entries** | 108 entries |
+| **Entries** | 130 entries |
+
+---
+
+## What's New in v1.0.14
+
+1. **[Primary Currency Denomination Architecture]**:
+   - Removed blocking filters `currency.can_change_primary` and `currency.is_primary_locked`. Site administrators can change Primary Currency at any time without artificial lockouts.
+   - Handled `currency.primary_changed` hook to update active wallet denominations to the new Primary Currency without altering numeric balances (e.g. 500 BDT becomes 500 INR, no mathematical FX multiplication/division).
+   - Historical ledger entries, transaction records, attempts, and refunds retain their explicitly stored currency.
+
+2. **[Dynamic Manual Gateway Support]**:
+   - Updated `ManualBangladeshGateway::getSupportedCurrencies()` to dynamically include the active Primary Currency.
+   - Allows manual gateways (bKash, Nagad, Rocket, Bank Transfer) to accept the configured Primary Currency directly without foreign exchange conversion.
+
+3. **[Dynamic Currency Symbols & Elimination of Hardcoded Taka]**:
+   - Updated customer and admin views, formatters (`fpay_format_money()`), wallet overviews, and withdrawal tracking to dynamically resolve currency symbols from `Currency::getSymbol()`.
 
 ---
 

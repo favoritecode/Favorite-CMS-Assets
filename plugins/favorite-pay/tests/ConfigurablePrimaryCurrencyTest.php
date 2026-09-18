@@ -276,26 +276,22 @@ class ConfigurablePrimaryCurrencyTest extends TestCase
         $this->assertSame(80000, (int)$ledgerBefore->amount);
         $this->assertSame(80000, (int)$ledgerBefore->balance_after);
 
-        // 2. Administrator attempts to change site Primary Currency to USD - blocked in Phase 5C
-        try {
-            Currency::setPrimaryCurrency('USD');
-            $this->fail("Expected RuntimeException when changing primary currency with existing financial activity.");
-        } catch (RuntimeException $e) {
-            $this->assertStringContainsString('financial activity', $e->getMessage());
-        }
+        // 2. Administrator changes site Primary Currency to USD
+        Currency::setPrimaryCurrency('USD');
 
-        // Authoritative currency remains BDT
-        $this->assertSame('BDT', Currency::getPrimaryCurrency());
+        // Authoritative currency is now USD
+        $this->assertSame('USD', Currency::getPrimaryCurrency());
 
-        // 3. Verify that existing wallet, balance, transaction, and ledger entry are UNCHANGED
+        // 3. Verify that active wallet adopts new denomination without altering numeric balance (no FX conversion)
         $walletAfter = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
-        $this->assertSame('BDT', $walletAfter->currency, "Existing wallet currency must remain BDT.");
-        $this->assertSame(80000, (int)$walletAfter->balance, "Existing wallet balance must remain 80000 Poisha.");
+        $this->assertSame('USD', $walletAfter->currency, "Active wallet currency must adopt USD denomination.");
+        $this->assertSame(80000, (int)$walletAfter->balance, "Wallet balance must remain 80000 without FX mathematical conversion.");
 
         $balanceAfter = $this->walletService->getBalance($userId);
-        $this->assertSame('BDT', $balanceAfter->getCurrency());
+        $this->assertSame('USD', $balanceAfter->getCurrency());
         $this->assertSame(80000, $balanceAfter->getAmount());
 
+        // Historical transaction MUST preserve original BDT base_currency
         $txAfter = $this->db->selectOne("SELECT * FROM favorite_pay_transactions WHERE transaction_id = ?", [$intent1->getId()]);
         $this->assertSame('BDT', $txAfter->base_currency, "Historical transaction base_currency must remain BDT.");
         $this->assertSame(80000, (int)$txAfter->base_amount, "Historical transaction base_amount must remain 80000.");
@@ -308,8 +304,8 @@ class ConfigurablePrimaryCurrencyTest extends TestCase
         // must fail with an explicit exception rather than corrupting the wallet balance
         $intent2 = $this->paymentService->createIntent(
             'favorite_shop',
-            'new_usd_order',
-            Money::usd(5000),
+            'mismatched_eur_order',
+            Money::eur(5000),
             ['customer_id' => $userId]
         );
         $this->paymentService->updateIntentStatus($intent2->getId(), PaymentStatus::SUCCEEDED);
@@ -326,7 +322,7 @@ class ConfigurablePrimaryCurrencyTest extends TestCase
 
         // Wallet balance remains completely unmutated
         $balanceFinal = $this->walletService->getBalance($userId);
-        $this->assertSame('BDT', $balanceFinal->getCurrency());
+        $this->assertSame('USD', $balanceFinal->getCurrency());
         $this->assertSame(80000, $balanceFinal->getAmount());
     }
 }

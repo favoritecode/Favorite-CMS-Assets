@@ -19,6 +19,7 @@ $feeDec = \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($withdra
 $netDec = \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($withdrawal->getNetAmount()->getAmount(), 2);
 $destData = $withdrawal->getDestinationData();
 $currentMonth = substr($withdrawal->getCreatedAt(), 0, 7);
+$currencySym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($withdrawal->getCurrency()) : '৳';
 ?>
 
 <style>
@@ -155,19 +156,19 @@ $currentMonth = substr($withdrawal->getCreatedAt(), 0, 7);
         <div style="margin-bottom: 14px;">
             <div class="fpay-field-label">Requested Gross Amount (Hold)</div>
             <div class="fpay-field-value" style="font-size: 18px; color: #0f172a;">
-                ৳<?php echo $amtDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
+                <?php echo $currencySym; ?><?php echo $amtDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
             </div>
         </div>
         <div style="margin-bottom: 14px;">
             <div class="fpay-field-label">Processing Fee</div>
             <div class="fpay-field-value" style="color: #64748b;">
-                ৳<?php echo $feeDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
+                <?php echo $currencySym; ?><?php echo $feeDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
             </div>
         </div>
         <div style="margin-bottom: 14px;">
             <div class="fpay-field-label">Net Payable Amount to Customer</div>
             <div class="fpay-field-value" style="font-size: 20px; font-weight: 800; color: #15803d;">
-                ৳<?php echo $netDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
+                <?php echo $currencySym; ?><?php echo $netDec; ?> <?php echo htmlspecialchars($withdrawal->getCurrency(), ENT_QUOTES, 'UTF-8'); ?>
             </div>
         </div>
         <div>

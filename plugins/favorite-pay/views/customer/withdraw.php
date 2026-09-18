@@ -21,6 +21,7 @@ $availableMajor = $balance->getAmount() / 100.0;
 $isBalanceTooLow = ($availableMajor < $minAmount);
 $isMonthlyLimitReached = ($remainingMonthly <= 0);
 $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
+$currencySym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($primaryCurrency) : '৳';
 ?>
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 28px;">
@@ -31,7 +32,7 @@ $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
                 Available Balance for Withdrawal
             </div>
             <div style="font-size: 28px; font-weight: 800; color: var(--heading, #0f172a); letter-spacing: -0.02em; margin-bottom: 6px; line-height: 1.2;">
-                ৳<?php echo \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($balance->getAmount(), 2); ?>
+                <?php echo $currencySym; ?><?php echo \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($balance->getAmount(), 2); ?>
             </div>
             <div style="font-size: 12px; color: var(--muted, #64748b);">
                 Primary Currency: <strong style="color: var(--heading, #0f172a);"><?php echo htmlspecialchars($primaryCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>
@@ -46,7 +47,7 @@ $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
                 Payout Policy & Limits
             </div>
             <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: var(--text, #475569); line-height: 1.6;">
-                <li>Minimum withdrawal: <strong style="color: var(--heading, #0f172a);">৳<?php echo number_format($minAmount, 2); ?></strong></li>
+                <li>Minimum withdrawal: <strong style="color: var(--heading, #0f172a);"><?php echo $currencySym; ?><?php echo number_format($minAmount, 2); ?></strong></li>
                 <li>Withdrawals this month: <strong style="color: var(--heading, #0f172a);"><?php echo $monthlyCount; ?> / <?php echo $maxMonthlyCount; ?></strong></li>
                 <li>Remaining this month: <strong style="color: var(--heading, #0f172a);"><?php echo $remainingMonthly; ?></strong></li>
                 <li>Hold policy: Requested funds are reserved on hold until payout completion.</li>
@@ -66,7 +67,7 @@ $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
     </div>
 <?php elseif ($isBalanceTooLow): ?>
     <div class="fpay-alert fpay-alert-info" style="margin-bottom: 20px;">
-        <strong>Notice:</strong> Your available balance is below the minimum withdrawal amount of ৳<?php echo number_format($minAmount, 2); ?>.
+        <strong>Notice:</strong> Your available balance is below the minimum withdrawal amount of <?php echo $currencySym; ?><?php echo number_format($minAmount, 2); ?>.
     </div>
 <?php endif; ?>
 
@@ -178,7 +179,7 @@ $isFormDisabled = $isSuspended || $isBalanceTooLow || $isMonthlyLimitReached;
                             <span style="font-family: monospace; color: var(--text, #475569);"><?php echo htmlspecialchars($item->getDestinationMasked(), ENT_QUOTES, 'UTF-8'); ?></span>
                         </td>
                         <td style="text-align: right; font-weight: 700; color: var(--heading, #0f172a);">
-                            ৳<?php echo $amountDec; ?>
+                            <?php echo $currencySym; ?><?php echo $amountDec; ?>
                         </td>
                         <td>
                             <span class="fpay-badge <?php echo $badgeClass; ?>">

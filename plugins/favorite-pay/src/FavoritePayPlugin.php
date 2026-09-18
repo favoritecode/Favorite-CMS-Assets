@@ -507,33 +507,23 @@ final class FavoritePayPlugin
             });
         }
 
-        // Filter hook: Block Primary Currency change if financial activity exists
-        if (function_exists('add_filter')) {
-            add_filter('currency.can_change_primary', function ($allowed, string $newCurrency, string $oldCurrency) {
-                if ($newCurrency === $oldCurrency) {
-                    return true;
+        // Action hook: Align active wallet denomination on site Primary Currency change
+        if (function_exists('add_action')) {
+            add_action('currency.primary_changed', function (array $data): void {
+                $newCurrency = $data['new'] ?? null;
+                if (!empty($newCurrency) && $this->app->has(Database::class)) {
+                    try {
+                        $db = $this->app->make(Database::class);
+                        if (method_exists($db, 'registerPrefixableTables')) {
+                            $db->registerPrefixableTables(self::TABLES);
+                        }
+                        if ($db->tableExists('favorite_pay_wallets')) {
+                            $db->execute("UPDATE favorite_pay_wallets SET currency = ?", [strtoupper(trim((string)$newCurrency))]);
+                        }
+                    } catch (\Throwable) {
+                    }
                 }
-                if ($this->hasFinancialActivity()) {
-                    return [
-                        'allowed' => false,
-                        'reason'  => 'Primary Currency cannot be changed after financial activity has started. Existing wallets, transactions, and ledger records use the current accounting currency.',
-                    ];
-                }
-                return $allowed;
-            }, 10, 3);
-
-            add_filter('currency.is_primary_locked', function ($locked) {
-                if ($locked) {
-                    return true;
-                }
-                if ($this->hasFinancialActivity()) {
-                    return [
-                        'locked' => true,
-                        'reason' => 'Primary Currency cannot be changed after financial activity has started. Existing wallets, transactions, and ledger records use the current accounting currency.',
-                    ];
-                }
-                return false;
-            }, 10, 1);
+            });
         }
 
         // Ensure default permissions and role mappings are registered if database is ready

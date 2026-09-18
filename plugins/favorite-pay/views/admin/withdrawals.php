@@ -239,6 +239,7 @@ $exportQuery = http_build_query([
                 $badgeClass = 'fpay-admin-badge-' . $st->value;
                 $amtDec = \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($item->getAmount()->getAmount(), 2);
                 $netDec = \FavoriteCMS\Pay\Support\DecimalFormatter::minorUnitToDecimal($item->getNetAmount()->getAmount(), 2);
+                $sym = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($item->getAmount()->getCurrency()) : '৳';
                 ?>
                 <tr>
                     <td style="color: #64748b; font-size: 12px;"><?php echo htmlspecialchars(fpay_format_datetime($item->getCreatedAt()), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -255,8 +256,8 @@ $exportQuery = http_build_query([
                             <div style="font-size: 11px; color: #2563eb; font-family: monospace;">Ref: <?php echo htmlspecialchars($item->getTransactionReference(), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endif; ?>
                     </td>
-                    <td style="text-align: right; color: #64748b;">৳<?php echo $amtDec; ?></td>
-                    <td style="text-align: right; font-weight: 700; color: #0f172a;">৳<?php echo $netDec; ?></td>
+                    <td style="text-align: right; color: #64748b;"><?php echo $sym; ?><?php echo $amtDec; ?></td>
+                    <td style="text-align: right; font-weight: 700; color: #0f172a;"><?php echo $sym; ?><?php echo $netDec; ?></td>
                     <td><span class="fpay-admin-badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($st->label(), ENT_QUOTES, 'UTF-8'); ?></span></td>
                     <td style="text-align: right;">
                         <a href="/admin/page/favorite-pay-withdrawals?id=<?php echo urlencode($item->getId()); ?>" class="button button-small" style="margin-right: 4px;">View</a>

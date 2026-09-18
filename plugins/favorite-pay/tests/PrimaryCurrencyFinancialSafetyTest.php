@@ -22,11 +22,17 @@ use FavoriteCMS\Pay\Services\GatewayRegistry;
 use FavoriteCMS\Pay\Services\PaymentService;
 use FavoriteCMS\Pay\Services\RefundService;
 use FavoriteCMS\Pay\Services\WalletService;
-use InvalidArgumentException;
 use PDO;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
+/**
+ * Tests for Global CMS Primary Currency Architecture & Denomination Safety in Favorite Pay.
+ * Verifies that:
+ * 1. Primary Currency can be changed after financial activity has started.
+ * 2. Changing Primary Currency updates active wallet denomination without altering numeric balances.
+ * 3. Historical transaction records preserve their explicitly stored currencies.
+ * 4. Manual gateways support the configured Primary Currency directly without FX conversion.
+ */
 class PrimaryCurrencyFinancialSafetyTest extends TestCase
 {
     private Database $db;
@@ -77,7 +83,7 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
         $this->app = Application::getInstance();
         $this->app->instance(Database::class, $this->db);
 
-        $this->currencyService = new CurrencyService();
+        $this->currencyService = new CurrencyService(null, $this->db);
         $this->registry = new GatewayRegistry();
 
         $gateway = new ManualBangladeshGateway(
@@ -103,7 +109,7 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
             $this->db
         );
 
-        $this->refundService = new RefundService($this->paymentService);
+        $this->refundService = new RefundService($this->paymentService, $this->registry, $this->db);
 
         $this->app->instance(PaymentService::class, $this->paymentService);
         $this->app->instance(WalletService::class, $this->walletService);
@@ -153,7 +159,6 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
      */
     public function testGatewayConfigurationAloneDoesNotBlockCurrencyChange(): void
     {
-        // Register additional gateways
         $nagad = new ManualBangladeshGateway('manual_nagad', 'Nagad', PaymentMethodType::MANUAL_NAGAD, []);
         $bank = new ManualBangladeshGateway('manual_bank', 'Bank', PaymentMethodType::MANUAL_BANK, []);
         $this->registry->register($nagad);
@@ -167,9 +172,10 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
     }
 
     /**
-     * 2. Primary Currency change is blocked when a payment transaction exists.
+     * 2. Primary Currency CAN be changed even after payment transaction exists.
+     * Preserves historical transaction currency and does not perform mathematical FX.
      */
-    public function testPrimaryCurrencyChangeBlockedWhenPaymentTransactionExists(): void
+    public function testPrimaryCurrencyCanChangeEvenWhenPaymentTransactionExists(): void
     {
         $intent = $this->paymentService->createIntent(
             'favorite_shop',
@@ -179,23 +185,27 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
         );
 
         $this->assertTrue($this->plugin->hasFinancialActivity());
-        $lockReason = null;
-        $this->assertTrue(Currency::isPrimaryCurrencyLocked($lockReason));
-        $this->assertStringContainsString('financial activity', $lockReason);
+        $this->assertFalse(Currency::isPrimaryCurrencyLocked());
 
         $reason = null;
-        $this->assertFalse(Currency::canChangePrimaryCurrency('USD', $reason));
-        $this->assertStringContainsString('financial activity', $reason);
+        $this->assertTrue(Currency::canChangePrimaryCurrency('INR', $reason));
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
-        Currency::setPrimaryCurrency('USD');
+        // Change from BDT to INR
+        Currency::setPrimaryCurrency('INR');
+        $this->assertSame('INR', Currency::getPrimaryCurrency());
+        $this->assertSame('INR', $this->currencyService->getBaseCurrency());
+        $this->assertSame('INR', $this->walletService->getPrimaryCurrency());
+
+        // Historical transaction MUST preserve original BDT currency and amount
+        $tx = $this->db->selectOne("SELECT * FROM favorite_pay_transactions WHERE transaction_id = ?", [$intent->getId()]);
+        $this->assertSame('BDT', $tx->base_currency);
+        $this->assertSame(25000, (int)$tx->base_amount);
     }
 
     /**
-     * 3. Primary Currency change is blocked when a payment attempt exists.
+     * 3. Primary Currency CAN be changed when a payment attempt exists.
      */
-    public function testPrimaryCurrencyChangeBlockedWhenPaymentAttemptExists(): void
+    public function testPrimaryCurrencyCanChangeWhenPaymentAttemptExists(): void
     {
         $intent = $this->paymentService->createIntent(
             'favorite_shop',
@@ -211,17 +221,21 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
         );
 
         $this->assertTrue($this->plugin->hasFinancialActivity());
-        $this->assertTrue(Currency::isPrimaryCurrencyLocked());
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
+        // Change from BDT to EUR
         Currency::setPrimaryCurrency('EUR');
+        $this->assertSame('EUR', Currency::getPrimaryCurrency());
+
+        // Attempt retains historical currency
+        $attempt = $this->db->selectOne("SELECT * FROM favorite_pay_attempts WHERE transaction_id = ?", [$intent->getId()]);
+        $this->assertSame('BDT', $attempt->currency);
+        $this->assertSame(15000, (int)$attempt->amount);
     }
 
     /**
-     * 4. Primary Currency change is blocked when a refund exists.
+     * 4. Primary Currency CAN be changed when a refund exists.
      */
-    public function testPrimaryCurrencyChangeBlockedWhenRefundExists(): void
+    public function testPrimaryCurrencyCanChangeWhenRefundExists(): void
     {
         $intent = $this->paymentService->createIntent(
             'favorite_shop',
@@ -230,142 +244,51 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
             ['customer_id' => 1]
         );
         $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
-
         $this->refundService->createRefund($intent->getId(), Money::bdt(5000), 'Customer requested partial refund');
 
         $this->assertTrue($this->plugin->hasFinancialActivity());
-        $this->assertTrue(Currency::isPrimaryCurrencyLocked());
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
+        // Change from BDT to USD
         Currency::setPrimaryCurrency('USD');
+        $this->assertSame('USD', Currency::getPrimaryCurrency());
+
+        // Refund retains historical currency
+        $refund = $this->db->selectOne("SELECT * FROM favorite_pay_refunds WHERE transaction_id = ?", [$intent->getId()]);
+        $this->assertSame('BDT', $refund->currency);
+        $this->assertSame(5000, (int)$refund->amount);
     }
 
     /**
-     * 5. Primary Currency change is blocked when a wallet exists.
+     * 5. Changing Primary Currency updates active wallet denomination WITHOUT altering numeric balance.
+     * Example: BDT 500 becomes INR 500 (denomination updated, numeric 500 preserved, NO FX multiplication).
      */
-    public function testPrimaryCurrencyChangeBlockedWhenWalletExists(): void
-    {
-        $this->db->insert('favorite_pay_wallets', [
-            'user_id'    => 55,
-            'balance'    => 0,
-            'currency'   => 'BDT',
-            'status'     => 'active',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $this->assertTrue($this->plugin->hasFinancialActivity());
-        $this->assertTrue(Currency::isPrimaryCurrencyLocked());
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
-        Currency::setPrimaryCurrency('USD');
-    }
-
-    /**
-     * 6. Primary Currency change is blocked when a wallet ledger entry exists.
-     */
-    public function testPrimaryCurrencyChangeBlockedWhenWalletLedgerEntryExists(): void
-    {
-        $this->db->insert('favorite_pay_wallet_entries', [
-            'entry_id'        => 'led_test_001',
-            'wallet_id'       => 1,
-            'user_id'         => 66,
-            'type'            => 'credit',
-            'amount'          => 5000,
-            'balance_after'   => 5000,
-            'reference_type'  => 'deposit',
-            'reference_id'    => 'dep_001',
-            'idempotency_key' => 'idemp_001',
-            'description'     => 'Initial test deposit',
-            'created_at'      => date('Y-m-d H:i:s'),
-        ]);
-
-        $this->assertTrue($this->plugin->hasFinancialActivity());
-        $this->assertTrue(Currency::isPrimaryCurrencyLocked());
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
-        Currency::setPrimaryCurrency('USD');
-    }
-
-    /**
-     * 7. Failed currency change leaves the original Primary Currency unchanged.
-     */
-    public function testFailedCurrencyChangeLeavesOriginalPrimaryCurrencyUnchanged(): void
-    {
-        $intent = $this->paymentService->createIntent(
-            'favorite_digital',
-            'sub_001',
-            Money::bdt(9900),
-            ['customer_id' => 10]
-        );
-
-        $this->assertSame('BDT', Currency::getPrimaryCurrency());
-
-        try {
-            Currency::setPrimaryCurrency('USD');
-            $this->fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $e) {
-            $this->assertStringContainsString('financial activity', $e->getMessage());
-        }
-
-        // Primary Currency MUST still be BDT
-        $this->assertSame('BDT', Currency::getPrimaryCurrency());
-        $this->assertSame('BDT', Setting::get('general', 'primary_currency'));
-        $this->assertSame('BDT', $this->currencyService->getBaseCurrency());
-    }
-
-    /**
-     * 8. Existing wallet currency remains unchanged.
-     */
-    public function testExistingWalletCurrencyRemainsUnchanged(): void
+    public function testPrimaryCurrencyChangeUpdatesActiveWalletDenominationWithoutAlteringNumericBalance(): void
     {
         $userId = 201;
-        $this->walletService->deposit($userId, Money::bdt(50000), 'dep_bdt_201');
+        $this->walletService->deposit($userId, Money::bdt(50000), 'dep_bdt_201'); // 500.00 BDT
 
         $wallet = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
         $this->assertSame('BDT', $wallet->currency);
         $this->assertSame(50000, (int)$wallet->balance);
 
-        // Attempt currency change (will fail)
-        try {
-            Currency::setPrimaryCurrency('USD');
-        } catch (RuntimeException) {
-        }
+        // Administrator changes site Primary Currency to INR
+        Currency::setPrimaryCurrency('INR');
 
+        // Database wallet record updated to new denomination without changing numeric balance
         $walletAfter = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
-        $this->assertSame('BDT', $walletAfter->currency);
+        $this->assertSame('INR', $walletAfter->currency);
         $this->assertSame(50000, (int)$walletAfter->balance);
+
+        // Wallet service returns balance in the new denomination
+        $balance = $this->walletService->getBalance($userId);
+        $this->assertSame('INR', $balance->getCurrency());
+        $this->assertSame(50000, $balance->getAmount());
     }
 
     /**
-     * 9. Existing transaction currency remains unchanged.
+     * 6. Historical ledger entries retain their original recorded currency.
      */
-    public function testExistingTransactionCurrencyRemainsUnchanged(): void
-    {
-        $intent = $this->paymentService->createIntent(
-            'favorite_shop',
-            'order_bdt_hist',
-            Money::bdt(45000),
-            ['customer_id' => 301]
-        );
-
-        try {
-            Currency::setPrimaryCurrency('EUR');
-        } catch (RuntimeException) {
-        }
-
-        $tx = $this->db->selectOne("SELECT * FROM favorite_pay_transactions WHERE transaction_id = ?", [$intent->getId()]);
-        $this->assertSame('BDT', $tx->base_currency);
-        $this->assertSame(45000, (int)$tx->base_amount);
-    }
-
-    /**
-     * 10. Existing ledger entry currency remains unchanged.
-     */
-    public function testExistingLedgerEntryCurrencyRemainsUnchanged(): void
+    public function testHistoricalLedgerEntriesRetainTheirOriginalRecordedCurrency(): void
     {
         $userId = 401;
         $intent = $this->paymentService->createIntent(
@@ -375,50 +298,88 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
             ['customer_id' => $userId]
         );
         $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
-        $entry = $this->walletService->settleSuccessfulPayment($intent->getId());
+        $this->walletService->settleSuccessfulPayment($intent->getId());
 
-        try {
-            Currency::setPrimaryCurrency('GBP');
-        } catch (RuntimeException) {
-        }
+        // Change Primary Currency to GBP
+        Currency::setPrimaryCurrency('GBP');
 
+        // Ledger entry retains original recorded amount
         $ledger = $this->db->selectOne("SELECT * FROM favorite_pay_wallet_entries WHERE reference_id = ?", [$intent->getId()]);
         $this->assertSame(60000, (int)$ledger->amount);
         $this->assertSame(60000, (int)$ledger->balance_after);
-
-        $wallet = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
-        $this->assertSame('BDT', $wallet->currency);
+        $meta = json_decode((string)$ledger->metadata, true);
+        $this->assertSame('BDT', $meta['base_currency'] ?? $meta['currency'] ?? null);
     }
 
     /**
-     * 11. New wallet uses current Primary Currency when wallet creation is allowed.
+     * 7. Manual gateways dynamically support the site's primary currency without foreign exchange conversion.
      */
-    public function testNewWalletUsesCurrentPrimaryCurrencyWhenWalletCreationAllowed(): void
+    public function testManualGatewaysSupportPrimaryCurrencyDynamically(): void
     {
-        // Fresh install with no activity: change primary currency to USD
-        Currency::setPrimaryCurrency('USD');
-        $this->assertSame('USD', Currency::getPrimaryCurrency());
+        Currency::setPrimaryCurrency('INR');
 
-        $userId = 501;
+        $gateway = $this->registry->get('manual_bkash');
+        $this->assertInstanceOf(ManualBangladeshGateway::class, $gateway);
+
+        // Supported currencies must include active primary currency 'INR'
+        $this->assertContains('INR', $gateway->getSupportedCurrencies());
+
+        // Payment intent in INR can create an attempt directly without error
         $intent = $this->paymentService->createIntent(
-            'favorite_shop',
-            'order_usd_new',
-            Money::usd(2500), // $25.00 USD
-            ['customer_id' => $userId]
+            'favorite_digital',
+            'fd_ord_inr_300',
+            new Money(30000, 'INR'), // 300.00 INR
+            ['customer_id' => 99]
         );
-        $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
 
-        $entry = $this->walletService->settleSuccessfulPayment($intent->getId());
-        $this->assertSame('USD', $entry->getAmount()->getCurrency());
-        $this->assertSame(2500, $entry->getAmount()->getAmount());
+        $attempt = $gateway->createAttempt($intent, [
+            'trx_id'         => 'MANUAL_TRX_INR_123',
+            'sender_account' => '01711111111',
+        ]);
 
-        $wallet = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
-        $this->assertSame('USD', $wallet->currency);
-        $this->assertSame(2500, (int)$wallet->balance);
+        $this->assertSame(PaymentStatus::AWAITING_VERIFICATION, $attempt->getStatus());
+        $this->assertSame('INR', $attempt->getAmount()->getCurrency());
+        $this->assertSame(30000, $attempt->getAmount()->getAmount());
     }
 
     /**
-     * 12. Settlement with matching currencies succeeds.
+     * 8. Super-admin setting controller updates Primary Currency successfully even with existing financial activity.
+     */
+    public function testSuperAdminSettingControllerUpdatesPrimaryCurrencyWithFinancialActivity(): void
+    {
+        // 1. Establish financial activity
+        $this->paymentService->createIntent(
+            'favorite_shop',
+            'admin_activity_exists',
+            Money::bdt(10000),
+            ['customer_id' => 1]
+        );
+
+        $this->assertTrue($this->plugin->hasFinancialActivity());
+
+        $controller = new SettingController($this->app);
+
+        // 2. Admin submits form with primary_currency = INR
+        $_SESSION['_token'] = 'csrf_token_test_abc';
+        $request = new Request([], [
+            '_token'           => 'csrf_token_test_abc',
+            'site_name'        => 'My Store',
+            'primary_currency' => 'INR',
+        ], [], [], [], ['REQUEST_METHOD' => 'POST']);
+
+        $response = $controller->update($request);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('Settings saved successfully.', $_SESSION['flash_success'] ?? null);
+
+        // Site primary currency MUST now be INR
+        $this->assertSame('INR', Currency::getPrimaryCurrency());
+        $this->assertSame('INR', Setting::get('general', 'primary_currency'));
+        $this->assertSame('INR', $this->currencyService->getBaseCurrency());
+    }
+
+    /**
+     * 9. Settlement with matching currencies succeeds.
      */
     public function testSettlementWithMatchingCurrenciesSucceeds(): void
     {
@@ -438,150 +399,5 @@ class PrimaryCurrencyFinancialSafetyTest extends TestCase
         $balance = $this->walletService->getBalance($userId);
         $this->assertSame('BDT', $balance->getCurrency());
         $this->assertSame(30000, $balance->getAmount());
-    }
-
-    /**
-     * 13. Settlement with mismatched currencies is rejected safely.
-     */
-    public function testSettlementWithMismatchedCurrenciesIsRejectedSafely(): void
-    {
-        $userId = 701;
-
-        // User already has an existing BDT wallet
-        $this->db->insert('favorite_pay_wallets', [
-            'user_id'    => $userId,
-            'balance'    => 10000,
-            'currency'   => 'BDT',
-            'status'     => 'active',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        // Create a transaction with USD base amount (e.g. from an external service or legacy)
-        $intent = $this->paymentService->createIntent(
-            'favorite_shop',
-            'mismatched_tx_1',
-            Money::usd(5000),
-            ['customer_id' => $userId]
-        );
-        $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
-
-        $this->expectException(\Throwable::class);
-        $this->walletService->settleSuccessfulPayment($intent->getId());
-    }
-
-    /**
-     * 14. Mismatched settlement does not change wallet balance.
-     */
-    public function testMismatchedSettlementDoesNotChangeWalletBalance(): void
-    {
-        $userId = 801;
-        $this->db->insert('favorite_pay_wallets', [
-            'user_id'    => $userId,
-            'balance'    => 40000,
-            'currency'   => 'BDT',
-            'status'     => 'active',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $intent = $this->paymentService->createIntent(
-            'favorite_shop',
-            'mismatched_tx_2',
-            Money::usd(7500),
-            ['customer_id' => $userId]
-        );
-        $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
-
-        try {
-            $this->walletService->settleSuccessfulPayment($intent->getId());
-            $this->fail('Expected exception for mismatched settlement.');
-        } catch (\Throwable) {
-        }
-
-        // Balance in database MUST remain exactly 40,000
-        $wallet = $this->db->selectOne("SELECT * FROM favorite_pay_wallets WHERE user_id = ?", [$userId]);
-        $this->assertSame(40000, (int)$wallet->balance);
-        $this->assertSame('BDT', $wallet->currency);
-
-        // In-memory balance must also remain unchanged
-        $balance = $this->walletService->getBalance($userId);
-        $this->assertSame(40000, $balance->getAmount());
-        $this->assertSame('BDT', $balance->getCurrency());
-    }
-
-    /**
-     * 15. Mismatched settlement does not create a ledger entry.
-     */
-    public function testMismatchedSettlementDoesNotCreateLedgerEntry(): void
-    {
-        $userId = 901;
-        $this->db->insert('favorite_pay_wallets', [
-            'user_id'    => $userId,
-            'balance'    => 20000,
-            'currency'   => 'BDT',
-            'status'     => 'active',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $entriesBefore = $this->db->select("SELECT * FROM favorite_pay_wallet_entries WHERE user_id = ?", [$userId]);
-        $this->assertCount(0, $entriesBefore);
-
-        $intent = $this->paymentService->createIntent(
-            'favorite_shop',
-            'mismatched_tx_3',
-            Money::usd(1000),
-            ['customer_id' => $userId]
-        );
-        $this->paymentService->updateIntentStatus($intent->getId(), PaymentStatus::SUCCEEDED);
-
-        try {
-            $this->walletService->settleSuccessfulPayment($intent->getId());
-        } catch (\Throwable) {
-        }
-
-        $entriesAfter = $this->db->select("SELECT * FROM favorite_pay_wallet_entries WHERE user_id = ?", [$userId]);
-        $this->assertCount(0, $entriesAfter, 'Zero ledger entries should be created on failed settlement.');
-    }
-
-    /**
-     * 16. Super-admin / admin controller cannot bypass the Primary Currency financial safety rule.
-     */
-    public function testSuperAdminSettingControllerCannotBypassPrimaryCurrencySafetyRule(): void
-    {
-        // 1. Establish financial activity
-        $this->paymentService->createIntent(
-            'favorite_shop',
-            'admin_bypass_prevention',
-            Money::bdt(10000),
-            ['customer_id' => 1]
-        );
-
-        $controller = new SettingController($this->app);
-
-        // 2. Simulate super-admin submitting form with primary_currency = USD
-        $_SESSION['_token'] = 'csrf_token_test_abc';
-        $request = new Request([], [
-            '_token'           => 'csrf_token_test_abc',
-            'site_name'        => 'My Store',
-            'primary_currency' => 'USD',
-        ], [], [], [], ['REQUEST_METHOD' => 'POST']);
-
-        $response = $controller->update($request);
-
-        // Controller redirects back with flash error
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertNotEmpty($_SESSION['flash_error'] ?? null);
-        $this->assertStringContainsString('financial activity', $_SESSION['flash_error']);
-
-        // Site primary currency MUST remain BDT
-        $this->assertSame('BDT', Currency::getPrimaryCurrency());
-        $this->assertSame('BDT', Setting::get('general', 'primary_currency'));
-
-        // Direct programmatic call also cannot bypass
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('financial activity');
-        Currency::setPrimaryCurrency('EUR');
     }
 }

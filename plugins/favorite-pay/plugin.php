@@ -3,7 +3,7 @@
  * Plugin Name: Favorite Pay
  * Plugin URI: https://github.com/favoritecode/Favorite-CMS-Assets
  * Description: Authoritative shared payment orchestration, digital wallet, and exchange-rate management plugin for Favorite CMS.
- * Version: 1.0.13
+ * Version: 1.0.14
  * Author: Favorite CMS Team
  */
 

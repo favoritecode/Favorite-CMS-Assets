@@ -140,7 +140,7 @@ $baseCurrency = $currency ?? 'BDT';
                 </label>
                 <div style="position: relative; display: flex; align-items: center;">
                     <span style="position: absolute; left: 16px; font-size: 20px; font-weight: 700; color: var(--muted, #64748b);">
-                        <?php echo match(strtoupper($primaryCurrency ?? $baseCurrency)) { 'BDT' => '৳', 'USD' => '$', 'EUR' => '€', default => ($primaryCurrency ?? $baseCurrency) }; ?>
+                        <?php echo htmlspecialchars(class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($primaryCurrency ?? $baseCurrency) : ($primaryCurrency ?? $baseCurrency), ENT_QUOTES, 'UTF-8'); ?>
                     </span>
                     <input type="number" 
                            name="amount" 

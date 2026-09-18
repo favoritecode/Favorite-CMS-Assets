@@ -52,7 +52,7 @@
                     </label>
                     <div style="position: relative; display: flex; align-items: center;">
                         <span style="position: absolute; left: 16px; font-size: 20px; font-weight: 700; color: var(--muted, #64748b);">
-                            <?php echo match(strtoupper($primaryCurrency)) { 'BDT' => '৳', 'USD' => '$', 'EUR' => '€', default => $primaryCurrency }; ?>
+                            <?php echo htmlspecialchars(class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getSymbol($primaryCurrency) : $primaryCurrency, ENT_QUOTES, 'UTF-8'); ?>
                         </span>
                         <input type="number" 
                                name="amount" 
