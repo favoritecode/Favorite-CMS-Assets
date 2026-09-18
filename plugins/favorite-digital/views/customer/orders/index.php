@@ -40,7 +40,7 @@
                 <?php foreach ($orders as $order): ?>
                     <tr>
                         <td><strong style="color: var(--heading, #0f172a);"><?= htmlspecialchars((string)$order->order_number, ENT_QUOTES, 'UTF-8') ?></strong></td>
-                        <td><?= htmlspecialchars(substr((string)$order->created_at, 0, 10), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars(fdig_format_date($order->created_at, 'd M Y'), ENT_QUOTES, 'UTF-8') ?></td>
                         <td><span class="order-badge"><?= strtoupper(htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8')) ?></span></td>
                         <td><span class="order-badge"><?= strtoupper(htmlspecialchars((string)$order->payment_status, ENT_QUOTES, 'UTF-8')) ?></span></td>
                         <td style="text-align: right; font-weight: bold; color: var(--heading, #0f172a);"><?= htmlspecialchars((string)$order->currency, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string)$order->total_amount, ENT_QUOTES, 'UTF-8') ?></td>

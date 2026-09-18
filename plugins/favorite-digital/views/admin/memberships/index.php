@@ -224,10 +224,10 @@
                                         <?php endif; ?>
                                     </td>
                                     <td style="padding: 12px 14px; font-family: monospace; font-size: 12px; color: #1e1e1e;">
-                                        <?php echo htmlspecialchars($m->expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php echo htmlspecialchars(fdig_format_datetime($m->expires_at), ENT_QUOTES, 'UTF-8'); ?>
                                         <?php if (!empty($m->grace_expires_at) && $m->status === 'grace'): ?>
                                             <div style="color: #b45309; font-size: 11px;">
-                                                Grace: <?php echo htmlspecialchars($m->grace_expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                                                Grace: <?php echo htmlspecialchars(fdig_format_datetime($m->grace_expires_at), ENT_QUOTES, 'UTF-8'); ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>

@@ -105,7 +105,7 @@
                 </div>
                 <div class="info-block">
                     <div class="info-label">Current Expiry</div>
-                    <div class="info-value"><?= htmlspecialchars(substr((string)$activeMembership->expires_at, 0, 10), ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="info-value"><?= htmlspecialchars(fdig_format_date($activeMembership->expires_at, 'd M Y'), ENT_QUOTES, 'UTF-8') ?></div>
                 </div>
                 <div class="info-block">
                     <div class="info-label">Grace Period</div>
@@ -119,7 +119,7 @@
 
             <?php if ($activeMembership->status === 'grace'): ?>
                 <div class="alert-grace">
-                    ⚠️ Your membership is currently in the grace period. Please renew before <?= htmlspecialchars((string)$activeMembership->grace_expires_at, ENT_QUOTES, 'UTF-8') ?> to prevent loss of access.
+                    ⚠️ Your membership is currently in the grace period. Please renew before <?= htmlspecialchars(fdig_format_datetime($activeMembership->grace_expires_at), ENT_QUOTES, 'UTF-8') ?> to prevent loss of access.
                 </div>
             <?php endif; ?>
 
@@ -185,7 +185,7 @@
                                     <?= strtoupper(htmlspecialchars($m->status, ENT_QUOTES, 'UTF-8')) ?>
                                 </span>
                             </td>
-                            <td><?= htmlspecialchars((string)$m->expires_at, ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?= htmlspecialchars(fdig_format_datetime($m->expires_at), ENT_QUOTES, 'UTF-8') ?></td>
                             <td><?= !empty($m->auto_renew) ? 'Enabled' : 'Disabled' ?></td>
                         </tr>
                     <?php endforeach; ?>

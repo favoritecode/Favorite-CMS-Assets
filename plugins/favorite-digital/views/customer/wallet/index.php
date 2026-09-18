@@ -596,7 +596,7 @@ include __DIR__ . '/../account/nav.php';
                             ?>
                             <tr>
                                 <td style="white-space: nowrap; font-size: 13px; color: var(--muted, #64748b);">
-                                    <?= htmlspecialchars($tx->created_at, ENT_QUOTES, 'UTF-8') ?>
+                                    <?= htmlspecialchars(fdig_format_datetime($tx->created_at), ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td>
                                     <span class="fav-badge-type fav-badge-<?= htmlspecialchars($tx->type, ENT_QUOTES, 'UTF-8') ?>">
@@ -669,7 +669,7 @@ include __DIR__ . '/../account/nav.php';
                         <?php foreach ($recharges as $rc): ?>
                             <tr>
                                 <td style="white-space: nowrap; font-size: 13px; color: var(--muted, #64748b);">
-                                    <?= htmlspecialchars($rc->created_at, ENT_QUOTES, 'UTF-8') ?>
+                                    <?= htmlspecialchars(fdig_format_datetime($rc->created_at), ENT_QUOTES, 'UTF-8') ?>
                                 </td>
                                 <td style="font-family: monospace; font-size: 12px;">
                                     <?= htmlspecialchars($rc->transaction_id, ENT_QUOTES, 'UTF-8') ?>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * View Package / Bundle Overview
  *
@@ -249,11 +249,11 @@ $savings = $combinedIndividualPrice - (float)$product->final_price;
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #646970;">Created:</span>
-                        <span style="color: #1e1e1e; font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars((string)$product->created_at, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span style="color: #1e1e1e; font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars(fdig_format_datetime($product->created_at), ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #646970;">Updated:</span>
-                        <span style="color: #1e1e1e; font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars((string)$product->updated_at, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span style="color: #1e1e1e; font-family: monospace; font-size: 12px;"><?php echo htmlspecialchars(fdig_format_datetime($product->updated_at), ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                 </div>
             </div>

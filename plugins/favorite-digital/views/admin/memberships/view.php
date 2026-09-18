@@ -70,19 +70,19 @@
                     </tr>
                     <tr style="border-bottom: 1px solid #f0f0f1;">
                         <td style="padding: 8px 0; color: #646970;">Started At:</td>
-                        <td style="padding: 8px 0; font-family: monospace;"><?php echo htmlspecialchars($membership->started_at, ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td style="padding: 8px 0; font-family: monospace;"><?php echo htmlspecialchars(fdig_format_datetime($membership->started_at), ENT_QUOTES, 'UTF-8'); ?></td>
                     </tr>
                     <tr style="border-bottom: 1px solid #f0f0f1;">
                         <td style="padding: 8px 0; color: #646970;">Expires At:</td>
                         <td style="padding: 8px 0; font-family: monospace; font-weight: 600; color: #1e1e1e;">
-                            <?php echo htmlspecialchars($membership->expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                            <?php echo htmlspecialchars(fdig_format_datetime($membership->expires_at), ENT_QUOTES, 'UTF-8'); ?>
                         </td>
                     </tr>
                     <?php if (!empty($membership->grace_expires_at)): ?>
                         <tr style="border-bottom: 1px solid #f0f0f1;">
                             <td style="padding: 8px 0; color: #b45309;">Grace Window Until:</td>
                             <td style="padding: 8px 0; font-family: monospace; color: #b45309; font-weight: 600;">
-                                <?php echo htmlspecialchars($membership->grace_expires_at, ENT_QUOTES, 'UTF-8'); ?>
+                                <?php echo htmlspecialchars(fdig_format_datetime($membership->grace_expires_at), ENT_QUOTES, 'UTF-8'); ?>
                             </td>
                         </tr>
                     <?php endif; ?>

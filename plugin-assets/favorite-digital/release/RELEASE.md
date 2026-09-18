@@ -8,15 +8,29 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.6 |
-| **Package File** | Favorite-Digital-v1.0.6.zip / Favorite-Digital.zip |
-| **Package Size** | 243,455 bytes |
-| **ZIP Entries** | 120 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `1691edac9894390094611f217787e97019083693022ba8216a084e9095c8ec76` |
+| **Release Version** | 1.0.7 |
+| **Package File** | Favorite-Digital-v1.0.7.zip / Favorite-Digital.zip |
+| **Package Size** | 243,436 bytes |
+| **ZIP Entries** | 96 entries (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `7fb63ff102fb43eda17d9e18624f904ae6393ca179fd2cac4a4151da6ad37f58` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12) |
+
+---
+
+## What's New in v1.0.7
+
+1. **[Site Timezone Alignment]**:
+   - Dynamic conversion of stored UTC timestamps into Core's configured Site Timezone across all customer and admin views via `fdig_format_datetime()` and `fdig_format_date()`.
+   - Non-destructive display conversion delegating directly to Core `format_date()` / `\FavoriteCMS\Core\DateTime::format()`, reading from `Setting::get('general', 'timezone')`.
+   - Stored database values and schema remain in strict UTC with zero database mutations.
+
+2. **[Orders Admin UI Polish]**:
+   - Modernized and polished administrative Orders list (`views/admin/orders/index.php`).
+   - Human-readable timestamp presentation (`d M Y, h:i A` e.g., `18 Sep 2026, 01:43 PM`), elegant status chips, clean tabular numbers, and dark-mode compatible layout.
+   - Preserves 100% of search, filter parameters, pagination, bulk actions, and CSRF protection.
 
 ---
 

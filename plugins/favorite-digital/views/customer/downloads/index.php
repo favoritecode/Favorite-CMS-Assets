@@ -39,7 +39,7 @@
                                 </div>
                             <?php endif; ?>
                             <?php if (!empty($item['expires_at'])): ?>
-                                <div style="font-size: 12px; color: var(--muted, #64748b); margin-top: 2px;">Expires: <?= htmlspecialchars((string)$item['expires_at'], ENT_QUOTES, 'UTF-8') ?></div>
+                                <div style="font-size: 12px; color: var(--muted, #64748b); margin-top: 2px;">Expires: <?= htmlspecialchars(fdig_format_datetime($item['expires_at']), ENT_QUOTES, 'UTF-8') ?></div>
                             <?php endif; ?>
                         </td>
                         <td style="padding: 12px;">

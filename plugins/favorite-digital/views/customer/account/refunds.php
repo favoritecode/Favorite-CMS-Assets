@@ -114,7 +114,7 @@ $buildRefundsUrl = function (array $overrides = []) use ($page): string {
                 <tbody>
                     <?php foreach ($refunds as $ref): ?>
                         <tr>
-                            <td><?= htmlspecialchars(substr((string)$ref->processed_at, 0, 10), ENT_QUOTES, 'UTF-8') ?></td>
+                            <td><?= htmlspecialchars(fdig_format_date($ref->processed_at, 'd M Y'), ENT_QUOTES, 'UTF-8') ?></td>
                             <td>
                                 <?php if (!empty($ref->order_number) && $ref->order_number !== 'N/A'): ?>
                                     <a href="/account/orders/<?= urlencode((string)$ref->order_number) ?>" style="font-weight: 700; color: var(--accent, #2563eb); text-decoration: none;">

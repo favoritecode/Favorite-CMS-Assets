@@ -27,3 +27,6 @@ if (!class_exists('FavoriteCMS\\Plugins\\FavoriteDigitalPlugin', false)) {
     class_alias(\FavoriteCMS\Digital\FavoriteDigitalPlugin::class, 'FavoriteCMS\\Plugins\\FavoriteDigitalPlugin');
 }
 
+// Global helpers
+require_once __DIR__ . '/src/Support/TimezoneHelper.php';
+

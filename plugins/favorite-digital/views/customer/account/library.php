@@ -293,7 +293,7 @@ if (!function_exists('buildLibraryUrl')) {
                                 <?php if (!empty($item['expires_at'])): ?>
                                     <div class="spec-line">
                                         <span>Expires:</span>
-                                        <strong><?= htmlspecialchars(substr((string)$item['expires_at'], 0, 10), ENT_QUOTES, 'UTF-8') ?></strong>
+                                        <strong><?= htmlspecialchars(fdig_format_date($item['expires_at'], 'd M Y'), ENT_QUOTES, 'UTF-8') ?></strong>
                                     </div>
                                 <?php endif; ?>
                             </div>

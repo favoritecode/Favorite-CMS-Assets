@@ -124,7 +124,7 @@
                                             <em>N/A</em>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= htmlspecialchars((string)$pay->created_at, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= htmlspecialchars(fdig_format_datetime($pay->created_at), ENT_QUOTES, 'UTF-8') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -162,8 +162,8 @@
                                             <?= htmlspecialchars(ucfirst((string)$ent->status), ENT_QUOTES, 'UTF-8') ?>
                                         </span>
                                     </td>
-                                    <td><?= htmlspecialchars((string)$ent->granted_at, ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= !empty($ent->expires_at) ? htmlspecialchars((string)$ent->expires_at, ENT_QUOTES, 'UTF-8') : '<em>Lifetime</em>' ?></td>
+                                    <td><?= htmlspecialchars(fdig_format_datetime($ent->granted_at), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= !empty($ent->expires_at) ? htmlspecialchars(fdig_format_datetime($ent->expires_at), ENT_QUOTES, 'UTF-8') : '<em>Lifetime</em>' ?></td>
                                     <td><?= ($ent->product_type === 'digital') ? (isset($ent->download_count) ? (int)$ent->download_count . ' / 3 used' : '0 / 3 used') : '—' ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -202,7 +202,7 @@
                                     </td>
                                     <td><?= htmlspecialchars((string)$ref->reason, ENT_QUOTES, 'UTF-8') ?></td>
                                     <td><span class="badge badge-completed"><?= htmlspecialchars(ucfirst((string)$ref->status), ENT_QUOTES, 'UTF-8') ?></span></td>
-                                    <td><?= htmlspecialchars((string)$ref->processed_at, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= htmlspecialchars(fdig_format_datetime($ref->processed_at), ENT_QUOTES, 'UTF-8') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -224,8 +224,8 @@
                 <h2>Order Overview</h2>
                 <p><strong>Order ID:</strong> #<?= (int)$order->id ?></p>
                 <p><strong>Customer ID:</strong> User #<?= (int)$order->user_id ?></p>
-                <p><strong>Created:</strong> <?= htmlspecialchars((string)$order->created_at, ENT_QUOTES, 'UTF-8') ?></p>
-                <p><strong>Last Updated:</strong> <?= htmlspecialchars((string)$order->updated_at, ENT_QUOTES, 'UTF-8') ?></p>
+                <p><strong>Created:</strong> <?= htmlspecialchars(fdig_format_datetime($order->created_at), ENT_QUOTES, 'UTF-8') ?></p>
+                <p><strong>Last Updated:</strong> <?= htmlspecialchars(fdig_format_datetime($order->updated_at), ENT_QUOTES, 'UTF-8') ?></p>
 
                 <?php
                 $hasServiceItem = false;

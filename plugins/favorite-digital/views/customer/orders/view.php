@@ -12,7 +12,7 @@
             <p style="margin: 5px 0 0 0; color: var(--muted, #64748b);">Order #<?= htmlspecialchars((string)$order->order_number, ENT_QUOTES, 'UTF-8') ?></p>
         </div>
         <div style="text-align: right;">
-            <p style="margin: 0; font-size: 14px; color: var(--muted, #64748b);">Placed on: <?= htmlspecialchars((string)$order->created_at, ENT_QUOTES, 'UTF-8') ?></p>
+            <p style="margin: 0; font-size: 14px; color: var(--muted, #64748b);">Placed on: <?= htmlspecialchars(fdig_format_datetime($order->created_at), ENT_QUOTES, 'UTF-8') ?></p>
             <p style="margin: 5px 0 0 0;">
                 <span class="badge" style="background: var(--surface-muted, #f1f5f9); color: var(--heading, #0f172a); border: 1px solid var(--border, #e2e8f0); padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;"><?= strtoupper(htmlspecialchars((string)$order->status, ENT_QUOTES, 'UTF-8')) ?></span>
             </p>
@@ -78,7 +78,7 @@
                         <strong>Refund Destination:</strong> Favorite Digital Wallet
                     </p>
                     <p style="margin: 4px 0;">
-                        <strong>Processed Date:</strong> <?= htmlspecialchars((string)$ref->processed_at, ENT_QUOTES, 'UTF-8') ?>
+                        <strong>Processed Date:</strong> <?= htmlspecialchars(fdig_format_datetime($ref->processed_at), ENT_QUOTES, 'UTF-8') ?>
                     </p>
                     <?php if (!empty($ref->reason)): ?>
                         <p style="margin: 4px 0;">
