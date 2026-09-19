@@ -1191,11 +1191,11 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                                     <?php $hMediaType = $val('hero_media_type', 'image'); ?>
                                     <select name="mods[hero_media_type]" id="fw-hero-media-type" class="fw-select">
                                         <option value="image" <?php echo $hMediaType === 'image' ? 'selected' : ''; ?>>Image (Custom or Default SVG)</option>
-                                        <option value="video" <?php echo $hMediaType === 'video' ? 'selected' : ''; ?>>Video (MP4, YouTube, or Vimeo)</option>
+                                        <option value="video" <?php echo $hMediaType === 'video' ? 'selected' : ''; ?>>Video (Direct Video, YouTube, Vimeo, or Embed Player)</option>
                                         <option value="none" <?php echo $hMediaType === 'none' ? 'selected' : ''; ?>>None (Text &amp; Buttons Only)</option>
                                     </select>
                                 </div>
-                                <div class="fw-field" id="fw-hero-image-fields">
+                                <div class="fw-field" id="fw-hero-image-fields" style="<?php echo $hMediaType === 'image' ? '' : 'display:none;'; ?>">
                                     <label class="fw-label">Hero Image</label>
                                     <div class="fw-media-picker-group">
                                         <div class="fw-media-preview-box" id="preview-box-hero-image">
@@ -1219,10 +1219,10 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                                         <input type="text" name="mods[hero_image_link]" class="fw-input" placeholder="Optional click link" value="<?php echo htmlspecialchars($val('hero_image_link'), ENT_QUOTES, 'UTF-8'); ?>">
                                     </div>
                                 </div>
-                                <div class="fw-field" id="fw-hero-video-fields">
+                                <div class="fw-field" id="fw-hero-video-fields" style="<?php echo $hMediaType === 'video' ? '' : 'display:none;'; ?>">
                                     <label class="fw-label" for="fw-hero-video-url">Hero Video URL</label>
-                                    <input type="text" name="mods[hero_video_url]" id="fw-hero-video-url" class="fw-input" value="<?php echo htmlspecialchars($val('hero_video_url'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="https://www.youtube.com/watch?v=... or MP4 file">
-                                    <span class="fw-help">Supports MP4 direct link, YouTube video URL, or Vimeo video URL.</span>
+                                    <input type="text" name="mods[hero_video_url]" id="fw-hero-video-url" class="fw-input" value="<?php echo htmlspecialchars($val('hero_video_url'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="https://... (Direct video, YouTube, Vimeo, or embed player URL)">
+                                    <span class="fw-help">Supports direct video URLs, YouTube, Vimeo, and third-party player/embed URLs (e.g. Abyss Player).</span>
                                 </div>
                             </div>
                         </div>
@@ -1885,6 +1885,21 @@ $stat4Ind = $val('stats_4_indicator', $val('stat_4_desc', 'Expert assistance'));
                 }
             } catch (e) {}
         });
+    }
+
+    // Dynamic Hero Media Visibility Toggle
+    var heroMediaTypeSelect = document.getElementById('fw-hero-media-type');
+    var heroImageFields = document.getElementById('fw-hero-image-fields');
+    var heroVideoFields = document.getElementById('fw-hero-video-fields');
+    function syncHeroMediaVisibility() {
+        if (!heroMediaTypeSelect) return;
+        var mType = heroMediaTypeSelect.value;
+        if (heroImageFields) heroImageFields.style.display = (mType === 'image') ? '' : 'none';
+        if (heroVideoFields) heroVideoFields.style.display = (mType === 'video') ? '' : 'none';
+    }
+    if (heroMediaTypeSelect) {
+        heroMediaTypeSelect.addEventListener('change', syncHeroMediaVisibility);
+        syncHeroMediaVisibility();
     }
 
     // Section Sort / Drag-and-Drop & Arrow Buttons

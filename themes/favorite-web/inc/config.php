@@ -44,7 +44,7 @@ if (!function_exists('fw_default_config')) {
             'hero_secondary_url'       => '#favorite-web-services',
             'hero_media_type'          => 'image', // 'image', 'video', 'none'
             'hero_image_url'           => '',      // empty = default SVG
-            'hero_image_alt'           => 'Favorite Web Platform',
+            'hero_image_alt'           => '',
             'hero_image_link'          => '',
             'hero_image_target'        => '_self',
             'hero_image_fit'           => 'contain',
@@ -345,27 +345,156 @@ if (!function_exists('fw_sanitize_custom_css')) {
 
 if (!function_exists('fw_extract_youtube_id')) {
     /**
-     * Safely extract YouTube video ID from various URL formats.
+     * Safely extract YouTube video ID from various URL formats including watch, embed, shorts, youtu.be,
+     * and URLs with arbitrary query parameters.
      */
     function fw_extract_youtube_id(string $url): ?string
     {
-        if (preg_match('#(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})#i', $url, $matches)) {
+        $u = trim($url);
+        if ($u === '') {
+            return null;
+        }
+
+        // Direct match for watch?v=, embed/, v/, shorts/, youtu.be/
+        if (preg_match('#(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,32})#i', $u, $matches)) {
             return $matches[1];
         }
+
+        // Fallback: parse query string for ?v= or &v= on any youtube.com host
+        $parsed = parse_url($u);
+        $host = strtolower((string)($parsed['host'] ?? ''));
+        if ($host !== '' && (str_ends_with($host, 'youtube.com') || $host === 'youtube.com')) {
+            if (!empty($parsed['query'])) {
+                parse_str($parsed['query'], $queryParams);
+                if (!empty($queryParams['v']) && is_string($queryParams['v']) && preg_match('/^[a-zA-Z0-9_-]{6,32}$/', $queryParams['v'])) {
+                    return $queryParams['v'];
+                }
+            }
+        }
+
         return null;
     }
 }
 
 if (!function_exists('fw_extract_vimeo_id')) {
     /**
-     * Safely extract Vimeo video ID from various URL formats.
+     * Safely extract Vimeo video ID from various URL formats including player, channels, groups, and albums.
      */
     function fw_extract_vimeo_id(string $url): ?string
     {
-        if (preg_match('#(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)([0-9]{6,12})#i', $url, $matches)) {
+        $u = trim($url);
+        if ($u === '') {
+            return null;
+        }
+        if (preg_match('#(?:vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)|player\.vimeo\.com\/video\/)([0-9]{6,12})#i', $u, $matches)) {
             return $matches[1];
         }
         return null;
+    }
+}
+
+if (!function_exists('fw_resolve_hero_video_source')) {
+    /**
+     * Resolve Hero Video Source safely into direct video, YouTube, Vimeo, generic third-party embed player, or unknown.
+     *
+     * @param string $input Raw URL or embed snippet from customizer
+     * @param array<string, mixed> $options ['autoplay' => bool, 'muted' => bool]
+     * @return array{type: 'direct'|'youtube'|'vimeo'|'embed'|'unknown', url: string, src: string, id?: string, is_iframe: bool}
+     */
+    function fw_resolve_hero_video_source(string $input, array $options = []): array
+    {
+        $raw = trim($input);
+        if ($raw === '') {
+            return ['type' => 'unknown', 'url' => '', 'src' => '', 'is_iframe' => false];
+        }
+
+        // 1. Check if raw embed HTML was pasted (e.g. <iframe ... src="..." or <video ... src="...")
+        if (preg_match('/<iframe\b[^>]*\bsrc=["\']([^"\']+)["\']/i', $raw, $matches)) {
+            $raw = trim($matches[1]);
+        } elseif (preg_match('/<video\b[^>]*\bsrc=["\']([^"\']+)["\']/i', $raw, $matches)) {
+            $raw = trim($matches[1]);
+        }
+
+        // 2. Reject dangerous URI schemes, control characters, and dangerous symbols
+        if (preg_match('/^(?:javascript|data|vbscript|file):/i', $raw) || preg_match('/[\x00-\x1F\x7F<>"\']/', $raw)) {
+            return ['type' => 'unknown', 'url' => '', 'src' => '', 'is_iframe' => false];
+        }
+
+        $autoplay = !empty($options['autoplay']);
+        $muted = !isset($options['muted']) || !empty($options['muted']);
+
+        // 3. YouTube detection
+        $ytId = fw_extract_youtube_id($raw);
+        if ($ytId !== null) {
+            $params = [
+                'rel' => '0',
+                'playsinline' => '1',
+            ];
+            if ($autoplay) {
+                $params['autoplay'] = '1';
+                if ($muted) {
+                    $params['mute'] = '1';
+                }
+            }
+            $queryStr = http_build_query($params);
+            $embedUrl = "https://www.youtube-nocookie.com/embed/{$ytId}?{$queryStr}";
+            return [
+                'type'      => 'youtube',
+                'url'       => $embedUrl,
+                'src'       => $embedUrl,
+                'id'        => $ytId,
+                'is_iframe' => true,
+            ];
+        }
+
+        // 4. Vimeo detection
+        $vmId = fw_extract_vimeo_id($raw);
+        if ($vmId !== null) {
+            $params = [
+                'playsinline' => '1',
+            ];
+            if ($autoplay) {
+                $params['autoplay'] = '1';
+                if ($muted) {
+                    $params['muted'] = '1';
+                }
+            }
+            $queryStr = http_build_query($params);
+            $embedUrl = "https://player.vimeo.com/video/{$vmId}?{$queryStr}";
+            return [
+                'type'      => 'vimeo',
+                'url'       => $embedUrl,
+                'src'       => $embedUrl,
+                'id'        => $vmId,
+                'is_iframe' => true,
+            ];
+        }
+
+        // 5. Direct media file check based on path extension (.mp4, .webm, .ogg, .ogv, .mov, .m4v)
+        $parsedPath = parse_url($raw, PHP_URL_PATH);
+        if (is_string($parsedPath) && preg_match('/\.(?:mp4|webm|ogg|ogv|mov|m4v)$/i', $parsedPath)) {
+            return [
+                'type'      => 'direct',
+                'url'       => $raw,
+                'src'       => $raw,
+                'is_iframe' => false,
+            ];
+        }
+
+        // 6. Generic third-party player / embed URL (e.g. https://player.abyssplayer.com/TEqUw-gUj)
+        $scheme = parse_url($raw, PHP_URL_SCHEME);
+        if (is_string($scheme) && in_array(strtolower($scheme), ['http', 'https'], true)) {
+            if (filter_var($raw, FILTER_VALIDATE_URL)) {
+                return [
+                    'type'      => 'embed',
+                    'url'       => $raw,
+                    'src'       => $raw,
+                    'is_iframe' => true,
+                ];
+            }
+        }
+
+        return ['type' => 'unknown', 'url' => '', 'src' => '', 'is_iframe' => false];
     }
 }
 
