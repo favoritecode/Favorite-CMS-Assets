@@ -560,3 +560,110 @@ if (!function_exists('fw_product_image')) {
         return '';
     }
 }
+
+if (!function_exists('fw_render_auth_page_with_theme')) {
+    /**
+     * Renders authentication screens (login, register, forgot-password, reset-password, resend-verification)
+     * seamlessly within the active favorite-web theme shell (header and footer), supporting real-time
+     * light/dark mode toggling, brand header, footer widgets, and preserving all security tokens and validation.
+     */
+    function fw_render_auth_page_with_theme(): void
+    {
+        $rawHtml = ob_get_clean();
+        $code = http_response_code();
+
+        // Pass through redirects (301, 302, 303, etc.), empty payloads, or non-auth pages untouched
+        if (($code >= 300 && $code < 400) || $rawHtml === '' || !str_contains($rawHtml, 'class="fc-auth"')) {
+            echo $rawHtml;
+            return;
+        }
+
+        // Extract title
+        $metaTitle = null;
+        if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $rawHtml, $m)) {
+            $metaTitle = html_entity_decode(trim($m[1]), ENT_QUOTES, 'UTF-8');
+        }
+
+        // Extract meta description if provided
+        $metaDescription = null;
+        if (preg_match('/<meta\s+name="description"\s+content="([^"]*)"/is', $rawHtml, $m)) {
+            $metaDescription = html_entity_decode(trim($m[1]), ENT_QUOTES, 'UTF-8');
+        }
+
+        // Extract auth card and frame
+        $frameHtml = '';
+        if (preg_match('/<div class="fc-auth__frame"[^>]*>.*?<\/div>\s*(?=<p class="fc-auth__footer"|<\/div>\s*<\/main>)/is', $rawHtml, $m)) {
+            $frameHtml = $m[0];
+        } elseif (preg_match('/<main class="fc-auth"[^>]*>(.*?)<\/main>/is', $rawHtml, $m)) {
+            $frameHtml = $m[1];
+        } else {
+            $frameHtml = $rawHtml;
+        }
+
+        // Extract auth progressive enhancement scripts (password toggle, validation rules, token hash parser)
+        $scriptsHtml = '';
+        if (preg_match_all('/<script\b[^>]*>(.*?)<\/script>/is', $rawHtml, $scriptMatches)) {
+            foreach ($scriptMatches[0] as $scriptTag) {
+                if (!str_contains($scriptTag, 'favorite_admin_theme')) {
+                    $scriptsHtml .= "\n" . $scriptTag;
+                }
+            }
+        }
+
+        // Render full page enclosed within favorite-web header and footer
+        ob_start();
+        $bodyClass = 'favorite-auth-page';
+        $fwHasSidebar = false;
+        $siteLayout = 'none';
+
+        include __DIR__ . '/header.php';
+        ?>
+        <main class="site-main site-main--auth" id="main-content" tabindex="-1">
+            <div class="fc-auth fc-auth--themed">
+                <div class="fc-auth__inner fc-auth__inner--account">
+                    <?php echo $frameHtml; ?>
+                </div>
+            </div>
+        </main>
+        <?php echo $scriptsHtml; ?>
+        <?php
+        include __DIR__ . '/footer.php';
+        $themedHtml = ob_get_clean();
+        echo $themedHtml;
+    }
+}
+
+if (class_exists(\FavoriteCMS\Core\Hook::class)) {
+    \FavoriteCMS\Core\Hook::addAction('init', function () {
+        // Only activate for requests with host/URI (web requests and integration tests)
+        if (php_sapi_name() === 'cli' && empty($_SERVER['HTTP_HOST'])) {
+            return;
+        }
+
+        $req = \FavoriteCMS\Core\Request::capture();
+        if (!empty($GLOBALS['favorite_cms_base_path'])) {
+            $req->setBasePath($GLOBALS['favorite_cms_base_path']);
+        }
+        $rawPath = $req->path();
+        $cleanPath = '/' . trim($rawPath, '/');
+        $authPaths = [
+            '/admin/login',
+            '/login',
+            '/register',
+            '/signup',
+            '/admin/register',
+            '/forgot-password',
+            '/reset-password',
+            '/resend-verification',
+            '/verify-email',
+            '/logout',
+            '/admin/logout',
+        ];
+
+        if (in_array($rawPath, $authPaths, true) || in_array($cleanPath, $authPaths, true)) {
+            ob_start();
+            register_shutdown_function('fw_render_auth_page_with_theme');
+        }
+    }, 5);
+}
+

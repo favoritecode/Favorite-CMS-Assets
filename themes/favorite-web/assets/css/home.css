@@ -585,6 +585,9 @@
 @media (min-width: 960px) {
     .fw-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+@media (min-width: 1440px) {
+    .fw-product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 
 /* 7. Packages Section & Pricing Cards ======================================= */
 .fw-packages {
@@ -685,6 +688,9 @@
 }
 @media (min-width: 960px) {
     .fw-packages__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1440px) {
+    .fw-packages__grid { max-width: 1320px; margin-inline: auto; }
 }
 
 /* 8. Memberships Section =================================================== */
