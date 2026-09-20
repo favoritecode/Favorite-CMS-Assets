@@ -10,7 +10,9 @@ use FavoriteCMS\Digital\Domain\ProductType;
 use FavoriteCMS\Digital\Exceptions\DownloadException;
 use FavoriteCMS\Digital\Repositories\DownloadRepository;
 use FavoriteCMS\Digital\Repositories\EntitlementRepository;
+use FavoriteCMS\Digital\Repositories\OrderRepository;
 use FavoriteCMS\Digital\Repositories\ProductRepository;
+use FavoriteCMS\Digital\Support\OrderLifecycleState;
 use Throwable;
 
 /**
@@ -30,6 +32,7 @@ class DownloadService
     protected DefaultEntitlementChecker $checker;
     protected DigitalFileStorageService $storageService;
     protected ?Database $db;
+    protected ?OrderRepository $orderRepo;
 
     public function __construct(
         DownloadRepository $downloadRepo,
@@ -38,7 +41,8 @@ class DownloadService
         MembershipLifecycleService $membershipService,
         DefaultEntitlementChecker $checker,
         DigitalFileStorageService $storageService,
-        ?Database $db = null
+        ?Database $db = null,
+        ?OrderRepository $orderRepo = null
     ) {
         $this->downloadRepo = $downloadRepo;
         $this->entitlementRepo = $entitlementRepo;
@@ -47,6 +51,7 @@ class DownloadService
         $this->checker = $checker;
         $this->storageService = $storageService;
         $this->db = $db ?? $downloadRepo->getDatabase();
+        $this->orderRepo = $orderRepo ?? ($this->db ? new OrderRepository($this->db) : null);
     }
 
     public function getDownloadRepository(): DownloadRepository
@@ -127,6 +132,102 @@ class DownloadService
             throw DownloadException::invalidToken();
         }
 
+        // 1. Service Deliverable Access Check
+        $deliverable = null;
+        if ($this->orderRepo) {
+            $deliverable = $this->orderRepo->findDeliverableByToken($token);
+        } elseif ($this->db) {
+            try {
+                $row = $this->db->selectOne("SELECT * FROM `favorite_digital_order_deliverables` WHERE `download_token` = ? LIMIT 1", [$token]);
+                if ($row) {
+                    $deliverable = (object)$row;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        if ($deliverable) {
+            $order = $this->orderRepo ? $this->orderRepo->findOrder((int)$deliverable->order_id) : null;
+            if (!$order && $this->db) {
+                try {
+                    $row = $this->db->selectOne("SELECT * FROM `favorite_digital_orders` WHERE `id` = ? LIMIT 1", [(int)$deliverable->order_id]);
+                    if ($row) {
+                        $order = (object)$row;
+                    }
+                } catch (\Throwable) {
+                }
+            }
+
+            if (!$order) {
+                throw DownloadException::fileNotFound("Order unavailable.");
+            }
+
+            // Customer ownership check: must belong to authenticated customer
+            if ((int)$order->user_id !== $authenticatedUserId) {
+                throw DownloadException::accessDenied("You are not authorized to access this deliverable.");
+            }
+
+            // Revocation check: access to deliverables for fully refunded or revoked orders is denied
+            if ($order->status === OrderLifecycleState::STATUS_REFUNDED || $order->fulfillment_status === OrderLifecycleState::FULFILLMENT_REVOKED) {
+                throw DownloadException::accessDenied("Access to deliverables for refunded orders has been revoked.");
+            }
+
+            // Released state check: must be released to customer
+            if (empty($deliverable->is_released) || (int)$deliverable->is_released !== 1) {
+                throw DownloadException::fileUnavailable("This deliverable has not been released yet.");
+            }
+
+            $isExternal = ($deliverable->resource_type === 'url');
+            if ($isExternal) {
+                $safeUrl = $this->storageService->validateSafeUrl((string)$deliverable->resource_url);
+                return [
+                    'download'       => (object)['id' => $deliverable->id, 'user_id' => $order->user_id],
+                    'product'        => null,
+                    'details'        => null,
+                    'entitlement'    => null,
+                    'file_path'      => null,
+                    'file_name'      => (string)$deliverable->title,
+                    'mime_type'      => 'text/html',
+                    'file_size'      => (int)$deliverable->file_size,
+                    'is_membership'  => false,
+                    'is_external'    => true,
+                    'resource_url'   => $safeUrl,
+                    'is_deliverable' => true,
+                    'deliverable'    => $deliverable,
+                    'order'          => $order,
+                ];
+            }
+
+            if (empty($deliverable->file_path)) {
+                throw DownloadException::fileUnavailable("Deliverable file missing.");
+            }
+
+            $absolutePath = $this->resolveAndValidateFilePath((string)$deliverable->file_path);
+            $downloadFileName = !empty($deliverable->file_name)
+                ? $this->storageService->sanitizeFileName((string)$deliverable->file_name)
+                : basename($absolutePath);
+            $mimeType = !empty($deliverable->mime_type) ? (string)$deliverable->mime_type : 'application/octet-stream';
+            $fileSize = !empty($deliverable->file_size) ? (int)$deliverable->file_size : (int)@filesize($absolutePath);
+
+            return [
+                'download'       => (object)['id' => $deliverable->id, 'user_id' => $order->user_id],
+                'product'        => null,
+                'details'        => null,
+                'entitlement'    => null,
+                'file_path'      => $absolutePath,
+                'file_name'      => $downloadFileName,
+                'mime_type'      => $mimeType,
+                'file_size'      => $fileSize,
+                'is_membership'  => false,
+                'is_external'    => false,
+                'resource_url'   => null,
+                'is_deliverable' => true,
+                'deliverable'    => $deliverable,
+                'order'          => $order,
+            ];
+        }
+
+        // 2. Standard Digital Product download token flow
         $download = $this->downloadRepo->findDownloadByToken($token);
         if (!$download) {
             throw DownloadException::invalidToken();
@@ -374,16 +475,21 @@ class DownloadService
     {
         $auth = $this->authorizeDownload($token, $authenticatedUserId);
 
-        $downloadId = (int)$auth['download']->id;
-        $isMembership = (bool)$auth['is_membership'];
+        if (empty($auth['is_deliverable'])) {
+            $downloadId = (int)$auth['download']->id;
+            $isMembership = (bool)$auth['is_membership'];
 
-        $recorded = $this->recordDownload($downloadId, $ip, $userAgent, $isMembership);
-        if (!$recorded) {
-            // Race condition triggered limit reached
-            throw DownloadException::downloadLimitReached(self::MAX_PURCHASE_DOWNLOADS);
+            $recorded = $this->recordDownload($downloadId, $ip, $userAgent, $isMembership);
+            if (!$recorded) {
+                // Race condition triggered limit reached
+                throw DownloadException::downloadLimitReached(self::MAX_PURCHASE_DOWNLOADS);
+            }
         }
 
         if (!empty($auth['is_external']) && !empty($auth['resource_url'])) {
+            if (defined('PHPUNIT_RUNNING')) {
+                return;
+            }
             header('Location: ' . $auth['resource_url'], true, 302);
             exit;
         }

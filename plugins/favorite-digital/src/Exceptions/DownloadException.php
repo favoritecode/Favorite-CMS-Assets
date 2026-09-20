@@ -59,6 +59,11 @@ class DownloadException extends RuntimeException
         return new self($reason);
     }
 
+    public static function fileUnavailable(string $reason = "File unavailable."): self
+    {
+        return new self($reason);
+    }
+
     public static function pathTraversalDetected(): self
     {
         return new self("Invalid file path requested.");

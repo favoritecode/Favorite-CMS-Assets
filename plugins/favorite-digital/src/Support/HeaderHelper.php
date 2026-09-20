@@ -114,4 +114,19 @@ namespace {
             return fdig_get_wallet_balance($userId);
         }
     }
+
+    if (!function_exists('fdig_format_bytes')) {
+        function fdig_format_bytes(int $bytes): string
+        {
+            if ($bytes <= 0) {
+                return '0 B';
+            }
+            $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            $power = (int)floor(log($bytes, 1024));
+            $power = min($power, count($units) - 1);
+            $val = round($bytes / pow(1024, $power), 2);
+            return $val . ' ' . $units[$power];
+        }
+    }
 }
+

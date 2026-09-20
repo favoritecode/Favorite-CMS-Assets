@@ -1,7 +1,7 @@
 {
     "id": "favorite-digital",
     "name": "Favorite Digital",
-    "version": "1.0.12",
+    "version": "1.0.13",
     "description": "Digital products, downloadable files, services, bundles, and membership access management plugin for Favorite CMS.",
     "author": "Favorite CMS Team",
     "requires_php": "8.1.0",
@@ -24,6 +24,7 @@
         "favorite_digital_downloads",
         "favorite_digital_wallets",
         "favorite_digital_wallet_transactions",
-        "favorite_digital_refunds"
+        "favorite_digital_refunds",
+        "favorite_digital_order_deliverables"
     ]
 }

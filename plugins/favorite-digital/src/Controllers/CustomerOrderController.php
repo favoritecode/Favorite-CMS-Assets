@@ -47,9 +47,14 @@ class CustomerOrderController
 
         $page = max(1, (int)$request->get('page', 1));
         $result = $this->orderService->listUserOrders($userId, $page, 15);
+        $orders = $result['data'];
+        try {
+            $orders = $this->orderService->getOrderRepository()->enrichOrdersWithDeliverableInfo($orders);
+        } catch (\Throwable) {
+        }
 
         return $this->renderView('orders/index', [
-            'orders'     => $result['data'],
+            'orders'     => $orders,
             'total'      => $result['total'],
             'page'       => $result['page'],
             'totalPages' => $result['total_pages'],
@@ -92,10 +97,17 @@ class CustomerOrderController
             $refunds = $this->refundRepo->findRefundsByOrderId((int)$order->id);
         }
 
+        $deliverables = [];
+        try {
+            $deliverables = $this->orderService->getOrderRepository()->getDeliverablesByOrderId((int)$order->id, false);
+        } catch (\Throwable) {
+        }
+
         return $this->renderView('orders/view', [
-            'order'   => $order,
-            'refunds' => $refunds,
-            'userId'  => $userId,
+            'order'        => $order,
+            'refunds'      => $refunds,
+            'deliverables' => $deliverables,
+            'userId'       => $userId,
         ]);
     }
 
@@ -103,6 +115,9 @@ class CustomerOrderController
     {
         if (isset($GLOBALS['_test_current_user']) && isset($GLOBALS['_test_current_user']->id)) {
             return (int)$GLOBALS['_test_current_user']->id;
+        }
+        if (isset($GLOBALS['_test_current_user_id']) && (int)$GLOBALS['_test_current_user_id'] > 0) {
+            return (int)$GLOBALS['_test_current_user_id'];
         }
         return (int)($_SESSION['auth_user_id'] ?? 0);
     }

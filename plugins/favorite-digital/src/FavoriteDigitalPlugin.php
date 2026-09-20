@@ -41,12 +41,14 @@ final class FavoriteDigitalPlugin
         'favorite_digital_wallets',
         'favorite_digital_wallet_transactions',
         'favorite_digital_refunds',
+        'favorite_digital_order_deliverables',
     ];
 
     private static ?self $instance = null;
     private Application $app;
     private bool $booted = false;
     public static bool $walletPillRenderedByTheme = false;
+    private static bool $migrationsEnsured = false;
 
     public function __construct(Application $app)
     {
@@ -65,6 +67,7 @@ final class FavoriteDigitalPlugin
     {
         self::$instance = null;
         self::$walletPillRenderedByTheme = false;
+        self::$migrationsEnsured = false;
     }
 
     public static function bootstrap(Application $app): self
@@ -182,7 +185,8 @@ final class FavoriteDigitalPlugin
                 $app->make(OrderService::class),
                 $app->has(Services\FulfillmentService::class) ? $app->make(Services\FulfillmentService::class) : null,
                 $app->has(Repositories\EntitlementRepository::class) ? $app->make(Repositories\EntitlementRepository::class) : null,
-                $app->has(Services\RefundService::class) ? $app->make(Services\RefundService::class) : null
+                $app->has(Services\RefundService::class) ? $app->make(Services\RefundService::class) : null,
+                $app->has(Services\DigitalFileStorageService::class) ? $app->make(Services\DigitalFileStorageService::class) : null
             );
         });
 
@@ -250,7 +254,8 @@ final class FavoriteDigitalPlugin
                 $app->make(Services\MembershipLifecycleService::class),
                 $app->make(Services\DefaultEntitlementChecker::class),
                 $app->make(Services\DigitalFileStorageService::class),
-                $app->has(Database::class) ? $app->make(Database::class) : null
+                $app->has(Database::class) ? $app->make(Database::class) : null,
+                $app->has(Repositories\OrderRepository::class) ? $app->make(Repositories\OrderRepository::class) : null
             );
         });
 
@@ -342,6 +347,9 @@ final class FavoriteDigitalPlugin
         if ($this->booted) {
             return;
         }
+        $this->booted = true;
+
+        $this->ensureMigrations();
 
         // Register Admin Menus
         if (function_exists('add_admin_menu')) {
@@ -606,6 +614,42 @@ final class FavoriteDigitalPlugin
                 }
             });
 
+            add_action('favorite.pay.manual.rejected', function (array $data): void {
+                $attemptId = (string)($data['attempt_id'] ?? '');
+                $reason = (string)($data['reason'] ?? 'Manual payment verification rejected.');
+                if ($attemptId !== '' && $this->app->has(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class)) {
+                    try {
+                        $payService = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class);
+                        if (method_exists($payService, 'getAttempt')) {
+                            $attempt = $payService->getAttempt($attemptId);
+                            if ($attempt) {
+                                $intent = $payService->getIntent($attempt->getIntentId());
+                                if ($intent && $intent->getSourcePlugin() === 'favorite-digital') {
+                                    $ref = (string)$intent->getSourceReference();
+                                    if (is_numeric($ref) && (int)$ref > 0 && $this->app->has(Controllers\AdminOrderController::class)) {
+                                        $orderId = (int)$ref;
+                                        $this->app->make(Controllers\AdminOrderController::class)->cancelSingleOrder($orderId, $reason);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Throwable) {
+                    }
+                }
+            });
+
+            add_action('favorite.pay.payment.failed', function (array $data): void {
+                if (($data['source_plugin'] ?? '') === 'favorite-digital') {
+                    $ref = (string)($data['source_reference'] ?? '');
+                    if (is_numeric($ref) && (int)$ref > 0 && $this->app->has(Controllers\AdminOrderController::class)) {
+                        try {
+                            $this->app->make(Controllers\AdminOrderController::class)->cancelSingleOrder((int)$ref, 'Payment failed or rejected by payment gateway.');
+                        } catch (\Throwable) {
+                        }
+                    }
+                }
+            });
+
             add_action('account_menu_init', function (): void {
                 $this->registerAccountMenuItems();
             });
@@ -838,6 +882,190 @@ final class FavoriteDigitalPlugin
     {
         if (function_exists('cms_log')) {
             cms_log('Favorite Digital plugin deactivated.', 'info', ['plugin' => 'favorite-digital']);
+        }
+    }
+
+    public function ensureMigrations(): void
+    {
+        if (self::$migrationsEnsured || !$this->app->has(Database::class)) {
+            return;
+        }
+
+        self::$migrationsEnsured = true;
+
+        try {
+            $db = $this->app->make(Database::class);
+            if (method_exists($db, 'registerPrefixableTables')) {
+                $db->registerPrefixableTables(self::TABLES);
+            }
+
+            if (method_exists($db, 'tableExists') && $db->tableExists('favorite_digital_order_deliverables')) {
+                $this->alignDeliverablesSchemaIfNecessary($db);
+                return;
+            }
+
+            $this->repairDeliverablesTable($db);
+        } catch (\Throwable $e) {
+            if (function_exists('cms_log')) {
+                cms_log("Favorite Digital schema synchronization failed: " . $e->getMessage(), 'error', ['plugin' => 'favorite-digital']);
+            }
+        }
+    }
+
+    public function repairDeliverablesTable(Database $db): void
+    {
+        if (method_exists($db, 'registerPrefixableTables')) {
+            $db->registerPrefixableTables(self::TABLES);
+        }
+
+        $prefix = method_exists($db, 'prefix') ? $db->prefix() : '';
+        $expectedTableName = method_exists($db, 'table') ? $db->table('favorite_digital_order_deliverables') : 'favorite_digital_order_deliverables';
+
+        // Check if destination table already exists
+        if ($db->tableExists('favorite_digital_order_deliverables')) {
+            $this->alignDeliverablesSchemaIfNecessary($db);
+            return;
+        }
+
+        $isMigration018Run = false;
+        try {
+            $migRec = $db->selectOne("SELECT id FROM `cms_migrations` WHERE `migration` LIKE '%018_create_favorite_digital_order_deliverables%' LIMIT 1");
+            $isMigration018Run = ($migRec !== null);
+        } catch (\Throwable) {
+        }
+
+        // If a prefix is configured, check whether an unprefixed table exists
+        if ($prefix !== '') {
+            $pdo = $db->getConnection();
+            $unprefixedExists = false;
+            try {
+                $check = $pdo->query("SELECT 1 FROM `favorite_digital_order_deliverables` LIMIT 1");
+                $unprefixedExists = ($check !== false);
+            } catch (\Throwable) {
+                $unprefixedExists = false;
+            }
+
+            if ($unprefixedExists) {
+                // Verify destination prefixed table does NOT exist
+                $destExists = false;
+                try {
+                    $checkDest = $pdo->query("SELECT 1 FROM `{$expectedTableName}` LIMIT 1");
+                    $destExists = ($checkDest !== false);
+                } catch (\Throwable) {
+                    $destExists = false;
+                }
+
+                if (!$destExists) {
+                    // Verify the unprefixed table has the expected deliverable schema
+                    $isValidSchema = false;
+                    try {
+                        $driver = strtolower((string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME));
+                        if ($driver === 'sqlite') {
+                            $rawCols = $pdo->query("PRAGMA table_info(`favorite_digital_order_deliverables`)")->fetchAll(\PDO::FETCH_ASSOC);
+                            $cols = array_map(fn($c) => (string)($c['name'] ?? $c['NAME'] ?? ''), $rawCols);
+                        } else {
+                            $cols = $pdo->query("SHOW COLUMNS FROM `favorite_digital_order_deliverables`")->fetchAll(\PDO::FETCH_COLUMN);
+                        }
+                        $expectedCols = ['id', 'order_id', 'title', 'download_token', 'is_released'];
+                        $diff = array_diff($expectedCols, $cols);
+                        $isValidSchema = empty($diff);
+                    } catch (\Throwable) {
+                    }
+
+                    if ($isValidSchema) {
+                        // Count rows before rename
+                        $rowCountBefore = (int)$pdo->query("SELECT COUNT(*) FROM `favorite_digital_order_deliverables`")->fetchColumn();
+
+                        // Safely rename table (ALTER TABLE ... RENAME TO works across MySQL, MariaDB, and SQLite)
+                        $pdo->exec("ALTER TABLE `favorite_digital_order_deliverables` RENAME TO `{$expectedTableName}`");
+
+                        // Verify row count after rename
+                        $rowCountAfter = (int)$pdo->query("SELECT COUNT(*) FROM `{$expectedTableName}`")->fetchColumn();
+
+                        if ($rowCountBefore === $rowCountAfter) {
+                            if (function_exists('cms_log')) {
+                                cms_log("Favorite Digital: safely renamed unprefixed deliverables table to {$expectedTableName} preserving {$rowCountAfter} rows.", 'info', ['plugin' => 'favorite-digital']);
+                            }
+                            $this->alignDeliverablesSchemaIfNecessary($db);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If migration 018 was not run yet, run migrations through official runner
+        if (!$isMigration018Run) {
+            $this->runMigrations();
+        }
+
+        // If the expected prefixed table is STILL missing (e.g. migration 018 was recorded as executed
+        // or skipped, or runMigrations failed to create it under prefix):
+        if (!$db->tableExists('favorite_digital_order_deliverables')) {
+            $migrationFile = __DIR__ . '/../database/migrations/018_create_favorite_digital_order_deliverables_table.php';
+            if (file_exists($migrationFile)) {
+                require_once $migrationFile;
+                if (class_exists(\CreateFavoriteDigitalOrderDeliverablesTable::class)) {
+                    $migration = new \CreateFavoriteDigitalOrderDeliverablesTable($db);
+                    $migration->up();
+                }
+            }
+        }
+
+        $this->alignDeliverablesSchemaIfNecessary($db);
+    }
+
+    public function alignDeliverablesSchemaIfNecessary(Database $db): void
+    {
+        try {
+            $driver = $db->getConnection()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if (strtolower((string)$driver) === 'sqlite') {
+                return;
+            }
+
+            $tableName = method_exists($db, 'table') ? $db->table('favorite_digital_order_deliverables') : 'favorite_digital_order_deliverables';
+
+            $cols = $db->select("
+                SELECT COLUMN_NAME, COLUMN_TYPE 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                  AND TABLE_NAME = ? 
+                  AND COLUMN_NAME IN ('id', 'order_id', 'order_item_id', 'file_size')
+            ", [$tableName]);
+
+            $needsAlter = false;
+            foreach ($cols as $col) {
+                if (!str_contains(strtolower((string)$col->COLUMN_TYPE), 'unsigned')) {
+                    $needsAlter = true;
+                    break;
+                }
+            }
+
+            if (!$needsAlter) {
+                return;
+            }
+
+            $negCheck = $db->selectOne("
+                SELECT 
+                    SUM(CASE WHEN `id` < 0 THEN 1 ELSE 0 END) as neg_id,
+                    SUM(CASE WHEN `order_id` < 0 THEN 1 ELSE 0 END) as neg_order,
+                    SUM(CASE WHEN `order_item_id` IS NOT NULL AND `order_item_id` < 0 THEN 1 ELSE 0 END) as neg_item,
+                    SUM(CASE WHEN `file_size` < 0 THEN 1 ELSE 0 END) as neg_size
+                FROM `favorite_digital_order_deliverables`
+            ");
+
+            if ($negCheck && ($negCheck->neg_id > 0 || $negCheck->neg_order > 0 || $negCheck->neg_item > 0 || $negCheck->neg_size > 0)) {
+                return;
+            }
+
+            $db->execute("
+                ALTER TABLE `favorite_digital_order_deliverables`
+                MODIFY `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                MODIFY `order_id` BIGINT UNSIGNED NOT NULL,
+                MODIFY `order_item_id` BIGINT UNSIGNED NULL,
+                MODIFY `file_size` BIGINT UNSIGNED NOT NULL DEFAULT 0
+            ");
+        } catch (\Throwable) {
         }
     }
 

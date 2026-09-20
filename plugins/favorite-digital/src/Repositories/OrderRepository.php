@@ -125,7 +125,38 @@ class OrderRepository
         $order->discount_amount = number_format((float)$order->discount_amount, 2, '.', '');
         $order->total_amount    = number_format((float)$order->total_amount, 2, '.', '');
 
+        if (isset($order->retained_amount) && $order->retained_amount !== null) {
+            $order->retained_amount = number_format((float)$order->retained_amount, 2, '.', '');
+        } else {
+            $order->retained_amount = null;
+        }
+
+        if (isset($order->refunded_amount) && $order->refunded_amount !== null) {
+            $order->refunded_amount = number_format((float)$order->refunded_amount, 2, '.', '');
+        } else {
+            $order->refunded_amount = '0.00';
+        }
+
         return $order;
+    }
+
+    public function updateOrderPartialSettlement(
+        int $id,
+        string $status,
+        string $paymentStatus,
+        string $fulfillmentStatus,
+        ?string $retainedAmount,
+        string $refundedAmount
+    ): bool {
+        $data = [
+            'status'             => $status,
+            'payment_status'     => $paymentStatus,
+            'fulfillment_status' => $fulfillmentStatus,
+            'retained_amount'    => ($retainedAmount !== null) ? number_format((float)$retainedAmount, 2, '.', '') : null,
+            'refunded_amount'    => number_format((float)$refundedAmount, 2, '.', ''),
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ];
+        return $this->db->update('favorite_digital_orders', $data, ['id' => $id]) >= 0;
     }
 
     public function getOrderPayments(int $orderId): array
@@ -281,5 +312,108 @@ class OrderRepository
     public function listOrdersForUser(int $userId, int $page = 1, int $perPage = 20): array
     {
         return $this->listOrders(['user_id' => $userId], $page, $perPage);
+    }
+
+    public function createDeliverable(array $data): int
+    {
+        return (int)$this->db->insert('favorite_digital_order_deliverables', $data);
+    }
+
+    public function findDeliverable(int $id): ?object
+    {
+        $res = $this->db->selectOne("SELECT * FROM `favorite_digital_order_deliverables` WHERE `id` = ? LIMIT 1", [$id]);
+        return $res ? (object)$res : null;
+    }
+
+    public function findDeliverableByToken(string $token): ?object
+    {
+        $res = $this->db->selectOne("SELECT * FROM `favorite_digital_order_deliverables` WHERE `download_token` = ? LIMIT 1", [$token]);
+        return $res ? (object)$res : null;
+    }
+
+    public function getDeliverablesByOrderId(int $orderId, bool $onlyReleased = false): array
+    {
+        $sql = "SELECT * FROM `favorite_digital_order_deliverables` WHERE `order_id` = ?";
+        $params = [$orderId];
+        if ($onlyReleased) {
+            $sql .= " AND `is_released` = 1";
+        }
+        $sql .= " ORDER BY `id` ASC";
+        return $this->db->select($sql, $params);
+    }
+
+    public function updateDeliverable(int $id, array $data): bool
+    {
+        return $this->db->update('favorite_digital_order_deliverables', $data, ['id' => $id]) > 0;
+    }
+
+    public function deleteDeliverable(int $id): bool
+    {
+        return $this->db->delete('favorite_digital_order_deliverables', ['id' => $id]) > 0;
+    }
+
+    /**
+     * Enrich a list of orders with product type flags and released deliverables count.
+     * Batch-queried to avoid N+1 queries.
+     *
+     * @param array $orders List of order objects
+     * @return array Enriched orders
+     */
+    public function enrichOrdersWithDeliverableInfo(array $orders): array
+    {
+        if (empty($orders)) {
+            return [];
+        }
+
+        $orderIds = [];
+        foreach ($orders as $order) {
+            if (isset($order->id) && (int)$order->id > 0) {
+                $orderIds[] = (int)$order->id;
+            }
+        }
+
+        if (empty($orderIds)) {
+            return $orders;
+        }
+
+        $inClause = implode(',', array_unique($orderIds));
+        $hasService = [];
+        $hasDigital = [];
+
+        try {
+            $items = $this->db->select(
+                "SELECT `order_id`, `product_type` FROM `favorite_digital_order_items` WHERE `order_id` IN ({$inClause})"
+            );
+            foreach ($items as $item) {
+                $oid = (int)$item->order_id;
+                $ptype = (string)($item->product_type ?? '');
+                if ($ptype === 'service') {
+                    $hasService[$oid] = true;
+                } elseif ($ptype === 'digital') {
+                    $hasDigital[$oid] = true;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        $releasedCounts = [];
+        try {
+            $delivRows = $this->db->select(
+                "SELECT `order_id`, COUNT(*) as cnt FROM `favorite_digital_order_deliverables` WHERE `order_id` IN ({$inClause}) AND `is_released` = 1 GROUP BY `order_id`"
+            );
+            foreach ($delivRows as $dr) {
+                $releasedCounts[(int)$dr->order_id] = (int)$dr->cnt;
+            }
+        } catch (\Throwable) {
+        }
+
+        foreach ($orders as $order) {
+            $oid = (int)($order->id ?? 0);
+            $order->has_service = !empty($hasService[$oid]);
+            $order->has_digital = !empty($hasDigital[$oid]);
+            $order->released_deliverables_count = (int)($releasedCounts[$oid] ?? 0);
+        }
+
+        return $orders;
     }
 }

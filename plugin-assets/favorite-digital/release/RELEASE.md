@@ -8,15 +8,41 @@ This directory contains the official, verified production release package and ch
 
 | Property | Value |
 | :--- | :--- |
-| **Release Version** | 1.0.12 |
-| **Package File** | Favorite-Digital-v1.0.12.zip / Favorite-Digital.zip |
-| **Package Size** | 259,680 bytes |
-| **ZIP Entries** | 124 entries (Root: `favorite-digital/`) |
-| **SHA-256 Checksum** | `f35e20ef5f0df9f1fdeba3c4b5033657dda3de0d141e791d23d5cd5483b18d43` |
+| **Release Version** | 1.0.13 |
+| **Package File** | Favorite-Digital-v1.0.13.zip / Favorite-Digital.zip |
+| **Package Size** | 279,442 bytes |
+| **ZIP Entries** | 101 production files (Root: `favorite-digital/`) |
+| **SHA-256 Checksum** | `d9a1ebf82447b62f96d19f9fea55a7c703ab7a89d47220908b91c997d4dbca39` |
 | **Source Repository** | `favoritecode/Favorite-CMS-Assets` |
 | **Target Platform** | Favorite CMS Universal (>= 1.0.0) |
 | **Plugin Identifier** | `favorite-digital` |
 | **PHP Compatibility** | PHP >= 8.1.0 (Tested on PHP 8.2.12 and PHP 8.3) |
+
+---
+
+## What's New in v1.0.13
+
+1. **Unified Order Status Architecture**:
+   - Consolidated administrative order status controls into exactly ONE editable Order Status dropdown containing ONLY: `Processing`, `Partial`, `Complete`, and `Refund`.
+   - `Pending` and `Cancel` are enforced as strict payment-controlled states derived from payment lifecycle events (Favorite Pay confirmation or rejection/failure). They are completely excluded from selectable dropdown options.
+   - Payment Status and Fulfillment Status are displayed in the Admin Order Overview as clean, read-only audit badges.
+
+2. **Authoritative Refund Engine & Strict Digital Asset Protection**:
+   - **Digital Products**: Partial refund is strictly forbidden (`"Partial refund is not allowed for Digital Product orders."`). Full refund credits customer wallet and immediately revokes all entitlements, download tokens, and access (`REFUNDED / REFUNDED / REVOKED`).
+   - **Digital Services**: Partial refund prompts for exact refund amount (up to remaining refundable balance), credits customer wallet, preserves delivered deliverables, and leaves order in `Partial` status (`PARTIAL_REFUND / PARTIALLY_DELIVERED`).
+   - **Final Service Refund**: When a partial refund reaches the total received amount (or upon full refund), status automatically transitions to `REFUNDED / REFUNDED / REVOKED` and revokes deliverable access.
+
+3. **Nested PDO Transaction Crash Prevention & Refund Wallet-Credit Reliability**:
+   - Resolved nested PDO transaction conflict during Favorite Digital wallet checkout (`processWalletPayment()`) and refunds (`executeRefund()`). Wallet operations execute against Favorite Pay `WalletService` outside outer transactions, eliminating `"There is already an active transaction"` crashes and ensuring wallet credits are authoritatively reflected.
+   - Swallowed deposit exceptions in `WalletService::credit()` resolved; failures bubble up as `WalletException::depositFailed()`.
+   - Dynamic Favorite Pay resolution via container (`getFavoritePayWalletService()`) and deterministic transaction reference tracking.
+   - Failed wallet debits or failed gateway verifications cleanly transition orders to `Cancel` (`CANCELLED / FAILED / CANCELLED`) with zero ledger leaks.
+
+4. **Payment Lifecycle Alignment**:
+   - Manual Payment: Initiated in `Pending` (`PENDING / UNPAID / UNFULFILLED`).
+   - Confirmation: Favorite Pay payment approval transitions Digital Products to `Complete` (`COMPLETED / PAID / FULFILLED`) and Digital Services to `Processing` (`PROCESSING / PAID / PROCESSING`).
+   - Rejection/Failure: Favorite Pay rejection hook (`favorite.pay.manual.rejected`, `favorite.pay.payment.failed`) transitions order to `Cancel` (`CANCELLED / FAILED / CANCELLED`).
+   - Maintains full backward compatibility with schema migrations 001 through 018.
 
 ---
 

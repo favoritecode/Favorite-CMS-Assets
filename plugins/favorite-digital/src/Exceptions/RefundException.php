@@ -52,4 +52,9 @@ class RefundException extends Exception
     {
         return new self("Membership refund restriction: {$message}");
     }
+
+    public static function invalidUserId(int $userId): self
+    {
+        return new self("Cannot issue refund to invalid customer user ID: {$userId}.");
+    }
 }

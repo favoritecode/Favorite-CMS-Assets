@@ -33,5 +33,10 @@ class WalletException extends RuntimeException
     {
         return new self("Failed to acquire wallet lock for user ID {$userId}. Please retry.");
     }
+
+    public static function depositFailed(string $reason): self
+    {
+        return new self("Wallet deposit failed: {$reason}");
+    }
 }
 

@@ -62,7 +62,7 @@ class CheckoutService
                         }
                     }
                 }
-                $targetStatus = $hasService ? OrderLifecycleState::STATUS_PENDING : null;
+                $targetStatus = $hasService ? OrderLifecycleState::STATUS_PROCESSING : OrderLifecycleState::STATUS_COMPLETED;
                 $this->fulfillmentService->fulfillOrder($orderId, $targetStatus);
             } catch (Throwable) {
                 // Legitimate payment is preserved; fulfillment can be retried
@@ -210,8 +210,11 @@ class CheckoutService
             return $order;
         }
 
-        $res = $this->executeInTransaction(function () use ($order, $orderId, $userId, $remaining) {
-            $refId = "fd_ord_{$orderId}_wal_" . bin2hex(random_bytes(6));
+        // Generate idempotent reference for this payment attempt
+        $refId = "fd_ord_{$orderId}_wal_" . bin2hex(random_bytes(6));
+
+        // Perform wallet debit OUTSIDE executeInTransaction to prevent nested PDO transactions with Favorite Pay
+        try {
             $walletTx = $this->walletService->debit(
                 $userId,
                 $remaining,
@@ -219,37 +222,70 @@ class CheckoutService
                 "Payment for Order #{$order->order_number}",
                 $orderId
             );
+        } catch (Throwable $debitEx) {
+            // If wallet payment fails: customer-facing status -> Cancel (0 refund, 0 wallet credit, no refund record)
+            $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_FAILED);
+            $this->orderRepo->updateOrderStatus($orderId, OrderLifecycleState::STATUS_CANCELLED);
+            $this->orderRepo->updateFulfillmentStatus($orderId, OrderLifecycleState::FULFILLMENT_CANCELLED);
+            throw $debitEx;
+        }
 
-            $this->orderRepo->createOrderPayment([
-                'order_id'           => $orderId,
-                'payment_method'     => 'wallet',
-                'favorite_pay_tx_id' => null,
-                'wallet_tx_id'       => (string)$walletTx->id,
-                'amount_paid'        => $remaining,
-                'currency'           => $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT'),
-                'status'             => 'completed',
-                'created_at'         => date('Y-m-d H:i:s'),
-                'updated_at'         => date('Y-m-d H:i:s'),
-            ]);
-
-            $hasService = false;
-            $orderItems = $order->items ?? $this->orderRepo->getOrderItems($orderId);
-            foreach ($orderItems as $it) {
-                if ((string)$it->product_type === ProductType::SERVICE) {
-                    $hasService = true;
-                    break;
-                }
+        $orderCurrency = $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT');
+        $hasService = false;
+        $orderItems = $order->items ?? $this->orderRepo->getOrderItems($orderId);
+        foreach ($orderItems as $it) {
+            if ((string)($it->product_type ?? '') === ProductType::SERVICE) {
+                $hasService = true;
+                break;
             }
-            $initialStatus = $hasService ? OrderLifecycleState::STATUS_PENDING : OrderLifecycleState::STATUS_PROCESSING;
+        }
+        $initialStatus = $hasService ? OrderLifecycleState::STATUS_PROCESSING : OrderLifecycleState::STATUS_COMPLETED;
+        $initialFulfillment = $hasService ? OrderLifecycleState::FULFILLMENT_PARTIALLY_FULFILLED : OrderLifecycleState::FULFILLMENT_FULFILLED;
 
-            $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_PAID);
-            $this->orderRepo->updateOrderStatus($orderId, $initialStatus);
+        try {
+            $res = $this->executeInTransaction(function () use (
+                $orderId,
+                $walletTx,
+                $remaining,
+                $orderCurrency,
+                $initialStatus,
+                $initialFulfillment
+            ) {
+                $this->orderRepo->createOrderPayment([
+                    'order_id'           => $orderId,
+                    'payment_method'     => 'wallet',
+                    'favorite_pay_tx_id' => null,
+                    'wallet_tx_id'       => (string)$walletTx->id,
+                    'amount_paid'        => $remaining,
+                    'currency'           => $orderCurrency,
+                    'status'             => 'completed',
+                    'created_at'         => date('Y-m-d H:i:s'),
+                    'updated_at'         => date('Y-m-d H:i:s'),
+                ]);
 
-            return $this->orderRepo->findOrderWithItems($orderId);
-        });
+                $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_PAID);
+                $this->orderRepo->updateOrderStatus($orderId, $initialStatus);
+                $this->orderRepo->updateFulfillmentStatus($orderId, $initialFulfillment);
 
-        $this->triggerFulfillmentIfPaid($orderId);
-        return $this->orderRepo->findOrderWithItems($orderId) ?? $res;
+                return $this->orderRepo->findOrderWithItems($orderId);
+            });
+
+            $this->triggerFulfillmentIfPaid($orderId);
+            return $this->orderRepo->findOrderWithItems($orderId) ?? $res;
+        } catch (Throwable $e) {
+            // Post-debit failure compensation: reverse the wallet debit cleanly OUTSIDE any active transaction
+            try {
+                $this->walletService->reverseDebit(
+                    $userId,
+                    $remaining,
+                    $refId,
+                    "Reversal due to checkout error on Order #{$order->order_number}",
+                    $orderId
+                );
+            } catch (Throwable) {
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -476,7 +512,20 @@ class CheckoutService
         $paymentRecord = $this->orderRepo->findPaymentByTxId($favoritePayTxId);
 
         if ($intent->getStatus() === PaymentStatus::SUCCEEDED) {
-            if ($paymentRecord && $paymentRecord->status !== 'completed') {
+            if (!$paymentRecord) {
+                $orderCurrency = $order->currency ?? (class_exists(Currency::class) ? Currency::getPrimaryCurrency() : 'BDT');
+                $this->orderRepo->createOrderPayment([
+                    'order_id'           => $orderId,
+                    'payment_method'     => 'favorite_pay',
+                    'favorite_pay_tx_id' => $favoritePayTxId,
+                    'wallet_tx_id'       => null,
+                    'amount_paid'        => $this->minorToDecimal($intent->getAmount()->getAmount()),
+                    'currency'           => $orderCurrency,
+                    'status'             => 'completed',
+                    'created_at'         => date('Y-m-d H:i:s'),
+                    'updated_at'         => date('Y-m-d H:i:s'),
+                ]);
+            } elseif ($paymentRecord->status !== 'completed') {
                 $this->orderRepo->updatePayment((int)$paymentRecord->id, [
                     'status' => 'completed',
                 ]);
@@ -488,15 +537,17 @@ class CheckoutService
                 $hasService = false;
                 $orderItems = $order->items ?? $this->orderRepo->getOrderItems($orderId);
                 foreach ($orderItems as $it) {
-                    if ((string)$it->product_type === ProductType::SERVICE) {
+                    if ((string)($it->product_type ?? '') === ProductType::SERVICE) {
                         $hasService = true;
                         break;
                     }
                 }
-                $initialStatus = $hasService ? OrderLifecycleState::STATUS_PENDING : OrderLifecycleState::STATUS_PROCESSING;
+                $initialStatus = $hasService ? OrderLifecycleState::STATUS_PROCESSING : OrderLifecycleState::STATUS_COMPLETED;
+                $initialFulfillment = $hasService ? OrderLifecycleState::FULFILLMENT_PARTIALLY_FULFILLED : OrderLifecycleState::FULFILLMENT_FULFILLED;
 
                 $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_PAID);
                 $this->orderRepo->updateOrderStatus($orderId, $initialStatus);
+                $this->orderRepo->updateFulfillmentStatus($orderId, $initialFulfillment);
                 $this->triggerFulfillmentIfPaid($orderId);
             } else {
                 $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_PARTIALLY_PAID);
@@ -511,6 +562,8 @@ class CheckoutService
             // Failure recovery for mixed payment: reverse wallet deduction
             $this->reconcileMixedPaymentFailure($orderId, "Gateway payment failed for intent {$favoritePayTxId}");
             $this->orderRepo->updatePaymentStatus($orderId, OrderLifecycleState::PAYMENT_FAILED);
+            $this->orderRepo->updateOrderStatus($orderId, OrderLifecycleState::STATUS_CANCELLED);
+            $this->orderRepo->updateFulfillmentStatus($orderId, OrderLifecycleState::FULFILLMENT_CANCELLED);
         }
 
         return $this->orderRepo->findOrderWithItems($orderId);

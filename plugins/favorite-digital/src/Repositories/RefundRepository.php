@@ -28,7 +28,13 @@ class RefundRepository
     {
         $data['refund_amount'] = number_format((float)($data['refund_amount'] ?? 0), 2, '.', '');
         if (empty($data['destination'])) {
-            $data['destination'] = 'wallet';
+            $data['destination'] = (!empty($data['refund_method']) && $data['refund_method'] !== 'wallet') ? 'manual' : 'wallet';
+        }
+        if (empty($data['refund_method'])) {
+            $data['refund_method'] = ($data['destination'] === 'wallet') ? 'wallet' : 'manual';
+        }
+        if (empty($data['refund_type'])) {
+            $data['refund_type'] = 'full';
         }
         if (empty($data['currency'])) {
             $data['currency'] = class_exists(\FavoriteCMS\Core\Currency::class) ? \FavoriteCMS\Core\Currency::getPrimaryCurrency() : 'BDT';
@@ -148,6 +154,22 @@ class RefundRepository
         return $this->listRefunds(['user_id' => $userId], $page, $perPage);
     }
 
+    public function calculateTotalRefundedAmount(int $orderId): string
+    {
+        $rows = $this->db->select(
+            "SELECT `refund_amount` FROM `favorite_digital_refunds` WHERE `order_id` = ? AND `status` = 'completed'",
+            [$orderId]
+        );
+        $totalMinor = 0;
+        foreach ($rows as $r) {
+            $clean = trim((string)$r->refund_amount);
+            if ($clean !== '' && is_numeric($clean)) {
+                $totalMinor += (int)round((float)$clean * 100);
+            }
+        }
+        return number_format($totalMinor / 100, 2, '.', '');
+    }
+
     protected function formatRefund(?object $refund): ?object
     {
         if (!$refund) {
@@ -155,6 +177,11 @@ class RefundRepository
         }
 
         $refund->refund_amount = number_format((float)$refund->refund_amount, 2, '.', '');
+        $refund->destination   = $refund->destination ?? 'wallet';
+        $refund->refund_method = $refund->refund_method ?? ($refund->destination ?? 'wallet');
+        $refund->reference     = $refund->reference ?? null;
+        $refund->processed_by  = isset($refund->processed_by) && $refund->processed_by !== null ? (int)$refund->processed_by : null;
+        $refund->refund_type   = $refund->refund_type ?? 'full';
         return $refund;
     }
 }

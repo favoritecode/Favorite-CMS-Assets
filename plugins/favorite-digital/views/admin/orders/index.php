@@ -48,6 +48,7 @@
                     <option value="all" <?= ($statusFilter === 'all') ? 'selected' : '' ?>>All Order Statuses</option>
                     <option value="pending" <?= ($statusFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
                     <option value="processing" <?= ($statusFilter === 'processing') ? 'selected' : '' ?>>Processing</option>
+                    <option value="partial" <?= ($statusFilter === 'partial') ? 'selected' : '' ?>>Partial</option>
                     <option value="completed" <?= ($statusFilter === 'completed') ? 'selected' : '' ?>>Completed</option>
                     <option value="failed" <?= ($statusFilter === 'failed') ? 'selected' : '' ?>>Failed</option>
                     <option value="cancelled" <?= ($statusFilter === 'cancelled') ? 'selected' : '' ?>>Cancelled</option>
@@ -61,6 +62,7 @@
                     <option value="pending" <?= ($paymentFilter === 'pending') ? 'selected' : '' ?>>Pending</option>
                     <option value="partially_paid" <?= ($paymentFilter === 'partially_paid') ? 'selected' : '' ?>>Partially Paid</option>
                     <option value="paid" <?= ($paymentFilter === 'paid') ? 'selected' : '' ?>>Paid</option>
+                    <option value="partially_refunded" <?= ($paymentFilter === 'partially_refunded') ? 'selected' : '' ?>>Partially Refunded</option>
                     <option value="failed" <?= ($paymentFilter === 'failed') ? 'selected' : '' ?>>Failed</option>
                     <option value="refunded" <?= ($paymentFilter === 'refunded') ? 'selected' : '' ?>>Refunded</option>
                 </select>
@@ -135,6 +137,7 @@
                             $orderBadgeStyle = match ($status) {
                                 'completed' => 'background: #e6f7ec; color: #155724; border: 1px solid #b7ebc7;',
                                 'processing' => 'background: #e8f4fd; color: #0c5460; border: 1px solid #bee5eb;',
+                                'partial' => 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;',
                                 'pending' => 'background: #fff8e5; color: #856404; border: 1px solid #ffeeba;',
                                 'cancelled' => 'background: #fdf2f2; color: #721c24; border: 1px solid #f5c6cb;',
                                 'failed' => 'background: #fdf2f2; color: #721c24; border: 1px solid #f5c6cb;',
@@ -146,6 +149,7 @@
                                 'paid' => 'background: #e6f7ec; color: #155724; border: 1px solid #b7ebc7;',
                                 'pending' => 'background: #fff8e5; color: #856404; border: 1px solid #ffeeba;',
                                 'partially_paid' => 'background: #e8f4fd; color: #0c5460; border: 1px solid #bee5eb;',
+                                'partially_refunded' => 'background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe;',
                                 'failed' => 'background: #fdf2f2; color: #721c24; border: 1px solid #f5c6cb;',
                                 'refunded' => 'background: #f3e8fd; color: #4a154b; border: 1px solid #e0c4f8;',
                                 default => 'background: #f0f0f1; color: #50575e; border: 1px solid #dcdcde;', // unpaid

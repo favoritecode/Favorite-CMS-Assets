@@ -60,9 +60,11 @@ class CustomerDownloadController
         try {
             $auth = $this->downloadService->authorizeDownload($token, $userId);
             if (!empty($auth['is_external']) && !empty($auth['resource_url'])) {
-                $downloadId = (int)$auth['download']->id;
-                $isMembership = (bool)$auth['is_membership'];
-                $this->downloadService->recordDownload($downloadId, $ip, $userAgent, $isMembership);
+                if (empty($auth['is_deliverable'])) {
+                    $downloadId = (int)$auth['download']->id;
+                    $isMembership = (bool)$auth['is_membership'];
+                    $this->downloadService->recordDownload($downloadId, $ip, $userAgent, $isMembership);
+                }
                 return Response::redirect($auth['resource_url']);
             }
 
