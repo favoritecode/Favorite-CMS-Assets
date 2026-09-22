@@ -163,11 +163,14 @@ class AdminToolController
         $flashError = $_SESSION['flash_error'] ?? null;
         unset($_SESSION['flash_error']);
 
+        $designs = $this->app->has(FrontendDesignRepository::class) ? $this->app->make(FrontendDesignRepository::class)->allActive() : [];
+
         return ViewRenderer::render('admin/tools/form', [
             'tool'               => $tool,
             'categories'         => $categories,
             'pythonServices'     => $pythonServices,
             'registeredHandlers' => $registeredHandlers,
+            'designs'            => $designs,
             'csrfToken'          => CsrfGuard::token(),
             'isEdit'             => false,
             'flashError'         => $flashError,
@@ -200,6 +203,7 @@ class AdminToolController
             }
         }
         $registeredHandlers = \FavoriteCMS\Tools\Handlers\PhpHandlerRegistry::listHandlers();
+        $designs = $this->app->has(FrontendDesignRepository::class) ? $this->app->make(FrontendDesignRepository::class)->allActive() : [];
 
         $flashSuccess = $_SESSION['flash_success'] ?? null;
         $flashError   = $_SESSION['flash_error'] ?? null;
@@ -210,6 +214,7 @@ class AdminToolController
             'categories'         => $categories,
             'pythonServices'     => $pythonServices,
             'registeredHandlers' => $registeredHandlers,
+            'designs'            => $designs,
             'csrfToken'          => CsrfGuard::token(),
             'isEdit'             => true,
             'flashSuccess'       => $flashSuccess,
@@ -378,13 +383,16 @@ class AdminToolController
             return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools?action=edit&id={$id}" : '/admin/page/favorite-web-tools?action=create');
         }
 
+        $frontendDesignSlug = trim((string)$request->post('frontend_design_slug', '')) ?: null;
+
         $data = [
-            'name'               => $name,
-            'slug'               => $slug,
-            'description'        => $description,
-            'category_id'        => $categoryId,
-            'engine'             => $engine,
-            'handler_class'      => $handlerClass !== '' ? $handlerClass : null,
+            'name'                 => $name,
+            'slug'                 => $slug,
+            'description'          => $description,
+            'category_id'          => $categoryId,
+            'engine'               => $engine,
+            'frontend_design_slug' => $frontendDesignSlug,
+            'handler_class'        => $handlerClass !== '' ? $handlerClass : null,
             'handler_id'         => $handlerId !== '' ? $handlerId : null,
             'html_source'        => $htmlSource,
             'css_source'         => $cssSource,

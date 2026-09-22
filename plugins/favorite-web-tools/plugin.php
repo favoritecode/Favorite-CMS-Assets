@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Favorite Web Tools
  * Plugin URI: https://github.com/favoritecode/Favorite-CMS-Universal
- * Description: Modular web tools platform for Favorite CMS supporting HTML, CSS, JavaScript, PHP, and Python API tools.
- * Version: 1.1.1
+ * Description: Modular web tools platform for Favorite CMS supporting HTML, CSS, JavaScript, PHP, and Python API tools with Universal Frontend Design System.
+ * Version: 1.2.0
  * Author: Favorite CMS Team
  */
 
@@ -22,4 +22,3 @@ if (isset($app) && $app instanceof \FavoriteCMS\Core\Application) {
         FavoriteWebToolsPlugin::bootstrap($coreApp);
     }
 }
-

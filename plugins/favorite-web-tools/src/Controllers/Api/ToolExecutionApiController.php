@@ -8,7 +8,11 @@ use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
 use FavoriteCMS\Models\User;
+use FavoriteCMS\Tools\Normalizers\NormalizerResolver;
+use FavoriteCMS\Tools\Repositories\FrontendDesignRepository;
+use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Services\ToolExecutionService;
+use FavoriteCMS\Tools\Support\SafeTemplateRenderer;
 use Throwable;
 
 class ToolExecutionApiController
@@ -123,6 +127,52 @@ class ToolExecutionApiController
             }
 
             return Response::json($result, $statusCode);
+        }
+
+        // Resolve Tool and Assigned Frontend Design
+        $toolRepo = $this->app->has(ToolRepository::class) ? $this->app->make(ToolRepository::class) : null;
+        $tool = $toolRepo ? $toolRepo->findBySlug($slug) : null;
+        $designSlug = $tool ? $tool->getFrontendDesignSlug() : null;
+
+        $rawResult = $result['data']['value'] ?? $result['data']['data'] ?? $result['data'] ?? [];
+        if (is_string($rawResult) && (str_starts_with(trim($rawResult), '{') || str_starts_with(trim($rawResult), '['))) {
+            $decoded = json_decode($rawResult, true);
+            if (is_array($decoded)) {
+                $rawResult = $decoded;
+            }
+        }
+
+        // Auto-fallback: If no explicit design was configured on tool, check if payload is media format
+        if (empty($designSlug) && is_array($rawResult) && (!empty($rawResult['videos']) || !empty($rawResult['audios']))) {
+            $designSlug = 'media-downloader-cards';
+        }
+
+        if (!empty($designSlug) && $designSlug !== 'default' && $this->app->has(FrontendDesignRepository::class)) {
+            $designRepo = $this->app->make(FrontendDesignRepository::class);
+            $design = $designRepo->findBySlug($designSlug);
+            if ($design && $design->isActive()) {
+                $resolver = $this->app->has(NormalizerResolver::class)
+                    ? $this->app->make(NormalizerResolver::class)
+                    : new NormalizerResolver();
+
+                $normalizedData = $resolver->normalize(
+                    is_array($rawResult) ? $rawResult : ['result' => $rawResult],
+                    $designSlug
+                );
+
+                $renderedHtml = SafeTemplateRenderer::render($design->getTemplateHtml(), $normalizedData);
+
+                $result['design'] = [
+                    'slug'          => $design->getSlug(),
+                    'name'          => $design->getName(),
+                    'template_html' => $design->getTemplateHtml(),
+                    'css'           => $design->getCssContent(),
+                    'js'            => $design->isJsEnabled() ? $design->getJsContent() : '',
+                    'js_enabled'    => $design->isJsEnabled(),
+                ];
+                $result['rendered_html'] = $renderedHtml;
+                $result['normalized_data'] = $normalizedData;
+            }
         }
 
         if (!isset($result['data']) && isset($result['result'])) {

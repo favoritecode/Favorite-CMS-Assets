@@ -121,7 +121,7 @@ final class ToolThemeShell
 
     private static function generateAssetTags(): string
     {
-        $version = '1.1.1';
+        $version = \FavoriteCMS\Tools\FavoriteWebToolsPlugin::VERSION;
         $jsonFile = dirname(__DIR__, 2) . '/plugin.json';
         if (is_file($jsonFile)) {
             $meta = json_decode((string)@file_get_contents($jsonFile), true);

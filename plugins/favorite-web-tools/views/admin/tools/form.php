@@ -263,6 +263,38 @@ $currentEngine = strtoupper($tool->engine ?? 'PHP');
                            style="width: 100%; padding: 9px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
                 </div>
             </div>
+
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 280px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+                            Frontend Presentation Design
+                        </label>
+                        <select name="frontend_design_slug" id="fwt-frontend-design-select"
+                                style="width: 100%; padding: 9px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+                            <option value="">Default Tool UI (Standard Output & JSON Fallback)</option>
+                            <?php if (!empty($designs)): ?>
+                                <?php foreach ($designs as $design): ?>
+                                    <option value="<?php echo htmlspecialchars($design->getSlug(), ENT_QUOTES, 'UTF-8'); ?>"
+                                        <?php echo (($tool->frontend_design_slug ?? '') === $design->getSlug()) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($design->getName(), ENT_QUOTES, 'UTF-8'); ?>
+                                        (<?php echo $design->isBuiltin() ? 'Built-in' : 'Custom'; ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                            Decouples execution engine from frontend card/table/grid presentation.
+                        </div>
+                    </div>
+                    <div>
+                        <a href="/admin/web-tools/frontend-designs" target="_blank"
+                           style="display: inline-flex; align-items: center; gap: 4px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; text-decoration: none; white-space: nowrap;">
+                            🎨 Manage Designs ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Section 4: JSON Schemas (Dynamic Schema-Driven Tools) -->

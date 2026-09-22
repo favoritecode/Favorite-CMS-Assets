@@ -82,9 +82,10 @@ class ToolCatalogSeeder
             'slug'          => 'favorite-media-downloader',
             'description'   => 'Download video and audio streams from supported media and social platforms.',
             'category_id'   => $catIds['python'] ?? null,
-            'engine'        => EngineType::PYTHON_API,
-            'access_mode'   => AccessMode::FREE,
-            'status'        => ToolStatus::ACTIVE,
+            'engine'               => EngineType::PYTHON_API,
+            'frontend_design_slug' => 'media-downloader-cards',
+            'access_mode'          => AccessMode::FREE,
+            'status'               => ToolStatus::ACTIVE,
             'input_schema'  => [
                 'type'       => 'object',
                 'required'   => ['video_url'],
@@ -118,6 +119,10 @@ class ToolCatalogSeeder
         if ($existing) {
             $needsUpdate = false;
             $updates = [];
+            if (empty($existing->frontend_design_slug)) {
+                $updates['frontend_design_slug'] = 'media-downloader-cards';
+                $needsUpdate = true;
+            }
             if (empty($existing->input_schema)) {
                 $updates['input_schema'] = $toolData['input_schema'];
                 $needsUpdate = true;

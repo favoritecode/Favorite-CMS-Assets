@@ -15,6 +15,7 @@ class Tool
     public string $description = '';
     public ?int $category_id = null;
     public string $engine = 'HTML';
+    public ?string $frontend_design_slug = null;
     public string $access_mode = AccessMode::FREE;
     public string $status = ToolStatus::DRAFT;
     public array $input_schema = [];
@@ -153,6 +154,7 @@ class Tool
         $tool->description = (string)($row['description'] ?? '');
         $tool->category_id = isset($row['category_id']) && $row['category_id'] !== null ? (int)$row['category_id'] : null;
         $tool->engine = (string)($row['engine'] ?? 'HTML');
+        $tool->frontend_design_slug = isset($row['frontend_design_slug']) && $row['frontend_design_slug'] !== '' ? (string)$row['frontend_design_slug'] : null;
         $tool->access_mode = (string)($row['access_mode'] ?? AccessMode::FREE);
         $tool->status = (string)($row['status'] ?? ToolStatus::DRAFT);
 
@@ -172,19 +174,25 @@ class Tool
         return $tool;
     }
 
+    public function getFrontendDesignSlug(): string
+    {
+        return !empty($this->frontend_design_slug) ? $this->frontend_design_slug : 'default';
+    }
+
     public function toArray(): array
     {
         return [
-            'id'                => $this->id,
-            'name'              => $this->name,
-            'slug'              => $this->slug,
-            'description'       => $this->description,
-            'category_id'       => $this->category_id,
-            'category_name'     => $this->category_name,
-            'category_slug'     => $this->category_slug,
-            'engine'            => $this->engine,
-            'access_mode'       => $this->access_mode,
-            'status'            => $this->status,
+            'id'                   => $this->id,
+            'name'                 => $this->name,
+            'slug'                 => $this->slug,
+            'description'          => $this->description,
+            'category_id'          => $this->category_id,
+            'category_name'        => $this->category_name,
+            'category_slug'        => $this->category_slug,
+            'engine'               => $this->engine,
+            'frontend_design_slug' => $this->frontend_design_slug,
+            'access_mode'          => $this->access_mode,
+            'status'               => $this->status,
             'input_schema'      => $this->input_schema,
             'output_schema'     => $this->output_schema,
             'configuration'     => $this->configuration,

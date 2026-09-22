@@ -10,6 +10,7 @@ use FavoriteCMS\Core\Migrator;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Tools\Controllers\Admin\AdminCategoryController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminDashboardController;
+use FavoriteCMS\Tools\Controllers\Admin\AdminFrontendDesignController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminPythonServiceController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminToolController;
 use FavoriteCMS\Tools\Controllers\Api\DownloadApiController;
@@ -19,10 +20,13 @@ use FavoriteCMS\Tools\Controllers\Frontend\CatalogController;
 use FavoriteCMS\Tools\Controllers\Frontend\ToolController;
 use FavoriteCMS\Tools\Engines\EngineResolver;
 use FavoriteCMS\Tools\Engines\PythonApiEngine;
+use FavoriteCMS\Tools\Normalizers\NormalizerResolver;
 use FavoriteCMS\Tools\Repositories\CategoryRepository;
+use FavoriteCMS\Tools\Repositories\FrontendDesignRepository;
 use FavoriteCMS\Tools\Repositories\PythonServiceRepository;
 use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Services\AccessControlService;
+use FavoriteCMS\Tools\Services\DesignPackageImporter;
 use FavoriteCMS\Tools\Services\DownloadManagerService;
 use FavoriteCMS\Tools\Services\PythonClientService;
 use FavoriteCMS\Tools\Services\ToolCatalogSeeder;
@@ -32,10 +36,13 @@ use Throwable;
 
 final class FavoriteWebToolsPlugin
 {
+    public const VERSION = '1.2.0';
+
     public const TABLES = [
         'favorite_web_tool_categories',
         'favorite_web_tool_python_services',
         'favorite_web_tools',
+        'favorite_web_tool_frontend_designs',
     ];
 
     private static ?self $instance = null;
@@ -97,7 +104,18 @@ final class FavoriteWebToolsPlugin
             return new ToolRepository($app->make(Database::class));
         });
 
+        $this->app->singleton(FrontendDesignRepository::class, function ($app): FrontendDesignRepository {
+            return new FrontendDesignRepository($app->make(Database::class));
+        });
+
         // 3. Bind Services
+        $this->app->singleton(NormalizerResolver::class, function (): NormalizerResolver {
+            return new NormalizerResolver();
+        });
+
+        $this->app->singleton(DesignPackageImporter::class, function ($app): DesignPackageImporter {
+            return new DesignPackageImporter($app->make(FrontendDesignRepository::class));
+        });
         $this->app->singleton(PythonClientService::class, function (): PythonClientService {
             return new PythonClientService();
         });
@@ -226,6 +244,15 @@ final class FavoriteWebToolsPlugin
                 $app->make(PythonClientService::class)
             );
         });
+
+        $this->app->singleton(AdminFrontendDesignController::class, function ($app): AdminFrontendDesignController {
+            return new AdminFrontendDesignController(
+                $app,
+                $app->make(FrontendDesignRepository::class),
+                $app->make(ToolRepository::class),
+                $app->make(DesignPackageImporter::class)
+            );
+        });
     }
 
     public function boot(): void
@@ -260,6 +287,11 @@ final class FavoriteWebToolsPlugin
                 return $controller->handle($request);
             };
 
+            $designHandler = function (Request $request) {
+                $controller = $this->app->make(AdminFrontendDesignController::class);
+                return $controller->handle($request);
+            };
+
             add_admin_menu(
                 'favorite-web-tools',
                 'Web Tools',
@@ -291,6 +323,14 @@ final class FavoriteWebToolsPlugin
                     'favorite-web-tools-python-services',
                     'Python Services',
                     $pythonHandler,
+                    'manage_options'
+                );
+
+                add_admin_submenu(
+                    'favorite-web-tools',
+                    'favorite-web-tools-frontend-designs',
+                    'Frontend Designs',
+                    $designHandler,
                     'manage_options'
                 );
 
@@ -370,6 +410,20 @@ final class FavoriteWebToolsPlugin
             add_route(['GET', 'POST'], '/admin/web-tools/python-services', function (Request $request) {
                 $controller = $this->app->make(AdminPythonServiceController::class);
                 return $controller->handle($request);
+            });
+
+            add_route(['GET', 'POST'], '/admin/web-tools/frontend-designs', function (Request $request) {
+                $controller = $this->app->make(AdminFrontendDesignController::class);
+                return $controller->handle($request);
+            });
+
+            add_route('GET', '/api/tools/designs/{slug}', function (Request $request, string $slug) {
+                $repo = $this->app->make(FrontendDesignRepository::class);
+                $design = $repo->findBySlug($slug);
+                if (!$design) {
+                    return new \FavoriteCMS\Core\Response(json_encode(['error' => 'Design not found']), 404, ['Content-Type' => 'application/json']);
+                }
+                return new \FavoriteCMS\Core\Response(json_encode(['success' => true, 'design' => $design->toArray()]), 200, ['Content-Type' => 'application/json']);
             });
 
             add_route(['GET', 'POST'], '/admin/web-tools/dashboard', function (Request $request) {
@@ -485,6 +539,10 @@ final class FavoriteWebToolsPlugin
     public function seedIfEmpty(): void
     {
         try {
+            if ($this->app->has(FrontendDesignRepository::class)) {
+                $designRepo = $this->app->make(FrontendDesignRepository::class);
+                $designRepo->seedBuiltins();
+            }
             if ($this->app->has(ToolCatalogSeeder::class)) {
                 $seeder = $this->app->make(ToolCatalogSeeder::class);
                 $seeder->seedIfEmpty();

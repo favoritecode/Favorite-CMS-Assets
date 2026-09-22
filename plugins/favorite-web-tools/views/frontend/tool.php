@@ -194,7 +194,7 @@ $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
                 <?php else: ?>
                     <!-- Standard Schema-Driven Tool Workspace (PHP / Python API / Fallback) -->
                     <div class="fwt-tool-workspace">
-                        <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>" data-endpoint="/api/tools/<?php echo urlencode($tool->slug); ?>/execute">
+                        <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>" data-design="<?php echo htmlspecialchars($tool->getFrontendDesignSlug() ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-endpoint="/api/tools/<?php echo urlencode($tool->slug); ?>/execute">
                             <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                             <!-- Dynamic Inputs -->
@@ -344,6 +344,12 @@ $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
                                     </a>
                                 </div>
                             </div>
+
+                            <!-- Scoped Style Block for Injected Design CSS -->
+                            <style id="fwt-design-dynamic-css"></style>
+
+                            <!-- Universal Frontend Design Container -->
+                            <div id="fwt-design-output" class="fwt-design-container" style="display: none;"></div>
 
                             <!-- Text / JSON Result Box -->
                             <div id="fwt-result-text-box" style="display: none;">

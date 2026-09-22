@@ -213,15 +213,40 @@ class ToolRepository
         return array_map(fn($row) => Tool::fromArray($row), $rows);
     }
 
+    private ?bool $hasDesignSlugColumn = null;
+
+    protected function hasDesignSlugColumn(): bool
+    {
+        if ($this->hasDesignSlugColumn !== null) {
+            return $this->hasDesignSlugColumn;
+        }
+
+        try {
+            $this->db->selectOne("SELECT `frontend_design_slug` FROM `favorite_web_tools` LIMIT 0");
+            $this->hasDesignSlugColumn = true;
+        } catch (\Throwable) {
+            $this->hasDesignSlugColumn = false;
+        }
+
+        return $this->hasDesignSlugColumn;
+    }
+
     public function create(array $data): Tool
     {
-        $sql = "
-            INSERT INTO `favorite_web_tools` 
-            (`name`, `slug`, `description`, `category_id`, `engine`, `access_mode`, `status`,
-             `input_schema`, `output_schema`, `configuration`, `display_order`, `meta_title`,
-             `meta_description`, `icon`)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ";
+        $hasDesignCol = $this->hasDesignSlugColumn();
+
+        $columns = ['name', 'slug', 'description', 'category_id', 'engine'];
+        if ($hasDesignCol) {
+            $columns[] = 'frontend_design_slug';
+        }
+        $columns = array_merge($columns, [
+            'access_mode', 'status', 'input_schema', 'output_schema',
+            'configuration', 'display_order', 'meta_title', 'meta_description', 'icon'
+        ]);
+
+        $colList = implode('`, `', $columns);
+        $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+        $sql = "INSERT INTO `favorite_web_tools` (`{$colList}`) VALUES ({$placeholders})";
 
         $config = is_array($data['configuration'] ?? null) ? $data['configuration'] : (is_string($data['configuration'] ?? null) ? json_decode($data['configuration'], true) : []);
         if (!is_array($config)) {
@@ -238,12 +263,17 @@ class ToolRepository
             }
         }
 
-        $this->db->execute($sql, [
+        $values = [
             $data['name'],
             $data['slug'],
             $data['description'] ?? null,
             isset($data['category_id']) && $data['category_id'] !== '' ? (int)$data['category_id'] : null,
             $data['engine'] ?? 'HTML',
+        ];
+        if ($hasDesignCol) {
+            $values[] = $data['frontend_design_slug'] ?? null;
+        }
+        $values = array_merge($values, [
             $data['access_mode'] ?? 'FREE',
             $data['status'] ?? ToolStatus::DRAFT,
             is_array($data['input_schema'] ?? null) ? json_encode($data['input_schema']) : ($data['input_schema'] ?? null),
@@ -254,6 +284,8 @@ class ToolRepository
             $data['meta_description'] ?? null,
             $data['icon'] ?? null,
         ]);
+
+        $this->db->execute($sql, $values);
 
         $id = (int)$this->db->lastInsertId();
         return $this->findById($id) ?: new Tool(array_merge($data, ['id' => $id, 'configuration' => $config]));
@@ -270,6 +302,9 @@ class ToolRepository
             'input_schema', 'output_schema', 'configuration', 'display_order', 'meta_title',
             'meta_description', 'icon'
         ];
+        if ($this->hasDesignSlugColumn()) {
+            $allowedFields[] = 'frontend_design_slug';
+        }
 
         // Merge extra config fields into configuration
         $config = null;
