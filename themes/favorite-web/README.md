@@ -56,7 +56,7 @@ The theme supports the Core Customizer, menus, widget regions, SEO head output, 
 
 ## Source
 
-Theme version: `1.2.0`
+Theme version: `1.2.3`
 
 Official website: <https://www.favoriteweb.net/>
 

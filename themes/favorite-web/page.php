@@ -24,7 +24,7 @@ $featImg = $page->getFeaturedImage();
         <?php endif; ?>
 
         <div class="entry-content">
-            <?php echo fw_prepare_content(clean_post_content($page->content ?? '')); ?>
+            <?php echo fw_prepare_content($page->content ?? ''); ?>
         </div>
     </article>
 </main>

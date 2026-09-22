@@ -9,6 +9,10 @@ $comments     = $post->getComments('approved');
 $previousPost = $previousPost ?? null;
 $nextPost     = $nextPost ?? null;
 $authorBio    = $author ? trim((string)($author->bio ?? '')) : '';
+
+if (function_exists('fw_track_post_view')) {
+    fw_track_post_view($post, (bool)($isPreview ?? false));
+}
 ?>
 
 <main class="site-main site-main--singular" id="main-content" tabindex="-1">
@@ -46,7 +50,7 @@ $authorBio    = $author ? trim((string)($author->bio ?? '')) : '';
         <?php endif; ?>
 
         <div class="entry-content">
-            <?php echo fw_prepare_content(clean_post_content($post->content ?? '')); ?>
+            <?php echo fw_prepare_content($post->content ?? ''); ?>
         </div>
 
         <?php if (!empty($tags)): ?>

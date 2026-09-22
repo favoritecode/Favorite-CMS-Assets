@@ -113,6 +113,88 @@ if (!function_exists('fw_read_time')) {
     }
 }
 
+if (!function_exists('fw_format_views')) {
+    /**
+     * Format a view count with proper singular/plural grammar: "0 Views", "1 View", "123 Views".
+     */
+    function fw_format_views(int $views): string
+    {
+        $views = max(0, $views);
+        return number_format($views) . ' ' . ($views === 1 ? 'View' : 'Views');
+    }
+}
+
+if (!function_exists('fw_get_post_views')) {
+    /**
+     * Retrieve the persistent view count for a given post.
+     */
+    function fw_get_post_views(mixed $post): int
+    {
+        $postId = is_object($post) ? (int)($post->id ?? 0) : (int)$post;
+        if ($postId <= 0) {
+            return 0;
+        }
+
+        try {
+            if (class_exists(\FavoriteCMS\Models\Setting::class)) {
+                return (int)\FavoriteCMS\Models\Setting::get('post_views', (string)$postId, 0);
+            }
+        } catch (\Throwable) {
+            return 0;
+        }
+
+        return 0;
+    }
+}
+
+if (!function_exists('fw_track_post_view')) {
+    /**
+     * Increment the persistent view count for a published post when viewed by a public visitor.
+     * Excludes admin/editor previews and visits, and prevents counting duplicate refreshes in the same session.
+     */
+    function fw_track_post_view(mixed $post, bool $isPreview = false): int
+    {
+        $postId = is_object($post) ? (int)($post->id ?? 0) : (int)$post;
+        if ($postId <= 0 || $isPreview || isset($_GET['preview'])) {
+            return fw_get_post_views($postId);
+        }
+
+        // Exclude logged-in admins and editors to avoid artificial inflation
+        $user = function_exists('current_user') ? current_user() : null;
+        if (!$user && !empty($_SESSION['auth_user_id']) && class_exists(\FavoriteCMS\Models\User::class)) {
+            try {
+                $user = \FavoriteCMS\Models\User::find((int)$_SESSION['auth_user_id']);
+            } catch (\Throwable) {}
+        }
+        if ($user && ($user->hasRole('admin') || $user->hasRole('super-admin') || $user->hasRole('editor') || $user->hasPermission('manage_settings'))) {
+            return fw_get_post_views($postId);
+        }
+
+        // Prevent duplicate refreshes in the same browser session
+        if (session_status() === PHP_SESSION_ACTIVE || !empty($_SESSION) || isset($_SESSION)) {
+            $viewed = (array)($_SESSION['fw_viewed_posts'] ?? []);
+            if (in_array($postId, $viewed, true)) {
+                return fw_get_post_views($postId);
+            }
+            $viewed[] = $postId;
+            $_SESSION['fw_viewed_posts'] = $viewed;
+        }
+
+        // Atomically increment in database using Setting model
+        try {
+            if (class_exists(\FavoriteCMS\Models\Setting::class)) {
+                $current = (int)\FavoriteCMS\Models\Setting::get('post_views', (string)$postId, 0);
+                $newCount = $current + 1;
+                \FavoriteCMS\Models\Setting::set('post_views', (string)$postId, $newCount, 'int');
+                return $newCount;
+            }
+        } catch (\Throwable) {}
+
+        return fw_get_post_views($postId);
+    }
+}
+
+
 if (!function_exists('fw_excerpt')) {
     /** Manual excerpt, or a plain-text summary of the content trimmed to $length characters. */
     function fw_excerpt(object $post, int $length = 170): string
