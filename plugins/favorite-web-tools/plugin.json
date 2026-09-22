@@ -1,0 +1,16 @@
+{
+    "id": "favorite-web-tools",
+    "name": "Favorite Web Tools",
+    "version": "1.0.0",
+    "description": "Modular web tools platform for Favorite CMS supporting HTML, CSS, JavaScript, PHP, and Python API tools.",
+    "author": "Favorite CMS Team",
+    "requires_php": "8.1.0",
+    "dependencies": [],
+    "entry_point": "plugin.php",
+    "tables": [
+        "favorite_web_tool_categories",
+        "favorite_web_tool_python_services",
+        "favorite_web_tools"
+    ]
+}
+

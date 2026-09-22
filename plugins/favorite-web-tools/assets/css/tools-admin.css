@@ -1,0 +1,20 @@
+/**
+ * Favorite Web Tools - Admin Stylesheet
+ */
+
+.fwt-admin-wrap {
+    color: #1e293b;
+}
+
+.fwt-admin-wrap table th {
+    font-weight: 600;
+}
+
+.fwt-admin-wrap textarea:focus,
+.fwt-admin-wrap input:focus,
+.fwt-admin-wrap select:focus {
+    border-color: #2563eb !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+

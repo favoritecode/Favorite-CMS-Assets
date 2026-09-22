@@ -1,0 +1,25 @@
+# Favorite Web Tools - Assets Directory Access Control
+# Only allow safe static assets; forbid executable code and maps
+
+Options -Indexes
+
+<FilesMatch "(?i:\.(php|phtml|php[0-9]|phps|phar|env|sql|log|sh|map|bak|old))$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "(?i:\.(css|js|svg|png|jpg|jpeg|gif|webp|woff|woff2|ttf|eot|ico))$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
