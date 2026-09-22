@@ -147,7 +147,7 @@ class AdminToolController
     public function createForm(Request $request): string
     {
         $categories = $this->categoryRepo->all();
-        $pythonServices = $this->pythonRepo->all();
+        $pythonServices = $this->pythonRepo->allActive();
         $registeredHandlers = \FavoriteCMS\Tools\Handlers\PhpHandlerRegistry::listHandlers();
 
         $tool = new Tool([
@@ -183,7 +183,22 @@ class AdminToolController
         }
 
         $categories = $this->categoryRepo->all();
-        $pythonServices = $this->pythonRepo->all();
+        $pythonServices = $this->pythonRepo->allActive();
+        if ($tool->python_service_id) {
+            $hasCurrent = false;
+            foreach ($pythonServices as $ps) {
+                if ($ps->id === $tool->python_service_id) {
+                    $hasCurrent = true;
+                    break;
+                }
+            }
+            if (!$hasCurrent) {
+                $currentSrv = $this->pythonRepo->findById((int)$tool->python_service_id);
+                if ($currentSrv) {
+                    $pythonServices[] = $currentSrv;
+                }
+            }
+        }
         $registeredHandlers = \FavoriteCMS\Tools\Handlers\PhpHandlerRegistry::listHandlers();
 
         $flashSuccess = $_SESSION['flash_success'] ?? null;
@@ -317,6 +332,39 @@ class AdminToolController
         if ($name === '') {
             $_SESSION['flash_error'] = 'Tool Name is required.';
             return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools?action=edit&id={$id}" : '/admin/page/favorite-web-tools?action=create');
+        }
+
+        if ($engine === 'PYTHON_API') {
+            if (empty($pythonServiceId)) {
+                $_SESSION['flash_error'] = 'Please select an active Python API Service for this tool.';
+                return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools?action=edit&id={$id}" : '/admin/page/favorite-web-tools?action=create');
+            }
+
+            $service = $this->pythonRepo->findById($pythonServiceId);
+            if ($service === null || !$service->isActive()) {
+                $_SESSION['flash_error'] = 'The selected Python API Service is invalid or disabled.';
+                return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools?action=edit&id={$id}" : '/admin/page/favorite-web-tools?action=create');
+            }
+
+            if ($pythonEndpoint === '') {
+                $pythonEndpoint = $service->default_endpoint_path ?: '/download/api';
+            }
+
+            if (preg_match('#^https?://#i', $pythonEndpoint)) {
+                $endpointHost = strtolower((string)parse_url($pythonEndpoint, PHP_URL_HOST));
+                $serviceHost  = strtolower((string)parse_url($service->base_url, PHP_URL_HOST));
+                if ($endpointHost !== '' && $endpointHost !== $serviceHost) {
+                    $_SESSION['flash_error'] = "The endpoint URL host '{$endpointHost}' does not match the configured service host '{$serviceHost}'. Host override is forbidden.";
+                    return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools?action=edit&id={$id}" : '/admin/page/favorite-web-tools?action=create');
+                }
+                $path = parse_url($pythonEndpoint, PHP_URL_PATH) ?? '/';
+                $query = parse_url($pythonEndpoint, PHP_URL_QUERY);
+                $pythonEndpoint = $path . ($query ? '?' . $query : '');
+            }
+
+            if (!str_starts_with($pythonEndpoint, '/')) {
+                $pythonEndpoint = '/' . $pythonEndpoint;
+            }
         }
 
         if ($slug === '') {

@@ -12,6 +12,7 @@ use FavoriteCMS\Tools\Models\PythonService;
 use FavoriteCMS\Tools\Repositories\PythonServiceRepository;
 use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Services\PythonClientService;
+use FavoriteCMS\Tools\Services\ToolExecutionService;
 use FavoriteCMS\Tools\Support\CsrfGuard;
 use FavoriteCMS\Tools\Support\ViewRenderer;
 use Throwable;
@@ -71,10 +72,13 @@ class AdminPythonServiceController
         $id = (int)$request->post('id', 0);
 
         return match ($action) {
-            'save'   => $this->saveService($request, $id),
-            'test'   => $this->testConnection($request, $id),
-            'delete' => $this->deleteService($request, $id),
-            default  => Response::redirect('/admin/page/favorite-web-tools-python-services'),
+            'save'          => $this->saveService($request, $id),
+            'test'          => $this->testConnection($request, $id),
+            'delete'        => $this->deleteService($request, $id),
+            'toggle_status' => $this->toggleStatus($request, $id),
+            'activate'      => $this->setStatus($request, $id, 'active'),
+            'disable'       => $this->setStatus($request, $id, 'disabled'),
+            default         => Response::redirect('/admin/page/favorite-web-tools-python-services'),
         };
     }
 
@@ -84,7 +88,7 @@ class AdminPythonServiceController
         $toolCounts = [];
         $allTools = $this->toolRepo->all();
         foreach ($services as $srv) {
-            $count = count(array_filter($allTools, fn($t) => $t->python_service_id === $srv->id));
+            $count = count(array_filter($allTools, fn($t) => (int)$t->python_service_id === (int)$srv->id));
             $toolCounts[$srv->id] = $count;
         }
 
@@ -104,8 +108,12 @@ class AdminPythonServiceController
     public function createForm(Request $request): string
     {
         $service = new PythonService([
-            'is_active' => 1,
-            'timeout'   => 15,
+            'is_active'             => 1,
+            'status'                => 'active',
+            'timeout'               => 30,
+            'http_method'           => 'GET',
+            'default_endpoint_path' => '/download/api',
+            'auth_type'             => 'none',
         ]);
 
         $flashError = $_SESSION['flash_error'] ?? null;
@@ -143,27 +151,76 @@ class AdminPythonServiceController
     protected function saveService(Request $request, int $id): Response
     {
         $name = trim((string)$request->post('name', ''));
+        $slug = trim((string)$request->post('slug', ''));
+        $description = trim((string)$request->post('description', ''));
         $baseUrl = trim((string)$request->post('base_url', ''));
+        $defaultEndpoint = trim((string)$request->post('default_endpoint_path', ''));
+        $httpMethod = strtoupper(trim((string)$request->post('http_method', 'GET')));
+        $authType = strtolower(trim((string)$request->post('auth_type', 'none')));
         $apiKey = trim((string)$request->post('api_key', ''));
-        $timeout = max(1, min(120, (int)$request->post('timeout', 15)));
-        $isActive = (int)$request->post('is_active', 1);
+        $timeout = max(1, min(120, (int)$request->post('timeout', 30)));
+        $status = strtolower(trim((string)$request->post('status', 'active')));
+
+        if ($request->post('status') === null && $request->post('is_active') !== null) {
+            $status = !empty($request->post('is_active')) ? 'active' : 'disabled';
+        }
 
         if ($name === '' || $baseUrl === '') {
             $_SESSION['flash_error'] = 'Service Name and Base URL are required.';
             return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools-python-services?action=edit&id={$id}" : '/admin/page/favorite-web-tools-python-services?action=create');
         }
 
+        if ($slug === '') {
+            $slug = strtolower(trim((string)preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+        }
+
+        // Validate slug uniqueness
+        $existingSlug = $this->serviceRepo->findBySlug($slug);
+        if ($existingSlug !== null && $existingSlug->id !== $id) {
+            $_SESSION['flash_error'] = "Slug '{$slug}' is already in use by another Python service.";
+            return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools-python-services?action=edit&id={$id}" : '/admin/page/favorite-web-tools-python-services?action=create');
+        }
+
+        // Validate URL format and security (SSRF prevention)
         if (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
             $_SESSION['flash_error'] = 'Invalid Base URL format.';
             return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools-python-services?action=edit&id={$id}" : '/admin/page/favorite-web-tools-python-services?action=create');
         }
 
+        try {
+            // Validate URL and enforce HTTPS for external services
+            $this->clientService->validateUrl($baseUrl, true);
+        } catch (Throwable $e) {
+            $_SESSION['flash_error'] = 'URL Security Validation Failed: ' . ToolExecutionService::sanitizeMessageString($e->getMessage());
+            return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools-python-services?action=edit&id={$id}" : '/admin/page/favorite-web-tools-python-services?action=create');
+        }
+
+        if ($defaultEndpoint === '') {
+            $defaultEndpoint = '/download/api';
+        }
+        if (!str_starts_with($defaultEndpoint, '/')) {
+            $defaultEndpoint = '/' . $defaultEndpoint;
+        }
+
+        if (!in_array($httpMethod, ['GET', 'POST'], true)) {
+            $httpMethod = 'GET';
+        }
+
+        if (!in_array($authType, ['none', 'bearer', 'api_key'], true)) {
+            $authType = 'none';
+        }
+
         $data = [
-            'name'      => $name,
-            'base_url'  => $baseUrl,
-            'api_key'   => $apiKey !== '' ? $apiKey : null,
-            'timeout'   => $timeout,
-            'is_active' => $isActive,
+            'name'                  => $name,
+            'slug'                  => $slug,
+            'description'           => $description !== '' ? $description : null,
+            'base_url'              => $baseUrl,
+            'default_endpoint_path' => $defaultEndpoint,
+            'http_method'           => $httpMethod,
+            'auth_type'             => $authType,
+            'api_key'               => $apiKey !== '' ? $apiKey : null,
+            'timeout'               => $timeout,
+            'status'                => $status,
         ];
 
         try {
@@ -183,7 +240,7 @@ class AdminPythonServiceController
                 return Response::redirect("/admin/page/favorite-web-tools-python-services?action=edit&id={$created->id}");
             }
         } catch (Throwable $e) {
-            $_SESSION['flash_error'] = 'Failed to save Python service: ' . $e->getMessage();
+            $_SESSION['flash_error'] = 'Failed to save Python service: ' . ToolExecutionService::sanitizeMessageString($e->getMessage());
             return Response::redirect($id > 0 ? "/admin/page/favorite-web-tools-python-services?action=edit&id={$id}" : '/admin/page/favorite-web-tools-python-services?action=create');
         }
     }
@@ -196,25 +253,66 @@ class AdminPythonServiceController
             return Response::redirect('/admin/page/favorite-web-tools-python-services');
         }
 
-        $testEndpoint = trim((string)$request->post('test_endpoint', '/health'));
+        $testEndpoint = trim((string)$request->post('test_endpoint', ''));
         if ($testEndpoint === '') {
-            $testEndpoint = '/health';
+            $testEndpoint = $service->default_endpoint_path ?: '/download/api';
+        }
+        if (!str_starts_with($testEndpoint, '/')) {
+            $testEndpoint = '/' . $testEndpoint;
         }
 
-        $result = $this->clientService->request($service, 'GET', $testEndpoint, []);
+        $method = strtoupper($service->http_method ?? 'GET');
+        $result = $this->clientService->request($service, $method, $testEndpoint, []);
+
         if ($result['success']) {
-            $_SESSION['flash_success'] = "Connection test successful (HTTP " . ($result['status'] ?? 200) . ").";
+            $_SESSION['flash_success'] = "Connection successful (HTTP " . ($result['status'] ?? 200) . ") to {$service->name}.";
         } else {
-            $_SESSION['flash_error'] = "Connection test failed: " . ($result['error'] ?? 'Unknown error');
+            $safeError = ToolExecutionService::sanitizeMessageString($result['error'] ?? 'Connection failed');
+            $_SESSION['flash_error'] = "Connection failed: " . $safeError;
         }
 
-        return Response::redirect("/admin/page/favorite-web-tools-python-services?action=edit&id={$id}");
+        // Return to edit if requested, else index
+        $redirectTarget = (string)$request->post('redirect', '');
+        if ($redirectTarget === 'edit') {
+            return Response::redirect("/admin/page/favorite-web-tools-python-services?action=edit&id={$id}");
+        }
+
+        return Response::redirect('/admin/page/favorite-web-tools-python-services');
+    }
+
+    protected function toggleStatus(Request $request, int $id): Response
+    {
+        $service = $this->serviceRepo->find($id);
+        if ($service === null) {
+            $_SESSION['flash_error'] = "Python Service #{$id} was not found.";
+            return Response::redirect('/admin/page/favorite-web-tools-python-services');
+        }
+
+        $newStatus = $service->isActive() ? 'disabled' : 'active';
+        $this->serviceRepo->setStatus($id, $newStatus);
+        $_SESSION['flash_success'] = "Service '{$service->name}' status changed to " . strtoupper($newStatus) . ".";
+
+        return Response::redirect('/admin/page/favorite-web-tools-python-services');
+    }
+
+    protected function setStatus(Request $request, int $id, string $status): Response
+    {
+        $service = $this->serviceRepo->find($id);
+        if ($service === null) {
+            $_SESSION['flash_error'] = "Python Service #{$id} was not found.";
+            return Response::redirect('/admin/page/favorite-web-tools-python-services');
+        }
+
+        $this->serviceRepo->setStatus($id, $status);
+        $_SESSION['flash_success'] = "Service '{$service->name}' is now " . strtoupper($status) . ".";
+
+        return Response::redirect('/admin/page/favorite-web-tools-python-services');
     }
 
     protected function deleteService(Request $request, int $id): Response
     {
         $allTools = $this->toolRepo->all();
-        $dependent = array_filter($allTools, fn($t) => $t->python_service_id === $id);
+        $dependent = array_filter($allTools, fn($t) => (int)$t->python_service_id === $id);
         if (count($dependent) > 0) {
             $_SESSION['flash_error'] = "Cannot delete service #{$id}: " . count($dependent) . " tool(s) depend on it. Please reassign or delete dependent tools first.";
             return Response::redirect('/admin/page/favorite-web-tools-python-services');
@@ -224,7 +322,7 @@ class AdminPythonServiceController
             $this->serviceRepo->delete($id);
             $_SESSION['flash_success'] = "Python Service #{$id} was deleted.";
         } catch (Throwable $e) {
-            $_SESSION['flash_error'] = 'Failed to delete Python service: ' . $e->getMessage();
+            $_SESSION['flash_error'] = 'Failed to delete Python service: ' . ToolExecutionService::sanitizeMessageString($e->getMessage());
         }
         return Response::redirect('/admin/page/favorite-web-tools-python-services');
     }
@@ -259,4 +357,3 @@ class AdminPythonServiceController
         return false;
     }
 }
-

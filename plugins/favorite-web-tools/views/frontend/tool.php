@@ -16,6 +16,50 @@
 $canAccess = $accessCheck['can_access'] ?? false;
 $accessReason = $accessCheck['reason'] ?? '';
 $inputSchema = $tool->input_schema ?? [];
+if (is_string($inputSchema)) {
+    $inputSchema = json_decode($inputSchema, true) ?: [];
+}
+if (empty($inputSchema) && ($tool->slug === 'favorite-media-downloader' || str_contains($tool->slug, 'media-downloader'))) {
+    $inputSchema = [
+        'type'       => 'object',
+        'required'   => ['video_url'],
+        'properties' => [
+            'video_url' => [
+                'type'        => 'string',
+                'format'      => 'uri',
+                'title'       => 'Video / Post URL',
+                'placeholder' => 'https://www.youtube.com/watch?v=...',
+                'description' => 'Paste any video, audio, or social media link to extract available streams.',
+            ],
+        ],
+    ];
+}
+if (isset($inputSchema['properties']) && is_array($inputSchema['properties'])) {
+    $normalized = [];
+    $requiredList = $inputSchema['required'] ?? [];
+    foreach ($inputSchema['properties'] as $propName => $propDef) {
+        $fmt = strtolower((string)($propDef['format'] ?? ''));
+        $rawType = strtolower((string)($propDef['type'] ?? 'string'));
+        $normType = ($fmt === 'uri' || $fmt === 'url') ? 'url' : ($rawType === 'string' ? 'text' : $rawType);
+        $normalized[$propName] = [
+            'name'        => $propName,
+            'label'       => $propDef['title'] ?? $propDef['label'] ?? ucwords(str_replace('_', ' ', (string)$propName)),
+            'type'        => $normType,
+            'required'    => in_array($propName, $requiredList, true) || !empty($propDef['required']),
+            'placeholder' => $propDef['placeholder'] ?? ($propDef['description'] ?? ''),
+            'help'        => $propDef['description'] ?? ($propDef['help'] ?? ''),
+            'default'     => $propDef['default'] ?? '',
+        ];
+    }
+    $inputSchema = $normalized;
+} elseif (isset($inputSchema['fields']) && is_array($inputSchema['fields'])) {
+    $normalized = [];
+    foreach ($inputSchema['fields'] as $f) {
+        $fname = $f['name'] ?? 'input';
+        $normalized[$fname] = $f;
+    }
+    $inputSchema = $normalized;
+}
 $outputSchema = $tool->output_schema ?? [];
 $uiSchema = $tool->ui_schema ?? [];
 $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
@@ -150,19 +194,24 @@ $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
                 <?php else: ?>
                     <!-- Standard Schema-Driven Tool Workspace (PHP / Python API / Fallback) -->
                     <div class="fwt-tool-workspace">
-                        <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>">
+                        <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>" data-endpoint="/api/tools/<?php echo urlencode($tool->slug); ?>/execute">
                             <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                             <!-- Dynamic Inputs -->
                             <div class="fwt-inputs-container">
                                 <?php if (empty($inputSchema)): ?>
-                                    <!-- Fallback default textarea if no schema defined -->
+                                    <!-- Fallback default input if no schema defined -->
                                     <div class="fwt-form-group">
                                         <label for="fwt-input-content" class="fwt-label">
-                                            Input Content
+                                            <?php echo ($tool->slug === 'favorite-media-downloader' || $tool->engine === 'PYTHON_API') ? 'Video / Post URL' : 'Input Content'; ?>
                                         </label>
-                                        <textarea name="text" id="fwt-input-content" rows="8" placeholder="Paste or type content here..."
-                                                  class="fwt-input-control fwt-code-textarea"></textarea>
+                                        <?php if ($tool->slug === 'favorite-media-downloader' || $tool->engine === 'PYTHON_API'): ?>
+                                            <input type="url" name="video_url" id="fwt-input-content" placeholder="https://www.youtube.com/watch?v=..."
+                                                   class="fwt-input-control" required>
+                                        <?php else: ?>
+                                            <textarea name="text" id="fwt-input-content" rows="8" placeholder="Paste or type content here..."
+                                                      class="fwt-input-control fwt-code-textarea"></textarea>
+                                        <?php endif; ?>
                                     </div>
                                 <?php else: ?>
                                     <?php foreach ($inputSchema as $fieldName => $schema): ?>

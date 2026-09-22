@@ -158,22 +158,42 @@ $currentEngine = strtoupper($tool->engine ?? 'PHP');
                 <h4 style="font-size: 14px; font-weight: 700; margin: 0 0 10px 0; color: #334155;">Python Microservice Integration</h4>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
-                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Python Service</label>
-                        <select name="python_service_id" style="width: 100%; padding: 9px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
-                            <option value="">None configured</option>
+                        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Python Service *</label>
+                        <select name="python_service_id" id="fwt-python-service-select" onchange="updateResolvedEndpointPreview()"
+                                style="width: 100%; padding: 9px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+                            <option value="" data-base-url="" data-default-endpoint="/download/api">-- Select Active Python Service --</option>
                             <?php foreach ($pythonServices as $ps): ?>
-                                <option value="<?php echo (int)$ps->id; ?>" <?php echo ($tool->python_service_id === $ps->id) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($ps->name . ' (' . $ps->base_url . ')', ENT_QUOTES, 'UTF-8'); ?>
+                                <option value="<?php echo (int)$ps->id; ?>"
+                                        data-base-url="<?php echo htmlspecialchars($ps->base_url, ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-default-endpoint="<?php echo htmlspecialchars($ps->default_endpoint_path ?? '/download/api', ENT_QUOTES, 'UTF-8'); ?>"
+                                        <?php echo ($tool->python_service_id === $ps->id) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($ps->name, ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                            Active Python services configured in <a href="/admin/page/favorite-web-tools-python-services" target="_blank" style="color: #2563eb;">Python Services</a>.
+                        </div>
                     </div>
 
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Endpoint Path</label>
-                        <input type="text" name="python_endpoint" value="<?php echo htmlspecialchars($tool->python_endpoint ?? '', ENT_QUOTES, 'UTF-8'); ?>"
-                               placeholder="/api/v1/process"
+                        <input type="text" name="python_endpoint" id="fwt-python-endpoint-input"
+                               value="<?php echo htmlspecialchars($tool->python_endpoint ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                               placeholder="/download/api"
+                               oninput="updateResolvedEndpointPreview()"
                                style="width: 100%; padding: 9px 12px; font-size: 13px; font-family: monospace; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;">
+                        <div style="font-size: 11px; color: #64748b; margin-top: 4px;">e.g. <code>/download/api</code></div>
+                    </div>
+
+                    <!-- Read-only Resolved Endpoint Preview -->
+                    <div style="grid-column: 1 / -1; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;">
+                        <div style="font-weight: 600; color: #1e293b; margin-bottom: 3px;">
+                            Resolved Endpoint: <span id="fwt-resolved-endpoint-preview" style="font-family: monospace; color: #2563eb; font-weight: 700;">None (select a service)</span>
+                        </div>
+                        <div style="font-size: 11px; color: #64748b;">
+                            Informational preview. The selected Python service determines the base host. Host overrides are blocked.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -288,6 +308,36 @@ $currentEngine = strtoupper($tool->engine ?? 'PHP');
 </div>
 
 <script>
+function updateResolvedEndpointPreview() {
+    var svcSelect = document.getElementById('fwt-python-service-select');
+    var epInput = document.getElementById('fwt-python-endpoint-input');
+    var preview = document.getElementById('fwt-resolved-endpoint-preview');
+    if (!svcSelect || !preview) return;
+
+    var selectedOpt = svcSelect.options[svcSelect.selectedIndex];
+    if (!selectedOpt || !selectedOpt.value) {
+        preview.textContent = 'None (select a service)';
+        return;
+    }
+
+    var baseUrl = selectedOpt.getAttribute('data-base-url') || '';
+    var defaultEp = selectedOpt.getAttribute('data-default-endpoint') || '/download/api';
+
+    if (epInput && (!epInput.value || epInput.value.trim() === '')) {
+        epInput.value = defaultEp;
+    }
+
+    var ep = epInput ? epInput.value.trim() : '';
+    if (!ep) ep = defaultEp;
+
+    if (ep.startsWith('http://') || ep.startsWith('https://')) {
+        preview.textContent = ep;
+    } else {
+        if (!ep.startsWith('/')) ep = '/' + ep;
+        preview.textContent = baseUrl.replace(/\/+$/, '') + ep;
+    }
+}
+
 function updateEnginePanels() {
     var engineSelect = document.getElementById('fwt-engine-select');
     var val = engineSelect ? engineSelect.value.toUpperCase() : 'PHP';
@@ -301,7 +351,12 @@ function updateEnginePanels() {
     var fieldJs = document.getElementById('fwt-field-js-source');
 
     if (panelPhp) panelPhp.style.display = (val === 'PHP') ? 'block' : 'none';
-    if (panelPython) panelPython.style.display = (val === 'PYTHON_API') ? 'block' : 'none';
+    if (panelPython) {
+        panelPython.style.display = (val === 'PYTHON_API') ? 'block' : 'none';
+        if (val === 'PYTHON_API') {
+            updateResolvedEndpointPreview();
+        }
+    }
     if (panelCustom) panelCustom.style.display = (val === 'HTML' || val === 'CSS' || val === 'JAVASCRIPT') ? 'block' : 'none';
 
     if (fieldHtml) fieldHtml.style.display = (val === 'CSS') ? 'none' : 'block';
@@ -316,5 +371,8 @@ function toggleSchemaDetails() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', updateEnginePanels);
+document.addEventListener('DOMContentLoaded', function() {
+    updateEnginePanels();
+    updateResolvedEndpointPreview();
+});
 </script>

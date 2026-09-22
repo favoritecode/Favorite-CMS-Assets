@@ -145,7 +145,8 @@ final class FavoriteWebToolsPlugin
             return new ToolCatalogSeeder(
                 $app->make(Database::class),
                 $app->make(CategoryRepository::class),
-                $app->make(ToolRepository::class)
+                $app->make(ToolRepository::class),
+                $app->make(PythonServiceRepository::class)
             );
         });
 
@@ -377,8 +378,39 @@ final class FavoriteWebToolsPlugin
             });
         }
 
-        // Plugin lifecycle hooks
+        // Handle incoming JSON payloads early on 'init' before Kernel checks post_max_size overflow
         if (function_exists('add_action')) {
+            add_action('init', function (): void {
+                if (
+                    isset($_SERVER['REQUEST_METHOD']) &&
+                    strtoupper($_SERVER['REQUEST_METHOD']) === 'POST' &&
+                    isset($_SERVER['CONTENT_TYPE']) &&
+                    str_contains(strtolower($_SERVER['CONTENT_TYPE']), 'application/json')
+                ) {
+                    $raw = (string)@file_get_contents('php://input');
+                    if ($raw !== '') {
+                        $decoded = json_decode($raw, true);
+                        if (is_array($decoded)) {
+                            if (isset($decoded['inputs']) && is_array($decoded['inputs'])) {
+                                $_POST['inputs'] = $decoded['inputs'];
+                                foreach ($decoded['inputs'] as $k => $v) {
+                                    if (!isset($_POST[$k])) {
+                                        $_POST[$k] = $v;
+                                    }
+                                }
+                            } else {
+                                foreach ($decoded as $k => $v) {
+                                    $_POST[$k] = $v;
+                                }
+                            }
+                            if (empty($_POST)) {
+                                $_POST['_fcms_json_payload'] = true;
+                            }
+                        }
+                    }
+                }
+            });
+
             add_action('plugin.activated', function (string $pluginId): void {
                 if ($pluginId === 'favorite-web-tools') {
                     $this->onActivate();
@@ -424,10 +456,6 @@ final class FavoriteWebToolsPlugin
             $db = $this->app->make(Database::class);
             if (method_exists($db, 'registerPrefixableTables')) {
                 $db->registerPrefixableTables(self::TABLES);
-            }
-
-            if (method_exists($db, 'tableExists') && $db->tableExists('favorite_web_tools')) {
-                return;
             }
 
             $this->runMigrations();

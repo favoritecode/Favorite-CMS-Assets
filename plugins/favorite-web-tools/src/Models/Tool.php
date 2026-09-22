@@ -113,6 +113,8 @@ class Tool
         ];
         if (in_array($name, $customConfigKeys, true)) {
             $this->configuration[$name] = $value;
+        } elseif (in_array($name, ['input_schema', 'output_schema', 'configuration'], true)) {
+            $this->{$name} = self::decodeJsonField($value);
         } elseif (property_exists($this, $name)) {
             $this->{$name} = $value;
         }

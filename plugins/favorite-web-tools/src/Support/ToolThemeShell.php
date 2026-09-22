@@ -121,6 +121,15 @@ final class ToolThemeShell
 
     private static function generateAssetTags(): string
     {
+        $version = '1.1.1';
+        $jsonFile = dirname(__DIR__, 2) . '/plugin.json';
+        if (is_file($jsonFile)) {
+            $meta = json_decode((string)@file_get_contents($jsonFile), true);
+            if (!empty($meta['version'])) {
+                $version = (string)$meta['version'];
+            }
+        }
+
         $cssPath = '/plugins/favorite-web-tools/assets/css/tools-frontend.css';
         $jsPath = '/plugins/favorite-web-tools/assets/js/tools-frontend.js';
 
@@ -134,8 +143,8 @@ final class ToolThemeShell
         }
 
         return $inlineCss
-             . '<link rel="stylesheet" href="' . $cssPath . '?v=1.0.0">' . "\n"
-             . '<script src="' . $jsPath . '?v=1.0.0" defer></script>';
+             . '<link rel="stylesheet" href="' . $cssPath . '?v=' . urlencode($version) . '">' . "\n"
+             . '<script src="' . $jsPath . '?v=' . urlencode($version) . '" defer></script>';
     }
 
     /** @return array{0:string,1:string} */

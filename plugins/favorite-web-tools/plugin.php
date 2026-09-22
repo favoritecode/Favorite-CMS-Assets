@@ -3,7 +3,7 @@
  * Plugin Name: Favorite Web Tools
  * Plugin URI: https://github.com/favoritecode/Favorite-CMS-Universal
  * Description: Modular web tools platform for Favorite CMS supporting HTML, CSS, JavaScript, PHP, and Python API tools.
- * Version: 1.0.0
+ * Version: 1.1.1
  * Author: Favorite CMS Team
  */
 

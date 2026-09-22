@@ -131,18 +131,21 @@ class ToolExecutionService
                 $meta['download'] = $downloadInfo;
             }
 
+            $resultPayload = [
+                'type'  => $resultType,
+                'value' => $resultValue,
+                'data'  => $resultData,
+                'meta'  => $meta,
+            ];
+
             return [
                 'success' => true,
                 'tool'    => [
                     'name' => $tool->name,
                     'slug' => $tool->slug,
                 ],
-                'data'    => [
-                    'type'  => $resultType,
-                    'value' => $resultValue,
-                    'data'  => $resultData,
-                    'meta'  => $meta,
-                ],
+                'data'    => $resultPayload,
+                'result'  => $resultPayload,
             ];
         } catch (Throwable $e) {
             return [

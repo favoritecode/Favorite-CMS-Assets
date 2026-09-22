@@ -36,6 +36,8 @@ class ToolExecutionApiController
             $rawJson = (string)$request->getContent();
         } elseif (isset($GLOBALS['_test_raw_input'])) {
             $rawJson = (string)$GLOBALS['_test_raw_input'];
+        } else {
+            $rawJson = (string)@file_get_contents('php://input');
         }
         if ($rawJson !== '') {
             $decoded = json_decode($rawJson, true);
@@ -54,13 +56,24 @@ class ToolExecutionApiController
                 if (is_array($decoded)) {
                     $inputs = $decoded;
                 }
-            } else {
-                $allPost = $request->post();
-                if (is_array($allPost)) {
-                    unset($allPost['_token']);
+            }
+        }
+
+        if (empty($inputs)) {
+            $allPost = !empty($_POST) ? $_POST : (method_exists($request, 'all') ? $request->all() : []);
+            if (is_array($allPost)) {
+                unset($allPost['_token'], $allPost['_fcms_json_payload']);
+                if (isset($allPost['inputs']) && is_array($allPost['inputs'])) {
+                    $inputs = $allPost['inputs'];
+                } else {
                     $inputs = $allPost;
                 }
             }
+        }
+
+        // Unwrap single nested inputs key if present
+        if (isset($inputs['inputs']) && is_array($inputs['inputs']) && count($inputs) === 1) {
+            $inputs = $inputs['inputs'];
         }
 
         // Merge uploaded files if present
@@ -78,7 +91,19 @@ class ToolExecutionApiController
             }
         }
 
-        $result = $this->executionService->execute($slug, $inputs, $userId > 0 ? $userId : null, $isAdmin);
+        try {
+            $result = $this->executionService->execute($slug, $inputs, $userId > 0 ? $userId : null, $isAdmin);
+        } catch (Throwable $e) {
+            $errMsg = ToolExecutionService::sanitizeErrorMessage($e);
+            return Response::json([
+                'success' => false,
+                'error'   => [
+                    'code'    => 'INTERNAL_EXECUTION_ERROR',
+                    'message' => $errMsg,
+                ],
+                'message' => $errMsg,
+            ], 500);
+        }
 
         if (!$result['success']) {
             $errCode = $result['error']['code'] ?? 'PROCESSING_ERROR';
@@ -93,7 +118,17 @@ class ToolExecutionApiController
                 default                    => 400,
             };
 
+            if (!isset($result['message']) && isset($result['error']['message'])) {
+                $result['message'] = $result['error']['message'];
+            }
+
             return Response::json($result, $statusCode);
+        }
+
+        if (!isset($result['data']) && isset($result['result'])) {
+            $result['data'] = $result['result'];
+        } elseif (!isset($result['result']) && isset($result['data'])) {
+            $result['result'] = $result['data'];
         }
 
         return Response::json($result, 200);

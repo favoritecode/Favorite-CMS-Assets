@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace FavoriteCMS\Tools\Services;
 
 use FavoriteCMS\Core\Database;
+use FavoriteCMS\Tools\Models\PythonService;
+use FavoriteCMS\Tools\Models\Tool;
 use FavoriteCMS\Tools\Repositories\CategoryRepository;
+use FavoriteCMS\Tools\Repositories\PythonServiceRepository;
 use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Support\AccessMode;
 use FavoriteCMS\Tools\Support\EngineType;
@@ -16,22 +19,129 @@ class ToolCatalogSeeder
     protected Database $db;
     protected CategoryRepository $catRepo;
     protected ToolRepository $toolRepo;
+    protected PythonServiceRepository $pythonRepo;
 
-    public function __construct(Database $db, ?CategoryRepository $catRepo = null, ?ToolRepository $toolRepo = null)
-    {
+    public function __construct(
+        Database $db,
+        ?CategoryRepository $catRepo = null,
+        ?ToolRepository $toolRepo = null,
+        ?PythonServiceRepository $pythonRepo = null
+    ) {
         $this->db = $db;
         $this->catRepo = $catRepo ?? new CategoryRepository($db);
         $this->toolRepo = $toolRepo ?? new ToolRepository($db);
+        $this->pythonRepo = $pythonRepo ?? new PythonServiceRepository($db);
     }
 
     public function seedIfEmpty(): void
     {
-        if ($this->toolRepo->countByStatus()['total'] > 0) {
-            return;
+        $this->seedCategories();
+        $this->seedDefaultPythonServices();
+
+        if ($this->toolRepo->countByStatus()['total'] === 0) {
+            $this->seedTools();
         }
 
-        $this->seedCategories();
-        $this->seedTools();
+        $this->seedMediaDownloaderTool();
+    }
+
+    public function seedDefaultPythonServices(): ?PythonService
+    {
+        $existing = $this->pythonRepo->findBySlug('favorite-media-downloader-api');
+        if ($existing) {
+            return $existing;
+        }
+
+        foreach ($this->pythonRepo->all() as $srv) {
+            if ($srv->name === 'Favorite Media Downloader API') {
+                return $srv;
+            }
+        }
+
+        return $this->pythonRepo->create([
+            'name'                  => 'Favorite Media Downloader API',
+            'slug'                  => 'favorite-media-downloader-api',
+            'description'           => 'External Media Downloader API for multi-platform video and audio streams.',
+            'base_url'              => 'https://server.favoriteweb.net',
+            'default_endpoint_path' => '/download/api',
+            'http_method'           => 'GET',
+            'auth_type'             => 'none',
+            'timeout'               => 30,
+            'status'                => 'active',
+        ]);
+    }
+
+    public function seedMediaDownloaderTool(): ?Tool
+    {
+        $existing = $this->toolRepo->findBySlug('favorite-media-downloader');
+        $service = $this->seedDefaultPythonServices();
+        $catIds = $this->seedCategories();
+
+        $toolData = [
+            'name'          => 'Favorite Media Downloader',
+            'slug'          => 'favorite-media-downloader',
+            'description'   => 'Download video and audio streams from supported media and social platforms.',
+            'category_id'   => $catIds['python'] ?? null,
+            'engine'        => EngineType::PYTHON_API,
+            'access_mode'   => AccessMode::FREE,
+            'status'        => ToolStatus::ACTIVE,
+            'input_schema'  => [
+                'type'       => 'object',
+                'required'   => ['video_url'],
+                'properties' => [
+                    'video_url' => [
+                        'type'        => 'string',
+                        'format'      => 'uri',
+                        'title'       => 'Video / Post URL',
+                        'placeholder' => 'https://...',
+                    ],
+                ],
+            ],
+            'output_schema' => [
+                'type'  => 'JSON',
+                'label' => 'Extracted Media Formats & Stream URLs',
+            ],
+            'configuration' => [
+                'python_service_id' => $service ? $service->id : null,
+                'python_endpoint'   => '/download/api',
+                'http_method'       => 'GET',
+                'param_mapping'     => ['video_url' => 'url'],
+                'endpoints'         => [
+                    'api'      => '/download/api',
+                    'job_file' => '/download/job-file/{JOB_ID}',
+                ],
+            ],
+            'display_order' => 10,
+            'icon'          => 'download',
+        ];
+
+        if ($existing) {
+            $needsUpdate = false;
+            $updates = [];
+            if (empty($existing->input_schema)) {
+                $updates['input_schema'] = $toolData['input_schema'];
+                $needsUpdate = true;
+            }
+            if (empty($existing->output_schema)) {
+                $updates['output_schema'] = $toolData['output_schema'];
+                $needsUpdate = true;
+            }
+            if (empty($existing->configuration['param_mapping']) || empty($existing->configuration['python_service_id'])) {
+                $updates['configuration'] = array_merge(
+                    $existing->configuration,
+                    $toolData['configuration'],
+                    ['python_service_id' => $service ? $service->id : ($existing->python_service_id ?: null)]
+                );
+                $needsUpdate = true;
+            }
+            if ($needsUpdate && $existing->id) {
+                $this->toolRepo->update($existing->id, $updates);
+                return $this->toolRepo->findById($existing->id);
+            }
+            return $existing;
+        }
+
+        return $this->toolRepo->create($toolData);
     }
 
     public function seedCategories(): array

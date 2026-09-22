@@ -30,19 +30,24 @@ class CreateFavoriteWebToolPythonServicesTable
 
         $this->db->execute("
             CREATE TABLE IF NOT EXISTS `favorite_web_tool_python_services` (
-                `id`         {$pkBigint},
-                `name`       VARCHAR(100) NOT NULL,
-                `base_url`   VARCHAR(255) NOT NULL,
-                `auth_type`  VARCHAR(32)  NOT NULL DEFAULT 'none',
-                `api_key`    VARCHAR(255) NULL,
-                `timeout`    INT          NOT NULL DEFAULT 30,
-                `status`     VARCHAR(32)  NOT NULL DEFAULT 'active',
-                `created_at` TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` {$updatedAt}
+                `id`                    {$pkBigint},
+                `name`                  VARCHAR(100) NOT NULL,
+                `slug`                  VARCHAR(100) NULL,
+                `description`           TEXT NULL,
+                `base_url`              VARCHAR(255) NOT NULL,
+                `default_endpoint_path` VARCHAR(255) NULL DEFAULT '/download/api',
+                `http_method`           VARCHAR(16)  NOT NULL DEFAULT 'GET',
+                `auth_type`             VARCHAR(32)  NOT NULL DEFAULT 'none',
+                `api_key`               VARCHAR(255) NULL,
+                `timeout`               INT          NOT NULL DEFAULT 30,
+                `status`                VARCHAR(32)  NOT NULL DEFAULT 'active',
+                `created_at`            TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+                `updated_at`            {$updatedAt}
             ){$engine};
         ");
 
         $this->createIndexIfNotExists('favorite_web_tool_python_services', 'idx_fwt_ps_status', '`status`');
+        $this->createIndexIfNotExists('favorite_web_tool_python_services', 'idx_fwt_ps_slug', '`slug`');
     }
 
     public function down(): void
