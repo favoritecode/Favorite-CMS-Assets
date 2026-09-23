@@ -306,14 +306,14 @@ class FrontendDesignRepository
                 'bindings_schema' => ['raw_json' => 'string', 'value' => 'mixed'],
                 'preview_data'    => ['value' => "Sample output string or object", 'raw_json' => "{\n  \"status\": \"success\"\n}"],
                 'template_markup' => '<div class="fwt-design-default"><pre class="fwt-result-code">{{raw_json}}</pre></div>',
-                'css_content'     => '.fwt-design-default pre { font-family: monospace; padding: 14px; border-radius: 8px; overflow-x: auto; }',
+                'css_content'     => '.fwt-design-default { max-width: 100%; min-width: 0; box-sizing: border-box; } .fwt-design-default pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.5; padding: 14px; border-radius: 8px; white-space: pre; overflow-x: auto; overflow-y: visible; word-break: normal; overflow-wrap: normal; max-width: 100%; min-width: 0; box-sizing: border-box; }',
                 'js_content'      => null,
             ],
             [
                 'name'            => 'Media Downloader Cards',
                 'slug'            => 'media-downloader-cards',
                 'description'     => 'Universal media format cards displaying video/audio resolutions, codecs, file sizes, and secure download buttons.',
-                'version'         => '1.0.0',
+                'version'         => '1.2.1',
                 'status'          => 'active',
                 'normalizer_key'  => 'media',
                 'is_builtin'      => 1,
@@ -322,14 +322,18 @@ class FrontendDesignRepository
                     'thumbnail' => 'url',
                     'duration'  => 'string',
                     'formats'   => 'array',
+                    'items'     => 'array',
                 ],
                 'preview_data'    => [
                     'title'         => 'Sample High Definition Video Stream',
                     'thumbnail'     => 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80',
                     'duration'      => '1:45',
                     'has_thumbnail' => true,
+                    'total_items'   => 1,
+                    'is_bulk'       => false,
                     'formats'       => [
                         [
+                            'format_id'          => '18',
                             'formatId'           => '18',
                             'quality'            => '360p',
                             'ext'                => 'MP4',
@@ -341,6 +345,7 @@ class FrontendDesignRepository
                             'has_download_url'   => true,
                         ],
                         [
+                            'format_id'          => '137',
                             'formatId'           => '137',
                             'quality'            => '1080p',
                             'ext'                => 'MP4',
@@ -352,6 +357,7 @@ class FrontendDesignRepository
                             'has_download_url'   => true,
                         ],
                         [
+                            'format_id'          => '140',
                             'formatId'           => '140',
                             'quality'            => '129 kbps',
                             'ext'                => 'M4A',
@@ -364,75 +370,219 @@ class FrontendDesignRepository
                         ],
                     ],
                 ],
-                'template_markup' => '<div class="fwt-media-design">
-{{#if has_thumbnail}}
-  <div class="fwt-media-meta-card">
-    <img src="{{thumbnail}}" alt="{{title}}" class="fwt-media-thumb">
-    <div class="fwt-media-info">
-      <div class="fwt-media-title">{{title}}</div>
-      {{#if duration}}<div class="fwt-media-duration">Duration: {{duration}}</div>{{/if}}
+                'template_markup' => '<div class="fwt-media-design" data-fwt-container="media-downloader">
+  <div class="fwt-media-input-card">
+    <label for="fwt-bulk-urls" class="fwt-media-input-label">Enter Video / Media URLs (one per line):</label>
+    <textarea id="fwt-bulk-urls" data-fwt-input="urls" rows="4" class="fwt-media-textarea" placeholder="Paste YouTube, TikTok, Instagram, Twitter/X, Facebook URLs here... (one per line)"></textarea>
+    <div class="fwt-media-input-actions">
+      <button type="button" data-fwt-action="get-formats" class="fwt-btn fwt-btn-primary">
+        <span>Get Formats</span>
+        <span class="fwt-spinner" style="display:none;"></span>
+      </button>
+      <button type="button" data-fwt-action="clear-all" class="fwt-btn fwt-btn-secondary">Clear</button>
     </div>
+    <div data-fwt-bind="input-status" class="fwt-media-input-status" style="display:none;"></div>
   </div>
-{{/if}}
 
-  <h4 class="fwt-media-heading">Available Downloads</h4>
-  <div class="fwt-media-list">
-{{#formats}}
-    <div class="fwt-media-card">
-      <div class="fwt-media-left">
-        <span class="fwt-badge {{badge_class}}">{{stream_type}}</span>
-        <span class="fwt-media-quality">{{quality}}</span>
-        <span class="fwt-media-ext">{{ext}}</span>
-        {{#if codec}}<span class="fwt-media-codec">{{codec}}</span>{{/if}}
-        {{#if filesize_formatted}}<span class="fwt-media-size">{{filesize_formatted}}</span>{{/if}}
-        {{#if label}}<span class="fwt-media-label" title="{{label}}">{{label}}</span>{{/if}}
-      </div>
-      <div class="fwt-media-right">
-        {{#if has_download_url}}
-        <a href="{{download_url}}" target="_blank" rel="noopener noreferrer" download class="fwt-btn-download">Download</a>
-        {{/if}}
-        {{^has_download_url}}
-        <span class="fwt-btn-disabled">Download unavailable</span>
-        {{/has_download_url}}
-      </div>
+  <div class="fwt-media-batch-bar" data-fwt-section="batch-bar" style="{{#if is_bulk}}{{else}}display:none;{{/if}}">
+    <div class="fwt-batch-left">
+      <span class="fwt-batch-count" data-fwt-bind="items-count">{{total_items}} item(s)</span>
+      <label class="fwt-batch-label">Quality:</label>
+      <select class="fwt-batch-select" data-fwt-action="set-global-quality">
+        <option value="best">Best (1080p+)</option>
+        <option value="720p">720p HD</option>
+        <option value="480p">480p SD</option>
+        <option value="360p">360p Mobile</option>
+        <option value="audio">Audio Only</option>
+      </select>
     </div>
-{{/formats}}
+    <div class="fwt-batch-right">
+      <button type="button" data-fwt-action="fast-download-all" class="fwt-btn fwt-btn-fast-all">⚡ Fast Download All</button>
+      <button type="button" data-fwt-action="convert-download-all" class="fwt-btn fwt-btn-convert-all">🔄 Convert & Download All</button>
+      <button type="button" data-fwt-action="cancel-all" class="fwt-btn fwt-btn-cancel-all">✕ Cancel All</button>
+    </div>
   </div>
+
+  <div class="fwt-media-cards-list" data-fwt-cards-container>
+{{#items}}
+    <div class="fwt-media-item-card" data-fwt-item-id="{{@index}}" data-fwt-url="{{url}}" data-fwt-status="{{status}}">
+      <div class="fwt-item-top">
+        {{#if has_thumbnail}}
+        <img src="{{thumbnail}}" alt="{{title}}" class="fwt-item-thumb">
+        {{/if}}
+        <div class="fwt-item-info">
+          <div class="fwt-item-title">{{title}}</div>
+          <div class="fwt-item-meta">
+            {{#if duration}}<span class="fwt-item-duration">⏱ {{duration}}</span>{{/if}}
+            {{#if channel}}<span class="fwt-item-channel">👤 {{channel}}</span>{{/if}}
+            <span class="fwt-item-url" title="{{url}}">{{url}}</span>
+          </div>
+        </div>
+        <div class="fwt-item-status-badge">
+          <span class="fwt-status-pill" data-fwt-bind="status-pill">{{status_label}}</span>
+        </div>
+      </div>
+
+      <div class="fwt-item-controls">
+        <div class="fwt-item-format-select-wrap">
+          <label class="fwt-format-label">Select Quality:</label>
+          <select class="fwt-item-format-select" data-fwt-select="format">
+            {{#formats}}
+            <option value="{{format_id}}" data-url="{{download_url}}" data-stream="{{stream_type}}" data-quality="{{quality}}" {{#if @first}}selected{{/if}}>
+              {{quality}} • {{ext}}{{#if filesize_formatted}} ({{filesize_formatted}}){{/if}} [{{stream_type}}]
+            </option>
+            {{/formats}}
+          </select>
+        </div>
+
+        <div class="fwt-item-btn-group">
+          <button type="button" data-fwt-action="fast-download" class="fwt-btn fwt-btn-fast">⚡ Fast Download</button>
+          <button type="button" data-fwt-action="convert-download" class="fwt-btn fwt-btn-convert">🔄 Convert & Download</button>
+          <button type="button" data-fwt-action="cancel" class="fwt-btn fwt-btn-cancel" style="display:none;">✕ Cancel</button>
+          <button type="button" data-fwt-action="retry" class="fwt-btn fwt-btn-retry" style="display:none;">↻ Retry</button>
+          <a data-fwt-action="download-file" href="{{download_url}}" download class="fwt-btn fwt-btn-save" style="display:none;">⬇ Save File</a>
+        </div>
+      </div>
+
+      <div class="fwt-item-progress-wrap" data-fwt-section="progress" style="display:none;">
+        <div class="fwt-item-progress-bar-track">
+          <div class="fwt-item-progress-fill" data-fwt-progress-bar style="width: 0%;"></div>
+        </div>
+        <div class="fwt-item-progress-stats">
+          <span data-fwt-bind="phase" class="fwt-progress-phase">Starting download...</span>
+          <span data-fwt-bind="progress-pct" class="fwt-progress-pct">0%</span>
+        </div>
+      </div>
+
+      <div data-fwt-bind="error-message" class="fwt-item-error" style="display:none;"></div>
+    </div>
+{{/items}}
+  </div>
+
+  <template data-fwt-template="card">
+    <div class="fwt-media-item-card" data-fwt-item-id="{{@index}}" data-fwt-url="{{url}}" data-fwt-status="ready">
+      <div class="fwt-item-top">
+        {{#if has_thumbnail}}
+        <img src="{{thumbnail}}" alt="{{title}}" class="fwt-item-thumb">
+        {{/if}}
+        <div class="fwt-item-info">
+          <div class="fwt-item-title">{{title}}</div>
+          <div class="fwt-item-meta">
+            {{#if duration}}<span class="fwt-item-duration">⏱ {{duration}}</span>{{/if}}
+            {{#if channel}}<span class="fwt-item-channel">👤 {{channel}}</span>{{/if}}
+            <span class="fwt-item-url" title="{{url}}">{{url}}</span>
+          </div>
+        </div>
+        <div class="fwt-item-status-badge">
+          <span class="fwt-status-pill" data-fwt-bind="status-pill">Ready</span>
+        </div>
+      </div>
+
+      <div class="fwt-item-controls">
+        <div class="fwt-item-format-select-wrap">
+          <label class="fwt-format-label">Select Quality:</label>
+          <select class="fwt-item-format-select" data-fwt-select="format">
+            {{#formats}}
+            <option value="{{format_id}}" data-url="{{download_url}}" data-stream="{{stream_type}}" data-quality="{{quality}}" {{#if @first}}selected{{/if}}>
+              {{quality}} • {{ext}}{{#if filesize_formatted}} ({{filesize_formatted}}){{/if}} [{{stream_type}}]
+            </option>
+            {{/formats}}
+          </select>
+        </div>
+
+        <div class="fwt-item-btn-group">
+          <button type="button" data-fwt-action="fast-download" class="fwt-btn fwt-btn-fast">⚡ Fast Download</button>
+          <button type="button" data-fwt-action="convert-download" class="fwt-btn fwt-btn-convert">🔄 Convert & Download</button>
+          <button type="button" data-fwt-action="cancel" class="fwt-btn fwt-btn-cancel" style="display:none;">✕ Cancel</button>
+          <button type="button" data-fwt-action="retry" class="fwt-btn fwt-btn-retry" style="display:none;">↻ Retry</button>
+          <a data-fwt-action="download-file" href="{{download_url}}" download class="fwt-btn fwt-btn-save" style="display:none;">⬇ Save File</a>
+        </div>
+      </div>
+
+      <div class="fwt-item-progress-wrap" data-fwt-section="progress" style="display:none;">
+        <div class="fwt-item-progress-bar-track">
+          <div class="fwt-item-progress-fill" data-fwt-progress-bar style="width: 0%;"></div>
+        </div>
+        <div class="fwt-item-progress-stats">
+          <span data-fwt-bind="phase" class="fwt-progress-phase">Starting download...</span>
+          <span data-fwt-bind="progress-pct" class="fwt-progress-pct">0%</span>
+        </div>
+      </div>
+
+      <div data-fwt-bind="error-message" class="fwt-item-error" style="display:none;"></div>
+    </div>
+  </template>
 
 {{#if raw_json}}
   <details class="fwt-media-raw">
     <summary>View Technical Details (Raw JSON)</summary>
-    <pre>{{raw_json}}</pre>
+    <pre class="fwt-result-code">{{raw_json}}</pre>
   </details>
 {{/if}}
 </div>',
-                'css_content'     => '.fwt-media-design { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
-.fwt-media-meta-card { display: flex; gap: 16px; align-items: center; padding: 14px 18px; background: var(--fwt-bg, #f8fafc); border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 10px; }
-.fwt-media-thumb { width: 88px; height: 56px; object-fit: cover; border-radius: 6px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-.fwt-media-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden; }
-.fwt-media-title { font-size: 15px; font-weight: 700; color: var(--fwt-text, #1e293b); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; }
-.fwt-media-duration { font-size: 12px; color: var(--fwt-muted, #64748b); font-weight: 500; }
-.fwt-media-heading { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fwt-muted, #64748b); margin: 4px 0 0 0; }
-.fwt-media-list { display: flex; flex-direction: column; gap: 10px; }
-.fwt-media-card { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: var(--fwt-card-bg, #ffffff); border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 8px; gap: 16px; }
-.fwt-media-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
-.fwt-media-quality { font-size: 14px; font-weight: 700; color: var(--fwt-text, #1e293b); }
-.fwt-media-ext { font-size: 12px; font-weight: 600; color: var(--fwt-muted, #64748b); background: rgba(0,0,0,0.06); padding: 2px 7px; border-radius: 4px; }
-.fwt-media-codec { font-size: 12px; color: var(--fwt-muted, #64748b); background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 3px; }
-.fwt-media-size { font-size: 12px; font-weight: 600; color: var(--fwt-text, #1e293b); }
-.fwt-media-label { font-size: 12px; color: var(--fwt-muted, #64748b); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fwt-media-right { flex-shrink: 0; }
-.fwt-btn-download { display: inline-flex; align-items: center; padding: 8px 18px; background: var(--fwt-primary, #2563eb); color: #fff !important; text-decoration: none !important; border-radius: 6px; font-size: 13px; font-weight: 600; }
-.fwt-btn-download:hover { background: var(--fwt-primary-hover, #1d4ed8); }
-.fwt-btn-disabled { display: inline-flex; align-items: center; padding: 8px 14px; background: rgba(0,0,0,0.06); color: var(--fwt-muted, #64748b); border-radius: 6px; font-size: 12px; font-weight: 500; cursor: not-allowed; }
-.fwt-media-raw { margin-top: 14px; border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 8px; padding: 10px 14px; background: var(--fwt-bg, #f8fafc); }
-.fwt-media-raw summary { font-size: 13px; font-weight: 600; color: var(--fwt-muted, #64748b); cursor: pointer; }
-.fwt-media-raw pre { margin-top: 10px; margin-bottom: 0; font-family: monospace; font-size: 13px; }
-.fwt-badge-video-audio { background: #0284c7; color: #fff; }
-.fwt-badge-video-only { background: #2563eb; color: #fff; }
-.fwt-badge-audio-only { background: #059669; color: #fff; }
-.fwt-badge-hls { background: #7c3aed; color: #fff; }
-@media (max-width: 640px) { .fwt-media-card { flex-direction: column; align-items: flex-start; gap: 12px; } .fwt-media-right { width: 100%; } .fwt-btn-download, .fwt-btn-disabled { width: 100%; justify-content: center; } }',
+                'css_content'     => '.fwt-media-design { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.fwt-media-input-card { background: var(--fwt-card-bg, #ffffff); border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.fwt-media-input-label { font-size: 14px; font-weight: 700; color: var(--fwt-text, #1e293b); }
+.fwt-media-textarea { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.5; padding: 12px 14px; border: 1px solid var(--fwt-border, #cbd5e1); border-radius: 8px; box-sizing: border-box; resize: vertical; min-height: 90px; }
+.fwt-media-textarea:focus { outline: none; border-color: var(--fwt-primary, #2563eb); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+.fwt-media-input-actions { display: flex; gap: 10px; align-items: center; }
+.fwt-media-input-status { font-size: 13px; padding: 8px 12px; border-radius: 6px; }
+.fwt-media-batch-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: var(--fwt-bg, #f8fafc); border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 10px; padding: 12px 18px; }
+.fwt-batch-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fwt-batch-count { font-size: 13px; font-weight: 700; color: var(--fwt-primary, #2563eb); background: rgba(37,99,235,0.08); padding: 4px 10px; border-radius: 20px; }
+.fwt-batch-label { font-size: 13px; font-weight: 600; color: var(--fwt-muted, #64748b); }
+.fwt-batch-select { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--fwt-border, #cbd5e1); background: #fff; }
+.fwt-batch-right { display: flex; gap: 8px; flex-wrap: wrap; }
+.fwt-btn-fast-all { background: #059669; color: #fff; }
+.fwt-btn-fast-all:hover { background: #047857; }
+.fwt-btn-convert-all { background: #d97706; color: #fff; }
+.fwt-btn-convert-all:hover { background: #b45309; }
+.fwt-btn-cancel-all { background: #64748b; color: #fff; }
+.fwt-btn-cancel-all:hover { background: #475569; }
+.fwt-media-cards-list { display: flex; flex-direction: column; gap: 14px; }
+.fwt-media-item-card { background: var(--fwt-card-bg, #ffffff); border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 10px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, box-shadow 0.2s; }
+.fwt-media-item-card:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.fwt-item-top { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.fwt-item-thumb { width: 96px; height: 60px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: #e2e8f0; }
+.fwt-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.fwt-item-title { font-size: 15px; font-weight: 700; color: var(--fwt-text, #1e293b); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fwt-item-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--fwt-muted, #64748b); flex-wrap: wrap; }
+.fwt-item-url { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.75; }
+.fwt-item-status-badge { flex-shrink: 0; }
+.fwt-status-pill { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background: #e2e8f0; color: #475569; }
+.fwt-item-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--fwt-border, #f1f5f9); }
+.fwt-item-format-select-wrap { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px; }
+.fwt-format-label { font-size: 12px; font-weight: 600; color: var(--fwt-muted, #64748b); flex-shrink: 0; }
+.fwt-item-format-select { flex: 1; padding: 7px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--fwt-border, #cbd5e1); background: #fff; min-width: 180px; }
+.fwt-item-btn-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fwt-btn-fast { background: var(--fwt-primary, #2563eb); color: #fff; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 6px; }
+.fwt-btn-fast:hover { background: #1d4ed8; }
+.fwt-btn-convert { background: #d97706; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 6px; }
+.fwt-btn-convert:hover { background: #b45309; }
+.fwt-btn-cancel { background: #ef4444; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 6px; }
+.fwt-btn-retry { background: #64748b; color: #fff; font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 6px; }
+.fwt-btn-save { background: #10b981; color: #fff !important; text-decoration: none !important; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 6px; display: inline-flex; align-items: center; }
+.fwt-item-progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+.fwt-item-progress-bar-track { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.fwt-item-progress-fill { height: 100%; background: #2563eb; width: 0%; transition: width 0.25s ease; }
+.fwt-item-progress-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--fwt-muted, #64748b); font-weight: 500; }
+.fwt-item-error { font-size: 12px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 12px; }
+.fwt-media-raw { margin-top: 14px; border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 8px; padding: 12px 16px; background: var(--fwt-bg, #f8fafc); max-width: 100%; min-width: 0; box-sizing: border-box; }
+.fwt-media-raw summary { font-size: 13px; font-weight: 600; color: var(--fwt-muted, #64748b); cursor: pointer; user-select: none; }
+.fwt-media-raw pre { margin-top: 10px; margin-bottom: 0; padding: 14px; background: var(--fwt-code-bg, #0f172a); color: var(--fwt-code-fg, #f8fafc); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.5; white-space: pre; overflow-x: auto; overflow-y: visible; word-break: normal; overflow-wrap: normal; }
+[data-fwt-status="working"] .fwt-status-pill { background: #3b82f6; color: #fff; }
+[data-fwt-status="completed"] .fwt-status-pill { background: #10b981; color: #fff; }
+[data-fwt-status="error"] .fwt-status-pill { background: #ef4444; color: #fff; }
+@media (max-width: 640px) { .fwt-item-top { flex-direction: column; align-items: flex-start; } .fwt-item-controls { flex-direction: column; align-items: flex-start; } .fwt-item-format-select-wrap { width: 100%; } .fwt-item-btn-group { width: 100%; } .fwt-item-btn-group .fwt-btn { flex: 1; text-align: center; justify-content: center; } }
+/* Built-in design dark-mode contract */
+html.dark .fwt-media-design,body.dark .fwt-media-design,[data-theme="dark"] .fwt-media-design,.dark .fwt-media-design{color-scheme:dark;color:var(--fwt-text,#e2e8f0)}
+html.dark .fwt-media-input-card,body.dark .fwt-media-input-card,[data-theme="dark"] .fwt-media-input-card,.dark .fwt-media-input-card,html.dark .fwt-media-item-card,body.dark .fwt-media-item-card,[data-theme="dark"] .fwt-media-item-card,.dark .fwt-media-item-card,html.dark .fwt-media-header-card,body.dark .fwt-media-header-card,[data-theme="dark"] .fwt-media-header-card,.dark .fwt-media-header-card{background:var(--fwt-card-bg,#111827)!important;color:var(--fwt-text,#e2e8f0)!important;border-color:var(--fwt-border,#334155)!important}
+html.dark .fwt-media-textarea,body.dark .fwt-media-textarea,[data-theme="dark"] .fwt-media-textarea,.dark .fwt-media-textarea,html.dark .fwt-batch-select,body.dark .fwt-batch-select,[data-theme="dark"] .fwt-batch-select,.dark .fwt-batch-select,html.dark .fwt-item-format-select,body.dark .fwt-item-format-select,[data-theme="dark"] .fwt-item-format-select,.dark .fwt-item-format-select{background:var(--fwt-input-bg,#1e293b)!important;color:var(--fwt-text,#e2e8f0)!important;border-color:var(--fwt-border,#475569)!important;color-scheme:dark}
+html.dark .fwt-media-input-label,body.dark .fwt-media-input-label,[data-theme="dark"] .fwt-media-input-label,.dark .fwt-media-input-label,html.dark .fwt-item-title,body.dark .fwt-item-title,[data-theme="dark"] .fwt-item-title,.dark .fwt-item-title{color:var(--fwt-text,#e2e8f0)!important}
+html.dark .fwt-item-meta,body.dark .fwt-item-meta,[data-theme="dark"] .fwt-item-meta,.dark .fwt-item-meta,html.dark .fwt-format-label,body.dark .fwt-format-label,[data-theme="dark"] .fwt-format-label,.dark .fwt-format-label{color:var(--fwt-muted,#94a3b8)!important}
+html.dark .fwt-status-pill,body.dark .fwt-status-pill,[data-theme="dark"] .fwt-status-pill,.dark .fwt-status-pill{background:#334155!important;color:#e2e8f0!important}
+html.dark .fwt-item-controls,body.dark .fwt-item-controls,[data-theme="dark"] .fwt-item-controls,.dark .fwt-item-controls{border-top-color:var(--fwt-border,#334155)!important}
+',
                 'js_content'      => null,
             ],
             [
@@ -529,18 +679,28 @@ class FrontendDesignRepository
   </div>
   <pre class="fwt-result-code">{{raw_json}}</pre>
 </div>',
-                'css_content'     => '.fwt-api-inspector { margin: 16px 0; border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 8px; overflow: hidden; }
+                'css_content'     => '.fwt-api-inspector { margin: 16px 0; border: 1px solid var(--fwt-border, #e2e8f0); border-radius: 8px; max-width: 100%; min-width: 0; box-sizing: border-box; }
 .fwt-inspector-header { padding: 10px 14px; background: var(--fwt-bg, #f8fafc); border-bottom: 1px solid var(--fwt-border, #e2e8f0); }
 .fwt-inspector-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2563eb; }
-.fwt-api-inspector pre { margin: 0; padding: 16px; font-family: monospace; font-size: 13px; background: var(--fwt-code-bg, #0f172a); color: var(--fwt-code-fg, #f8fafc); overflow-x: auto; }',
+.fwt-api-inspector pre { margin: 0; padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.5; background: var(--fwt-code-bg, #0f172a); color: var(--fwt-code-fg, #f8fafc); white-space: pre; overflow-x: auto; overflow-y: visible; word-break: normal; overflow-wrap: normal; max-width: 100%; min-width: 0; box-sizing: border-box; }',
                 'js_content'      => null,
             ],
         ];
 
         foreach ($builtins as $b) {
-            if ($this->findBySlug($b['slug']) === null) {
+            $existing = $this->findBySlug($b['slug']);
+            if ($existing === null) {
                 try {
                     $this->create($b);
+                } catch (Throwable) {
+                }
+            } elseif ($existing->isBuiltin()) {
+                try {
+                    $this->update($existing->getId(), [
+                        'template_markup' => $b['template_markup'],
+                        'css_content'     => $b['css_content'],
+                        'version'         => $b['version'],
+                    ]);
                 } catch (Throwable) {
                 }
             }

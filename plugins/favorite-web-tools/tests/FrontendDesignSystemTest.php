@@ -68,6 +68,13 @@ class FrontendDesignSystemTest extends TestCase
         $this->designRepo->seedBuiltins();
     }
 
+    protected function tearDown(): void
+    {
+        unset($GLOBALS['_test_current_user']);
+        unset($_SESSION['auth_user_id'], $_SESSION['user_id'], $_SESSION['flash_error'], $_SESSION['flash_success']);
+        parent::tearDown();
+    }
+
     public function testBuiltinDesignsSeededSuccessfully(): void
     {
         $all = $this->designRepo->all();
@@ -493,5 +500,138 @@ class FrontendDesignSystemTest extends TestCase
         $this->assertStringContainsString('Amazing Nature 4K', $body['rendered_html']);
         $this->assertStringContainsString('https://server.favoriteweb.net/stream_1080.mp4', $body['rendered_html']);
         $this->assertStringContainsString('1080p', $body['rendered_html']);
+    }
+
+    public function testAdminFrontendDesignControllerDeniesUnauthenticatedGuest(): void
+    {
+        unset($GLOBALS['_test_current_user']);
+        unset($_SESSION['auth_user_id'], $_SESSION['user_id']);
+
+        $app = new Application();
+        $importer = new DesignPackageImporter($this->designRepo);
+        $controller = new AdminFrontendDesignController($app, $this->designRepo, $this->toolRepo, $importer);
+
+        $request = new Request([], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs']);
+        $response = $controller->handle($request);
+
+        $this->assertEquals(403, $response->getStatusCode());
+        $this->assertStringContainsString('403 Access Denied', $response->getContent());
+        $this->assertStringContainsString('You do not have permission to manage frontend designs.', $response->getContent());
+    }
+
+    public function testAdminFrontendDesignControllerDeniesUnauthorizedUserWithoutManageOptions(): void
+    {
+        $subscriber = new class {
+            public int $id = 99;
+            public function can(string $cap): bool { return false; }
+            public function hasPermission(string $cap): bool { return false; }
+            public function isSuperAdmin(): bool { return false; }
+            public function hasRole(string $role): bool { return false; }
+        };
+        $GLOBALS['_test_current_user'] = $subscriber;
+
+        $app = new Application();
+        $importer = new DesignPackageImporter($this->designRepo);
+        $controller = new AdminFrontendDesignController($app, $this->designRepo, $this->toolRepo, $importer);
+
+        $request = new Request([], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs']);
+        $response = $controller->handle($request);
+
+        $this->assertEquals(403, $response->getStatusCode());
+        $this->assertStringContainsString('403 Access Denied', $response->getContent());
+        $this->assertStringContainsString('You do not have permission to manage frontend designs.', $response->getContent());
+    }
+
+    public function testAdminFrontendDesignControllerPermitsAuthorizedAdmin(): void
+    {
+        $admin = new class {
+            public int $id = 1;
+            public function can(string $cap): bool { return $cap === 'manage_options'; }
+            public function hasPermission(string $cap): bool { return $cap === 'manage_options'; }
+            public function isSuperAdmin(): bool { return true; }
+            public function hasRole(string $role): bool { return $role === 'admin'; }
+        };
+        $GLOBALS['_test_current_user'] = $admin;
+
+        $app = new Application();
+        $importer = new DesignPackageImporter($this->designRepo);
+        $controller = new AdminFrontendDesignController($app, $this->designRepo, $this->toolRepo, $importer);
+
+        // GET index
+        $request = new Request([], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs']);
+        $response = $controller->handle($request);
+
+        $html = (string)$response;
+        $this->assertStringContainsString('Universal Frontend Designs', $html);
+        $this->assertStringContainsString('available', $html);
+        $this->assertStringContainsString('/admin/page/favorite-web-tools-frontend-designs?action=create', $html);
+        $this->assertStringContainsString('/admin/page/favorite-web-tools-frontend-designs?action=import', $html);
+
+        // GET create action
+        $createReq = new Request(['action' => 'create'], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs?action=create']);
+        $createHtml = (string)$controller->handle($createReq);
+        $this->assertStringContainsString('Create Frontend Design', $createHtml);
+
+        // GET import action
+        $importReq = new Request(['action' => 'import'], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs?action=import']);
+        $importHtml = (string)$controller->handle($importReq);
+        $this->assertStringContainsString('Import Design Package (.ZIP)', $importHtml);
+
+        // GET preview action
+        $previewReq = new Request(['action' => 'preview'], [], [], [], ['REQUEST_METHOD' => 'GET', 'REQUEST_URI' => '/admin/page/favorite-web-tools-frontend-designs?action=preview']);
+        $previewHtml = (string)$controller->handle($previewReq);
+        $this->assertStringContainsString('Interactive Design Sandbox & Preview', $previewHtml);
+    }
+
+    public function testAdminFrontendDesignControllerEnforcesCsrfOnPost(): void
+    {
+        $admin = new class {
+            public int $id = 1;
+            public function can(string $cap): bool { return true; }
+        };
+        $GLOBALS['_test_current_user'] = $admin;
+
+        $app = new Application();
+        $importer = new DesignPackageImporter($this->designRepo);
+        $controller = new AdminFrontendDesignController($app, $this->designRepo, $this->toolRepo, $importer);
+
+        // POST without valid CSRF
+        $badPost = Request::create('POST', '/admin/page/favorite-web-tools-frontend-designs', [
+            'action'     => 'save',
+            'name'       => 'Bad CSRF Test',
+            'csrf_token' => 'invalid-token',
+        ]);
+        $postResp = $controller->handle($badPost);
+
+        $this->assertEquals(403, $postResp->getStatusCode());
+        $this->assertStringContainsString('Invalid security token', (string)$postResp->getContent());
+    }
+
+    public function testAdminFrontendDesignControllerRendersPreviewAjaxWithValidCsrf(): void
+    {
+        $admin = new class {
+            public int $id = 1;
+            public function can(string $cap): bool { return true; }
+        };
+        $GLOBALS['_test_current_user'] = $admin;
+
+        $app = new Application();
+        $importer = new DesignPackageImporter($this->designRepo);
+        $controller = new AdminFrontendDesignController($app, $this->designRepo, $this->toolRepo, $importer);
+
+        $token = CsrfGuard::token();
+        $ajaxPost = Request::create('POST', '/admin/page/favorite-web-tools-frontend-designs', [
+            'action'     => 'render_preview',
+            'csrf_token' => $token,
+            'slug'       => 'media-downloader-cards',
+            'mock_json'  => json_encode(['title' => 'Live Preview Test Video', 'formats' => []]),
+        ]);
+
+        $ajaxResp = $controller->handle($ajaxPost);
+        $this->assertEquals(200, $ajaxResp->getStatusCode());
+        $payload = json_decode($ajaxResp->getContent(), true);
+        $this->assertTrue($payload['success']);
+        $this->assertStringContainsString('Live Preview Test Video', $payload['rendered_html']);
+        $this->assertArrayHasKey('css', $payload);
     }
 }

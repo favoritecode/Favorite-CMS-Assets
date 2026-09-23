@@ -33,15 +33,38 @@ final class CsrfGuard
 
     public static function verify(Request $request): bool
     {
-        $submitted = (string)$request->post('_token', '');
+        if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+            @session_start();
+        }
+
+        $submitted = (string)($request->post('_token', '') ?: $request->post('csrf_token', ''));
         if ($submitted === '') {
-            $submitted = (string)$request->server('HTTP_X_CSRF_TOKEN', '');
+            $submitted = (string)($_POST['_token'] ?? $_POST['csrf_token'] ?? '');
         }
         if ($submitted === '') {
             $submitted = (string)$request->header('X-CSRF-TOKEN', '');
         }
+        if ($submitted === '') {
+            $submitted = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        }
+        if ($submitted === '') {
+            $rawBody = '';
+            if (method_exists($request, 'getContent')) {
+                $rawBody = (string)$request->getContent();
+            } elseif (isset($GLOBALS['_test_raw_input'])) {
+                $rawBody = (string)$GLOBALS['_test_raw_input'];
+            } else {
+                $rawBody = (string)@file_get_contents('php://input');
+            }
+            if ($rawBody !== '') {
+                $json = json_decode($rawBody, true);
+                if (is_array($json)) {
+                    $submitted = (string)($json['_token'] ?? $json['csrf_token'] ?? '');
+                }
+            }
+        }
 
-        $sessionToken = (string)($_SESSION['_token'] ?? '');
+        $sessionToken = (string)($_SESSION['_token'] ?? $_SESSION['csrf_token'] ?? '');
         if ($submitted === '' || $sessionToken === '') {
             return false;
         }

@@ -14,17 +14,43 @@ class SafeTemplateRenderer
      */
     public static function render(string $template, array $context): string
     {
+        // Client-side <template data-fwt-template="..."> blocks are rendered later by
+        // tools-frontend.js. Preserve their contents byte-for-byte so the client-side
+        // mustache variables ({{url}}, {{formats}}, etc.) are not consumed here.
+        $clientTemplates = [];
+        $template = preg_replace_callback(
+            '/<template\b(?=[^>]*\bdata-fwt-template\s*=\s*["\'])[^>]*>.*?<\/template>/is',
+            static function (array $match) use (&$clientTemplates): string {
+                $index = count($clientTemplates);
+                $placeholder = "__FWT_CLIENT_TEMPLATE_{$index}_";
+                $clientTemplates[$placeholder] = $match[0];
+                return $placeholder;
+            },
+            $template
+        ) ?? $template;
+
         // Disallow/neutralize raw template bypass tokens {{{ }}} or {{& }}
         $template = preg_replace('/\{\{\{\s*([a-zA-Z0-9_\-\.]+)\s*\}\}\}/', '{{$1}}', $template);
         $template = preg_replace('/\{\{&\s*([a-zA-Z0-9_\-\.]+)\s*\}\}/', '{{$1}}', $template);
 
         $tokens = preg_split('/(\{\{.*?\}\})/s', $template, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
         if ($tokens === false || empty($tokens)) {
-            return $template;
+            return self::restoreClientTemplates($template, $clientTemplates);
         }
 
         $ast = self::parseTokens($tokens, null);
-        return self::renderNodes($ast, $context);
+        $rendered = self::renderNodes($ast, $context);
+
+        return self::restoreClientTemplates($rendered, $clientTemplates);
+    }
+
+    /** @param array<string,string> $clientTemplates */
+    private static function restoreClientTemplates(string $rendered, array $clientTemplates): string
+    {
+        foreach ($clientTemplates as $placeholder => $original) {
+            $rendered = str_replace($placeholder, $original, $rendered);
+        }
+        return $rendered;
     }
 
     private static function parseTokens(array &$tokens, ?string $stopTag): array

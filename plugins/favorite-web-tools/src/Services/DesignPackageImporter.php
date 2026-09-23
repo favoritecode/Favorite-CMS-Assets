@@ -79,24 +79,39 @@ class DesignPackageImporter
             $zip->extractTo($tempDir);
             $zip->close();
 
-            // Locate manifest: design.json may be at root or inside a single top-level folder
-            $manifestPath = $tempDir . DIRECTORY_SEPARATOR . 'design.json';
+            // Locate manifest: design.json or manifest.json may be at root or inside a single top-level folder
+            $manifestNames = ['design.json', 'manifest.json'];
+            $manifestPath = null;
             $baseDir = $tempDir;
 
-            if (!file_exists($manifestPath)) {
-                $subdirs = glob($tempDir . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
-                if (!empty($subdirs) && file_exists($subdirs[0] . DIRECTORY_SEPARATOR . 'design.json')) {
-                    $baseDir = $subdirs[0];
-                    $manifestPath = $baseDir . DIRECTORY_SEPARATOR . 'design.json';
-                } else {
-                    throw new InvalidArgumentException("Design package must contain a 'design.json' manifest.");
+            foreach ($manifestNames as $mName) {
+                if (file_exists($tempDir . DIRECTORY_SEPARATOR . $mName)) {
+                    $manifestPath = $tempDir . DIRECTORY_SEPARATOR . $mName;
+                    break;
                 }
+            }
+
+            if ($manifestPath === null) {
+                $subdirs = glob($tempDir . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR);
+                if (!empty($subdirs)) {
+                    $baseDir = $subdirs[0];
+                    foreach ($manifestNames as $mName) {
+                        if (file_exists($baseDir . DIRECTORY_SEPARATOR . $mName)) {
+                            $manifestPath = $baseDir . DIRECTORY_SEPARATOR . $mName;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ($manifestPath === null) {
+                throw new InvalidArgumentException("Design package must contain a 'design.json' or 'manifest.json' manifest.");
             }
 
             $manifestContent = file_get_contents($manifestPath);
             $manifest = json_decode($manifestContent ?: '', true);
             if (!is_array($manifest)) {
-                throw new InvalidArgumentException("Invalid JSON in 'design.json' manifest.");
+                throw new InvalidArgumentException("Invalid JSON in manifest file.");
             }
 
             // Validate required manifest fields
@@ -123,19 +138,29 @@ class DesignPackageImporter
             $templateHtml = '';
             if (file_exists($baseDir . DIRECTORY_SEPARATOR . 'template.html')) {
                 $templateHtml = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'template.html');
+            } elseif (file_exists($baseDir . DIRECTORY_SEPARATOR . 'template.htm')) {
+                $templateHtml = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'template.htm');
             } elseif (isset($manifest['template_html'])) {
                 $templateHtml = (string) $manifest['template_html'];
+            } elseif (isset($manifest['template_markup'])) {
+                $templateHtml = (string) $manifest['template_markup'];
+            } elseif (isset($manifest['template'])) {
+                $templateHtml = (string) $manifest['template'];
             }
             if (trim($templateHtml) === '') {
                 throw new InvalidArgumentException("Design package must provide HTML template content ('template.html').");
             }
 
-            // Load CSS styles
+            // Load CSS styles (styles.css or style.css)
             $cssContent = '';
             if (file_exists($baseDir . DIRECTORY_SEPARATOR . 'styles.css')) {
                 $cssContent = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'styles.css');
+            } elseif (file_exists($baseDir . DIRECTORY_SEPARATOR . 'style.css')) {
+                $cssContent = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'style.css');
             } elseif (isset($manifest['css_content'])) {
                 $cssContent = (string) $manifest['css_content'];
+            } elseif (isset($manifest['css'])) {
+                $cssContent = (string) $manifest['css'];
             }
 
             // Scope and validate CSS
@@ -147,12 +172,37 @@ class DesignPackageImporter
             $jsContent = '';
             if (file_exists($baseDir . DIRECTORY_SEPARATOR . 'script.js')) {
                 $jsContent = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'script.js');
+            } elseif (file_exists($baseDir . DIRECTORY_SEPARATOR . 'scripts.js')) {
+                $jsContent = (string) file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'scripts.js');
             } elseif (isset($manifest['js_content'])) {
                 $jsContent = (string) $manifest['js_content'];
+            } elseif (isset($manifest['js'])) {
+                $jsContent = (string) $manifest['js'];
             }
 
             $supportedNormalizers = $manifest['supported_normalizers'] ?? ['media', 'default'];
-            $settingsSchema = $manifest['settings_schema'] ?? [];
+            $settingsSchema = $manifest['settings_schema'] ?? ($manifest['schema'] ?? []);
+
+            // Load bindings schema
+            $bindingsSchema = $manifest['bindings_schema'] ?? ($manifest['bindings'] ?? []);
+            if (file_exists($baseDir . DIRECTORY_SEPARATOR . 'bindings.json')) {
+                $decodedBindings = json_decode((string)file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'bindings.json'), true);
+                if (is_array($decodedBindings)) {
+                    $bindingsSchema = $decodedBindings;
+                }
+            }
+
+            // Load normalizer key
+            $normalizerKey = (string)($manifest['normalizer_key'] ?? ($supportedNormalizers[0] ?? 'default'));
+
+            // Load preview data from preview.json or manifest
+            $previewData = $manifest['preview_data'] ?? ($manifest['preview'] ?? []);
+            if (file_exists($baseDir . DIRECTORY_SEPARATOR . 'preview.json')) {
+                $decodedPreview = json_decode((string)file_get_contents($baseDir . DIRECTORY_SEPARATOR . 'preview.json'), true);
+                if (is_array($decodedPreview)) {
+                    $previewData = $decodedPreview;
+                }
+            }
 
             // Check existing design
             $existing = $this->repository->findBySlug($slug);
@@ -162,37 +212,45 @@ class DesignPackageImporter
                 }
 
                 $this->repository->update($existing->getId(), [
-                    'name' => $name,
-                    'description' => $description,
-                    'version' => $version,
-                    'author' => $author,
-                    'category' => $category,
-                    'template_html' => $templateHtml,
-                    'css_content' => $cssContent,
-                    'js_content' => $jsContent,
-                    'js_enabled' => 0, // Enforce disabled by default
+                    'name'                  => $name,
+                    'description'           => $description,
+                    'version'               => $version,
+                    'author'                => $author,
+                    'category'              => $category,
+                    'template_html'         => $templateHtml,
+                    'template_markup'       => $templateHtml,
+                    'css_content'           => $cssContent,
+                    'js_content'            => $jsContent,
+                    'js_enabled'            => 0, // Enforce disabled by default
                     'supported_normalizers' => $supportedNormalizers,
-                    'settings_schema' => $settingsSchema,
+                    'settings_schema'       => $settingsSchema,
+                    'bindings_schema'       => $bindingsSchema,
+                    'normalizer_key'        => $normalizerKey,
+                    'preview_data'          => $previewData,
                 ]);
 
                 return $this->repository->findById($existing->getId());
             }
 
             return $this->repository->create([
-                'name' => $name,
-                'slug' => $slug,
-                'description' => $description,
-                'version' => $version,
-                'author' => $author,
-                'category' => $category,
-                'template_html' => $templateHtml,
-                'css_content' => $cssContent,
-                'js_content' => $jsContent,
-                'is_builtin' => 0,
-                'is_active' => 1,
-                'js_enabled' => 0,
+                'name'                  => $name,
+                'slug'                  => $slug,
+                'description'           => $description,
+                'version'               => $version,
+                'author'                => $author,
+                'category'              => $category,
+                'template_html'         => $templateHtml,
+                'template_markup'       => $templateHtml,
+                'css_content'           => $cssContent,
+                'js_content'            => $jsContent,
+                'is_builtin'            => 0,
+                'is_active'             => 1,
+                'js_enabled'            => 0,
                 'supported_normalizers' => $supportedNormalizers,
-                'settings_schema' => $settingsSchema,
+                'settings_schema'       => $settingsSchema,
+                'bindings_schema'       => $bindingsSchema,
+                'normalizer_key'        => $normalizerKey,
+                'preview_data'          => $previewData,
             ]);
         } finally {
             $this->removeDirectory($tempDir);

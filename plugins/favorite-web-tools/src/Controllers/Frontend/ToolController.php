@@ -76,6 +76,15 @@ class ToolController
         $pageTitle = $tool->name . ' — Web Tools';
         $pageDescription = $tool->description ?? '';
 
+        $toolDesign = null;
+        $designSlug = $tool->getFrontendDesignSlug();
+        if (empty($designSlug) && ($tool->slug === 'favorite-media-downloader' || str_contains($tool->slug, 'media-downloader'))) {
+            $designSlug = 'media-downloader-cards';
+        }
+        if (!empty($designSlug) && $this->app->has(\FavoriteCMS\Tools\Repositories\FrontendDesignRepository::class)) {
+            $toolDesign = $this->app->make(\FavoriteCMS\Tools\Repositories\FrontendDesignRepository::class)->findBySlug($designSlug);
+        }
+
         $viewData = [
             'tool'          => $tool,
             'category'      => $category,
@@ -85,6 +94,7 @@ class ToolController
             'relatedTools'  => $relatedTools,
             'csrfToken'     => CsrfGuard::token(),
             'accessControl' => $this->accessControl,
+            'toolDesign'    => $toolDesign,
         ];
 
         $viewPath = ViewRenderer::getViewsDir() . '/frontend/tool.php';

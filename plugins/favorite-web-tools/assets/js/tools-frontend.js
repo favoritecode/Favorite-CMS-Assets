@@ -1,9 +1,145 @@
 (function () {
     'use strict';
 
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = String(str || '');
+        return div.innerHTML;
+    }
+
+    function isSafeDownloadUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        const trimmed = url.trim().toLowerCase();
+        return trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/');
+    }
+
+    function renderTemplateSafe(template, context) {
+        if (!template || typeof template !== 'string') return '';
+        if (!context || typeof context !== 'object') context = {};
+
+        // Disallow raw HTML bypass tokens {{{ }}} or {{& }}
+        template = template.replace(/\{\{\{\s*([a-zA-Z0-9_\-\.]+)\s*\}\}\}/g, '{{$1}}');
+        template = template.replace(/\{\{&\s*([a-zA-Z0-9_\-\.]+)\s*\}\}/g, '{{$1}}');
+
+        return renderBlock(template, context);
+
+        function resolveVal(key, ctx) {
+            if (key === '.' || key === 'this') return ctx.value !== undefined ? ctx.value : ctx;
+            if (ctx && typeof ctx === 'object' && Object.prototype.hasOwnProperty.call(ctx, key)) {
+                return ctx[key];
+            }
+            if (key.indexOf('.') !== -1) {
+                const parts = key.split('.');
+                let cur = ctx;
+                for (let i = 0; i < parts.length; i++) {
+                    if (cur && typeof cur === 'object' && Object.prototype.hasOwnProperty.call(cur, parts[i])) {
+                        cur = cur[parts[i]];
+                    } else {
+                        return null;
+                    }
+                }
+                return cur;
+            }
+            return null;
+        }
+
+        function isTruthy(val) {
+            if (val === null || val === undefined) return false;
+            if (typeof val === 'boolean') return val;
+            if (Array.isArray(val)) return val.length > 0;
+            if (typeof val === 'string') {
+                const s = val.trim();
+                return s !== '' && s !== '0' && s.toLowerCase() !== 'false';
+            }
+            if (typeof val === 'number') return val !== 0;
+            return Boolean(val);
+        }
+
+        function renderBlock(tmpl, ctx) {
+            // If blocks
+            const ifPattern = /\{\{#if\s+([!a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{#if).)*?)\{\{\/if\}\}/s;
+            while (ifPattern.test(tmpl)) {
+                tmpl = tmpl.replace(ifPattern, function (_, expr, body) {
+                    let negate = false;
+                    if (expr.startsWith('!')) {
+                        negate = true;
+                        expr = expr.substring(1);
+                    }
+                    let val = resolveVal(expr, ctx);
+                    let truthy = isTruthy(val);
+                    if (negate) truthy = !truthy;
+                    const parts = body.split('{{else}}');
+                    return renderBlock(truthy ? parts[0] : (parts[1] || ''), ctx);
+                });
+            }
+
+            // Inverted blocks {{^key}}...{{/key}}
+            const invPattern = /\{\{\^([a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{\^).)*?)\{\{\/\1\}\}/s;
+            while (invPattern.test(tmpl)) {
+                tmpl = tmpl.replace(invPattern, function (_, key, body) {
+                    let val = resolveVal(key, ctx);
+                    if (!isTruthy(val)) {
+                        return renderBlock(body, ctx);
+                    }
+                    return '';
+                });
+            }
+
+            // Loops / sections {{#key}}...{{/key}}
+            const secPattern = /\{\{#([a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{#[a-zA-Z0-9_\-\.]+).)*?)\{\{\/\1\}\}/s;
+            while (secPattern.test(tmpl)) {
+                tmpl = tmpl.replace(secPattern, function (_, key, body) {
+                    let val = resolveVal(key, ctx);
+                    if (Array.isArray(val)) {
+                        if (val.length === 0) return '';
+                        let out = '';
+                        for (let i = 0; i < val.length; i++) {
+                            const item = val[i];
+                            const itemCtx = (typeof item === 'object' && item !== null) ? Object.assign({}, ctx, item) : Object.assign({}, ctx, { value: item, '.': item });
+                            itemCtx['@index'] = i;
+                            itemCtx['@number'] = i + 1;
+                            itemCtx['@first'] = (i === 0);
+                            itemCtx['@last'] = (i === val.length - 1);
+                            out += renderBlock(body, itemCtx);
+                        }
+                        return out;
+                    }
+                    if (isTruthy(val)) {
+                        const sub = (typeof val === 'object' && val !== null) ? Object.assign({}, ctx, val) : ctx;
+                        return renderBlock(body, sub);
+                    }
+                    return '';
+                });
+            }
+
+            // Variables {{key}}
+            tmpl = tmpl.replace(/\{\{([@a-zA-Z0-9_\-\.]+)\}\}/g, function (_, key) {
+                let val = resolveVal(key, ctx);
+                if (val === null || val === undefined || typeof val === 'object') return '';
+
+                const kLower = key.toLowerCase();
+                const isUrl = kLower === 'download_url' || kLower === 'url' || kLower === 'thumbnail' || kLower.endsWith('_url') || kLower.endsWith('.download_url') || kLower.endsWith('.url');
+                if (isUrl) {
+                    const u = String(val).trim();
+                    if (isSafeDownloadUrl(u)) {
+                        return escapeHtml(u);
+                    }
+                    return '';
+                }
+
+                return escapeHtml(String(val));
+            });
+
+            return tmpl;
+        }
+    }
+
+    window.renderTemplateSafe = renderTemplateSafe;
+
     document.addEventListener('DOMContentLoaded', function () {
         initCatalogSearch();
         initToolExecution();
+        initGenericActionBridge();
     });
 
     function initCatalogSearch() {
@@ -238,12 +374,6 @@
                 .replace(/\/(?:var|tmp|home|etc|usr|opt|app|src|tests|views|plugins|themes)\/[\w\s.-]+/gi, '[path]')
                 .replace(/FavoriteCMS\\[\w\\]+/g, '')
                 .trim();
-        }
-
-        function isSafeDownloadUrl(url) {
-            if (!url || typeof url !== 'string') return false;
-            const trimmed = url.trim().toLowerCase();
-            return trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/');
         }
 
         function isFormatCandidate(item) {
@@ -602,134 +732,13 @@
 
             if (rawJson) {
                 html += '<details class="fwt-media-raw-details">'
-                      + '<summary>View Raw JSON / Technical Details</summary>'
+                      + '<summary>View Technical Details (Raw JSON)</summary>'
                       + '<pre class="fwt-result-code">' + escapeHtml(rawJson) + '</pre>'
                       + '</details>';
             }
 
             html += '</div>';
             return html;
-        }
-
-        function renderTemplateSafe(template, context) {
-            if (!template || typeof template !== 'string') return '';
-            if (!context || typeof context !== 'object') context = {};
-
-            // Disallow raw HTML bypass tokens {{{ }}} or {{& }}
-            template = template.replace(/\{\{\{\s*([a-zA-Z0-9_\-\.]+)\s*\}\}\}/g, '{{$1}}');
-            template = template.replace(/\{\{&\s*([a-zA-Z0-9_\-\.]+)\s*\}\}/g, '{{$1}}');
-
-            return renderBlock(template, context);
-
-            function resolveVal(key, ctx) {
-                if (key === '.' || key === 'this') return ctx.value !== undefined ? ctx.value : ctx;
-                if (ctx && typeof ctx === 'object' && Object.prototype.hasOwnProperty.call(ctx, key)) {
-                    return ctx[key];
-                }
-                if (key.indexOf('.') !== -1) {
-                    const parts = key.split('.');
-                    let cur = ctx;
-                    for (let i = 0; i < parts.length; i++) {
-                        if (cur && typeof cur === 'object' && Object.prototype.hasOwnProperty.call(cur, parts[i])) {
-                            cur = cur[parts[i]];
-                        } else {
-                            return null;
-                        }
-                    }
-                    return cur;
-                }
-                return null;
-            }
-
-            function isTruthy(val) {
-                if (val === null || val === undefined) return false;
-                if (typeof val === 'boolean') return val;
-                if (Array.isArray(val)) return val.length > 0;
-                if (typeof val === 'string') {
-                    const s = val.trim();
-                    return s !== '' && s !== '0' && s.toLowerCase() !== 'false';
-                }
-                if (typeof val === 'number') return val !== 0;
-                return Boolean(val);
-            }
-
-            function renderBlock(tmpl, ctx) {
-                // If blocks
-                const ifPattern = /\{\{#if\s+([!a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{#if).)*?)\{\{\/if\}\}/s;
-                while (ifPattern.test(tmpl)) {
-                    tmpl = tmpl.replace(ifPattern, function (_, expr, body) {
-                        let negate = false;
-                        if (expr.startsWith('!')) {
-                            negate = true;
-                            expr = expr.substring(1);
-                        }
-                        let val = resolveVal(expr, ctx);
-                        let truthy = isTruthy(val);
-                        if (negate) truthy = !truthy;
-                        const parts = body.split('{{else}}');
-                        return renderBlock(truthy ? parts[0] : (parts[1] || ''), ctx);
-                    });
-                }
-
-                // Inverted blocks {{^key}}...{{/key}}
-                const invPattern = /\{\{\^([a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{\^).)*?)\{\{\/\1\}\}/s;
-                while (invPattern.test(tmpl)) {
-                    tmpl = tmpl.replace(invPattern, function (_, key, body) {
-                        let val = resolveVal(key, ctx);
-                        if (!isTruthy(val)) {
-                            return renderBlock(body, ctx);
-                        }
-                        return '';
-                    });
-                }
-
-                // Loops / sections {{#key}}...{{/key}}
-                const secPattern = /\{\{#([a-zA-Z0-9_\-\.]+)\}\}((?:(?!\{\{#[a-zA-Z0-9_\-\.]+).)*?)\{\{\/\1\}\}/s;
-                while (secPattern.test(tmpl)) {
-                    tmpl = tmpl.replace(secPattern, function (_, key, body) {
-                        let val = resolveVal(key, ctx);
-                        if (Array.isArray(val)) {
-                            if (val.length === 0) return '';
-                            let out = '';
-                            for (let i = 0; i < val.length; i++) {
-                                const item = val[i];
-                                const itemCtx = (typeof item === 'object' && item !== null) ? Object.assign({}, ctx, item) : Object.assign({}, ctx, { value: item, '.': item });
-                                itemCtx['@index'] = i;
-                                itemCtx['@number'] = i + 1;
-                                itemCtx['@first'] = (i === 0);
-                                itemCtx['@last'] = (i === val.length - 1);
-                                out += renderBlock(body, itemCtx);
-                            }
-                            return out;
-                        }
-                        if (isTruthy(val)) {
-                            const sub = (typeof val === 'object' && val !== null) ? Object.assign({}, ctx, val) : ctx;
-                            return renderBlock(body, sub);
-                        }
-                        return '';
-                    });
-                }
-
-                // Variables {{key}}
-                tmpl = tmpl.replace(/\{\{([@a-zA-Z0-9_\-\.]+)\}\}/g, function (_, key) {
-                    let val = resolveVal(key, ctx);
-                    if (val === null || val === undefined || typeof val === 'object') return '';
-
-                    const kLower = key.toLowerCase();
-                    const isUrl = kLower === 'download_url' || kLower === 'url' || kLower === 'thumbnail' || kLower.endsWith('_url') || kLower.endsWith('.download_url') || kLower.endsWith('.url');
-                    if (isUrl) {
-                        const u = String(val).trim();
-                        if (isSafeDownloadUrl(u)) {
-                            return escapeHtml(u);
-                        }
-                        return '';
-                    }
-
-                    return escapeHtml(String(val));
-                });
-
-                return tmpl;
-            }
         }
 
         function displayResult(result, fullResponse) {
@@ -882,18 +891,859 @@
 
             resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+    }
 
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = String(str || '');
-            return div.innerHTML;
-            if (str === null || str === undefined) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+    /**
+     * Generic Action Bridge for Media Downloader & Universal Frontend Designs
+     * ZERO hardcoded presentation markup. Presentation is 100% design-owned.
+     */
+    function initGenericActionBridge() {
+        const activeJobs = new Map();
+        const downloadQueue = [];
+        let runningDownloads = 0;
+        const MAX_CONCURRENT_DOWNLOADS = 3;
+
+        document.addEventListener('click', handleActionClick);
+        document.addEventListener('change', handleActionChange);
+
+        function resolveCardElement(el) {
+            if (!el) return null;
+            return el.closest('[data-fwt-item-id]') ||
+                   el.closest('[data-fwt-item]') ||
+                   el.closest('.fwt-media-item-card, .fwt-grid-item-card, [data-fwt-card]');
         }
+
+        async function handleActionClick(e) {
+            const actionBtn = e.target.closest('[data-fwt-action]');
+            if (!actionBtn) return;
+
+            const action = actionBtn.getAttribute('data-fwt-action');
+            if (!action) return;
+
+            const container = actionBtn.closest('[data-fwt-container]') || document;
+
+            switch (action) {
+                case 'get-formats':
+                    e.preventDefault();
+                    await handleGetFormats(actionBtn, container);
+                    break;
+                case 'clear-all':
+                    e.preventDefault();
+                    handleClearAll(container);
+                    break;
+                case 'download':
+                case 'fast-download':
+                    e.preventDefault();
+                    handleSingleDownload(resolveCardElement(actionBtn), false, actionBtn);
+                    break;
+                case 'convert-download':
+                    e.preventDefault();
+                    handleSingleDownload(resolveCardElement(actionBtn), true, actionBtn);
+                    break;
+                case 'fast-download-all':
+                    e.preventDefault();
+                    handleBatchDownload(container, false);
+                    break;
+                case 'convert-download-all':
+                    e.preventDefault();
+                    handleBatchDownload(container, true);
+                    break;
+                case 'cancel':
+                    e.preventDefault();
+                    handleCancelJob(resolveCardElement(actionBtn));
+                    break;
+                case 'cancel-all':
+                    e.preventDefault();
+                    handleCancelAll(container);
+                    break;
+                case 'retry':
+                    e.preventDefault();
+                    handleRetryDownload(resolveCardElement(actionBtn));
+                    break;
+            }
+        }
+
+        function handleActionChange(e) {
+            if (e.target.matches('[data-fwt-action="set-global-quality"]')) {
+                const container = e.target.closest('[data-fwt-container]') || document;
+                setGlobalQuality(container, e.target.value);
+            }
+        }
+
+        function hydrateFormatSelect(cardEl, itemData) {
+            if (!cardEl || !itemData || typeof itemData !== 'object') return;
+
+            const selectEl = cardEl.querySelector('[data-fwt-select="format"], select[name="format"], .fwt-item-format-select');
+            if (!selectEl) return;
+
+            let formats = Array.isArray(itemData.formats) ? itemData.formats : [];
+            if (!formats.length && itemData.items && Array.isArray(itemData.items) && itemData.items[0] && Array.isArray(itemData.items[0].formats)) {
+                formats = itemData.items[0].formats;
+            }
+            if (!formats.length) return;
+
+            // The selected Frontend Design is presentation-only. If its client template
+            // loop was omitted/stripped or it uses a different binding syntax, hydrate
+            // the standard format select from the normalized media contract.
+            selectEl.innerHTML = '';
+
+            formats.forEach(function (fmt, index) {
+                if (!fmt || typeof fmt !== 'object') return;
+
+                const id = String(
+                    fmt.format_id || fmt.formatId || fmt.id || fmt.format || index || ''
+                ).trim();
+                if (!id) return;
+
+                let quality = String(
+                    fmt.quality_label || fmt.qualityLabel || fmt.quality || fmt.resolution || ''
+                ).trim();
+
+                if (!quality || /^(?:0|0p|0x0)$/i.test(quality)) {
+                    const height = parseInt(fmt.height, 10) || 0;
+                    if (height > 0) quality = height + 'p';
+                }
+                if (!quality) {
+                    const labelMatch = String(fmt.label || '').match(/(\d{3,4})\s*p/i);
+                    quality = labelMatch ? labelMatch[1] + 'p' : '';
+                }
+                if (!quality) {
+                    const bitrate = parseInt(fmt.bitrate, 10) || 0;
+                    quality = bitrate > 0 ? bitrate + ' kbps' : (String(fmt.ext || 'Video').trim() || 'Video');
+                }
+
+                const ext = String(fmt.ext || fmt.extension || fmt.container || '').trim().toUpperCase();
+                const streamType = String(fmt.stream_type || fmt.type || 'video').toLowerCase() === 'audio' ? 'audio' : 'video';
+                const downloadUrl = String(fmt.download_url || fmt.url || '').trim();
+                const hasAudioRaw = fmt.has_audio_str ?? fmt.has_audio ?? fmt.hasAudio;
+                const hasAudio = (hasAudioRaw === true || hasAudioRaw === 1 || hasAudioRaw === '1' || (hasAudioRaw === undefined && streamType === 'audio')) ? '1' : '0';
+                const label = String(fmt.label || (quality + (ext ? ' - ' + ext : ''))).trim();
+
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = quality + ' • ' + (ext || 'MEDIA') + (fmt.filesize_formatted ? ' (' + fmt.filesize_formatted + ')' : '') + ' [' + streamType + ']';
+                option.setAttribute('data-url', downloadUrl);
+                option.setAttribute('data-stream', streamType);
+                option.setAttribute('data-type', streamType);
+                option.setAttribute('data-quality', quality);
+                option.setAttribute('data-has-audio', hasAudio);
+                option.dataset.label = label;
+                if (index === 0) option.selected = true;
+                selectEl.appendChild(option);
+            });
+
+            if (selectEl.options.length > 0 && selectEl.selectedIndex < 0) {
+                selectEl.selectedIndex = 0;
+            }
+        }
+
+        async function handleGetFormats(btn, container) {
+            const inputEl = container.querySelector('[data-fwt-input="urls"]') ||
+                            container.querySelector('[data-fwt-input]') ||
+                            container.querySelector('textarea');
+            if (!inputEl) return;
+
+            const rawText = inputEl.value.trim();
+            const statusEl = container.querySelector('[data-fwt-bind="input-status"]');
+
+            if (!rawText) {
+                if (statusEl) {
+                    statusEl.textContent = 'Please enter one or more media URLs.';
+                    statusEl.style.display = 'block';
+                    statusEl.style.color = '#dc2626';
+                }
+                return;
+            }
+
+            if (statusEl) {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            }
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            const spinner = btn.querySelector('.fwt-spinner');
+            if (spinner) spinner.style.display = 'inline-block';
+
+            try {
+                const parseResp = await fetch('/api/tools/media-downloader/parse-urls', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ urls: rawText })
+                });
+
+                const parseData = await parseResp.json();
+                if (!parseData || !parseData.success || !parseData.valid_urls || parseData.valid_urls.length === 0) {
+                    const err = (parseData && parseData.error) ? parseData.error : 'No valid media URLs found.';
+                    if (statusEl) {
+                        statusEl.textContent = err;
+                        statusEl.style.display = 'block';
+                        statusEl.style.color = '#dc2626';
+                    }
+                    return;
+                }
+
+                const validUrls = parseData.valid_urls;
+                const cardsContainer = container.querySelector('[data-fwt-cards-container]') ||
+                                       container.querySelector('.fwt-media-grid, .fwt-grid-cards, #fwt-cards-container, [data-fwt-grid]') ||
+                                       document.querySelector('[data-fwt-cards-container]') ||
+                                       document.querySelector('.fwt-media-grid, .fwt-grid-cards, #fwt-cards-container, [data-fwt-grid]');
+                if (!cardsContainer) return;
+
+                cardsContainer.innerHTML = '';
+                const templateEl = container.querySelector('template[data-fwt-template="card"]') ||
+                                   document.querySelector('template[data-fwt-template="card"]');
+                const items = [];
+
+                const batchBar = container.querySelector('[data-fwt-section="batch-bar"]');
+                if (batchBar) {
+                    batchBar.style.display = validUrls.length > 1 ? 'flex' : 'none';
+                    const countEl = container.querySelector('[data-fwt-bind="items-count"]');
+                    if (countEl) countEl.textContent = validUrls.length + ' item(s)';
+                }
+
+                const CONCURRENCY = 3;
+                let currentIdx = 0;
+
+                async function fetchNext() {
+                    while (currentIdx < validUrls.length) {
+                        const idx = currentIdx++;
+                        const url = validUrls[idx];
+
+                        try {
+                            const fmtResp = await fetch('/api/tools/media-downloader/formats?url=' + encodeURIComponent(url), {
+                                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            const fmtData = await fmtResp.json();
+
+                            let itemData;
+                            if (fmtData && fmtData.success && fmtData.data) {
+                                itemData = fmtData.data;
+
+                                // Normalize format aliases at the browser boundary as well.
+                                // Imported designs are allowed to use id/label/quality or
+                                // the canonical format_id/quality fields. This keeps single
+                                // and bulk cards on the same stable presentation contract.
+                                if (Array.isArray(itemData.formats)) {
+                                    itemData.formats = itemData.formats.map(function (fmt, formatIndex) {
+                                        fmt = (fmt && typeof fmt === 'object') ? Object.assign({}, fmt) : {};
+                                        const formatId = String(fmt.format_id || fmt.formatId || fmt.id || fmt.format || formatIndex || '').trim();
+                                        let quality = String(fmt.quality || fmt.qualityLabel || fmt.quality_label || fmt.resolution || '').trim();
+                                        if (!quality || /^(?:0|0p|0x0)$/i.test(quality)) {
+                                            const height = parseInt(fmt.height, 10) || 0;
+                                            if (height > 0) quality = height + 'p';
+                                        }
+                                        if (!quality) {
+                                            const labelMatch = String(fmt.label || '').match(/(\d{3,4})\s*p/i);
+                                            quality = labelMatch ? labelMatch[1] + 'p' : '';
+                                        }
+                                        if (!quality) quality = String(fmt.label || fmt.ext || 'Video').trim();
+
+                                        const ext = String(fmt.ext || fmt.extension || fmt.container || '').trim().toUpperCase();
+                                        const streamType = String(fmt.stream_type || fmt.type || 'video').trim();
+                                        const downloadUrl = String(fmt.download_url || fmt.url || '').trim();
+                                        const label = String(fmt.label || (quality + (ext ? ' - ' + ext : ''))).trim();
+
+                                        fmt.id = formatId;
+                                        fmt.format_id = formatId;
+                                        fmt.formatId = formatId;
+                                        fmt.format = formatId;
+                                        fmt.quality = quality;
+                                        fmt.quality_label = quality;
+                                        fmt.qualityLabel = quality;
+                                        fmt.resolution = fmt.resolution || quality;
+                                        fmt.label = label;
+                                        fmt.ext = ext;
+                                        fmt.stream_type = streamType;
+                                        fmt.type = streamType;
+                                        fmt.download_url = downloadUrl;
+                                        fmt.url = downloadUrl;
+                                        fmt['@index'] = formatIndex;
+                                        fmt['@number'] = formatIndex + 1;
+                                        fmt['@first'] = formatIndex === 0;
+                                        fmt['@last'] = formatIndex === itemData.formats.length - 1;
+                                        return fmt;
+                                    });
+                                    itemData.total_formats = itemData.formats.length;
+                                    itemData.has_formats = itemData.formats.length > 0;
+                                }
+
+                                itemData['@index'] = idx;
+                                itemData['@number'] = idx + 1;
+                            } else {
+                                itemData = {
+                                    id: String(idx),
+                                    item_id: String(idx),
+                                    url: url,
+                                    source_url: url,
+                                    title: url,
+                                    thumbnail: '',
+                                    has_thumbnail: false,
+                                    duration: '',
+                                    has_duration: false,
+                                    formats: [],
+                                    has_formats: false,
+                                    status: 'error',
+                                    status_label: 'Error',
+                                    error: (fmtData && fmtData.error) ? fmtData.error : 'Failed to fetch video formats',
+                                    has_error: true,
+                                    '@index': idx,
+                                    '@number': idx + 1
+                                };
+                            }
+
+                            items.push(itemData);
+
+                            if (templateEl && window.renderTemplateSafe) {
+                                const renderedCardHtml = window.renderTemplateSafe(templateEl.innerHTML, itemData);
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = renderedCardHtml.trim();
+                                const newCard = tempDiv.firstElementChild;
+                                if (newCard) {
+                                    const targetUrl = String(
+                                        itemData.url ||
+                                        itemData.normalized_url ||
+                                        itemData.source_url ||
+                                        url ||
+                                        ''
+                                    ).trim();
+                                    if (targetUrl && isSafeDownloadUrl(targetUrl)) {
+                                        newCard.setAttribute('data-fwt-url', targetUrl);
+                                        newCard.setAttribute('data-fwt-source-url', targetUrl);
+                                        newCard.setAttribute('data-fwt-normalized-url', targetUrl);
+                                    }
+                                    newCard._fwtItemData = itemData;
+                                    hydrateFormatSelect(newCard, itemData);
+                                    if (itemData.has_error) {
+                                        newCard.setAttribute('data-fwt-status', 'error');
+                                        const errBox = newCard.querySelector('[data-fwt-bind="error-message"]');
+                                        if (errBox) {
+                                            errBox.textContent = itemData.error;
+                                            errBox.style.display = 'block';
+                                        }
+                                    }
+                                    cardsContainer.appendChild(newCard);
+                                }
+                            }
+                        } catch (err) {
+                            const errItem = {
+                                id: String(idx),
+                                item_id: String(idx),
+                                url: url,
+                                source_url: url,
+                                title: url,
+                                thumbnail: '',
+                                has_thumbnail: false,
+                                duration: '',
+                                has_duration: false,
+                                formats: [],
+                                has_formats: false,
+                                status: 'error',
+                                status_label: 'Error',
+                                error: 'Network error retrieving stream info',
+                                has_error: true,
+                                '@index': idx,
+                                '@number': idx + 1
+                            };
+                            items.push(errItem);
+                            if (templateEl && window.renderTemplateSafe) {
+                                const renderedCardHtml = window.renderTemplateSafe(templateEl.innerHTML, errItem);
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = renderedCardHtml.trim();
+                                const newCard = tempDiv.firstElementChild;
+                                if (newCard) {
+                                    newCard.setAttribute('data-fwt-status', 'error');
+                                    const errBox = newCard.querySelector('[data-fwt-bind="error-message"]');
+                                    if (errBox) {
+                                        errBox.textContent = errItem.error;
+                                        errBox.style.display = 'block';
+                                    }
+                                    cardsContainer.appendChild(newCard);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const workers = [];
+                for (let w = 0; w < Math.min(CONCURRENCY, validUrls.length); w++) {
+                    workers.push(fetchNext());
+                }
+                await Promise.all(workers);
+
+                const countEl = container.querySelector('[data-fwt-bind="items-count"]');
+                if (countEl) countEl.textContent = items.length + ' item(s)';
+            } catch (networkErr) {
+                if (statusEl) {
+                    statusEl.textContent = 'Network error fetching formats. Please try again.';
+                    statusEl.style.display = 'block';
+                    statusEl.style.color = '#dc2626';
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        async function handleSingleDownload(cardEl, isCompat, actionBtn) {
+            if (!cardEl && actionBtn) {
+                cardEl = resolveCardElement(actionBtn);
+            }
+
+            const itemId = cardEl ? (cardEl.getAttribute('data-fwt-item-id') || '0') : '0';
+
+            // Resolve URL strictly within this card's scope (never query other cards)
+            let url = '';
+            if (cardEl) {
+                url = (cardEl.getAttribute('data-fwt-url') || '').trim();
+                if (!url) {
+                    const childUrlEl = cardEl.querySelector('[data-fwt-url]');
+                    if (childUrlEl) {
+                        url = (childUrlEl.getAttribute('data-fwt-url') || '').trim();
+                    }
+                }
+                if (!url) {
+                    url = (cardEl.getAttribute('data-fwt-source-url') || '').trim() ||
+                          (cardEl.getAttribute('data-fwt-normalized-url') || '').trim();
+                }
+                if (!url) {
+                    const srcEl = cardEl.querySelector('.fwt-item-url, .fwt-grid-card-source, [data-fwt-bind="url"], [data-fwt-source-url]');
+                    if (srcEl) {
+                        url = (srcEl.getAttribute('title') || srcEl.getAttribute('href') || srcEl.textContent || '').trim();
+                    }
+                }
+            }
+
+            if (!url && actionBtn) {
+                url = (actionBtn.getAttribute('data-fwt-url') || '').trim();
+            }
+
+            // If a card exists but its URL attribute is empty, fall back to the
+            // authoritative single-URL input in the current tool container.
+            if (!url) {
+                const container = (actionBtn && actionBtn.closest('[data-fwt-container]')) ||
+                                  (cardEl && cardEl.closest('[data-fwt-container]')) ||
+                                  document;
+                const inputEl = container.querySelector('[data-fwt-input="urls"]') ||
+                                container.querySelector('[data-fwt-input]') ||
+                                container.querySelector('textarea');
+                if (inputEl) {
+                    const lines = inputEl.value.trim().split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    if (lines.length === 1) {
+                        url = lines[0];
+                    }
+                }
+            }
+
+            if (!url) {
+                if (cardEl) {
+                    finishJobError(cardEl, itemId, 'Unable to determine media URL for download.');
+                } else {
+                    console.error('Favorite Web Tools: Unable to determine media URL for download.');
+                }
+                return;
+            }
+
+            // Resolve format, streamType, and hasAudio
+            let formatId = null;
+            let streamType = 'video';
+            let hasAudio = '1';
+
+            if (actionBtn && actionBtn.getAttribute('data-fwt-format')) {
+                formatId = actionBtn.getAttribute('data-fwt-format');
+            }
+
+            if (cardEl && cardEl._fwtItemData) {
+                hydrateFormatSelect(cardEl, cardEl._fwtItemData);
+            }
+            const selectEl = cardEl ? cardEl.querySelector('[data-fwt-select="format"], select[name="format"], .fwt-item-format-select') : null;
+            if (selectEl) {
+                const selectedOpt = selectEl.options[selectEl.selectedIndex] || selectEl.options[0];
+                if (selectedOpt) {
+                    if (!formatId) {
+                        formatId = selectedOpt.value;
+                    }
+                    const rawStream = selectedOpt.getAttribute('data-stream') || selectedOpt.getAttribute('data-type');
+                    if (rawStream) {
+                        streamType = rawStream.toLowerCase() === 'audio' ? 'audio' : 'video';
+                    } else if (selectedOpt.textContent.toLowerCase().includes('audio')) {
+                        streamType = 'audio';
+                    }
+                    const optHasAudio = selectedOpt.getAttribute('data-has-audio') ?? selectedOpt.getAttribute('data-hasaudio');
+                    if (optHasAudio !== null) {
+                        hasAudio = (optHasAudio === '0' || optHasAudio === 'false') ? '0' : '1';
+                    } else if (streamType === 'audio') {
+                        hasAudio = '1';
+                    }
+                }
+            }
+
+            if (!formatId && actionBtn) {
+                formatId = actionBtn.dataset.format || actionBtn.getAttribute('data-format');
+            }
+
+            if (!formatId && selectEl && selectEl.options.length === 0) {
+                if (cardEl) {
+                    finishJobError(cardEl, itemId, 'No media format selected or available for download.');
+                }
+                return;
+            }
+
+            const cancelBtn = cardEl ? cardEl.querySelector('[data-fwt-action="cancel"]') : null;
+
+            if (cardEl) {
+                cardEl.setAttribute('data-fwt-status', 'working');
+                setCardText(cardEl, 'status-pill', isCompat ? 'Converting...' : 'Downloading...');
+                setCardText(cardEl, 'phase', 'Starting job...');
+                setCardText(cardEl, 'progress-pct', '0%');
+                setCardProgress(cardEl, 5);
+
+                const progressSection = cardEl.querySelector('[data-fwt-section="progress"]');
+                if (progressSection) progressSection.style.display = 'block';
+
+                if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+
+                const retryBtn = cardEl.querySelector('[data-fwt-action="retry"]');
+                if (retryBtn) retryBtn.style.display = 'none';
+
+                const errBox = cardEl.querySelector('[data-fwt-bind="error-message"]');
+                if (errBox) errBox.style.display = 'none';
+            }
+
+            runningDownloads++;
+
+            const jobEntry = {
+                jobId: null,
+                cancelled: false,
+                pollTimer: null,
+                cardEl: cardEl,
+                isCompat: isCompat
+            };
+            activeJobs.set(itemId, jobEntry);
+
+            try {
+                const reqBody = {
+                    url: url,
+                    format: formatId,
+                    type: streamType,
+                    hasAudio: hasAudio,
+                    compat: isCompat ? '1' : '0'
+                };
+
+                const startResp = await fetch('/api/tools/media-downloader/start-job', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(reqBody)
+                });
+
+                const startData = await startResp.json();
+                if (jobEntry.cancelled) return;
+
+                if (!startData || !startData.success || !startData.jobId) {
+                    const errMsg = (startData && startData.error) ? startData.error : 'Failed to start download job.';
+                    if (cardEl) {
+                        finishJobError(cardEl, itemId, errMsg);
+                    } else {
+                        console.error('Favorite Web Tools: ' + errMsg);
+                    }
+                    return;
+                }
+
+                jobEntry.jobId = startData.jobId;
+
+                let pollDelay = 600;
+
+                function schedulePoll() {
+                    if (jobEntry.cancelled) return;
+                    jobEntry.pollTimer = setTimeout(async function () {
+                        if (jobEntry.cancelled) return;
+                        try {
+                            const statusResp = await fetch('/api/tools/media-downloader/job-status/' + encodeURIComponent(jobEntry.jobId), {
+                                headers: { 'Accept': 'application/json', 'Cache-Control': 'no-store' }
+                            });
+                            const st = await statusResp.json();
+                            if (jobEntry.cancelled) return;
+
+                            if (st.status === 'working') {
+                                const pct = Math.min(99, Math.max(5, parseInt(st.pct || 0, 10)));
+                                if (cardEl) {
+                                    setCardProgress(cardEl, pct);
+                                    setCardText(cardEl, 'progress-pct', pct + '%');
+                                    setCardText(cardEl, 'phase', st.phase || 'Downloading stream...');
+                                    if (st.size) setCardText(cardEl, 'downloaded-size', st.size);
+                                }
+
+                                pollDelay = Math.min(2500, pollDelay + 150);
+                                schedulePoll();
+                            } else if (st.status === 'ready') {
+                                if (cardEl) {
+                                    setCardProgress(cardEl, 100);
+                                    setCardText(cardEl, 'progress-pct', '100%');
+                                    setCardText(cardEl, 'phase', 'Ready for download');
+                                    cardEl.setAttribute('data-fwt-status', 'completed');
+                                    setCardText(cardEl, 'status-pill', 'Done');
+
+                                    const fileUrl = '/api/tools/media-downloader/job-file/' + encodeURIComponent(jobEntry.jobId);
+                                    const saveBtn = cardEl.querySelector('[data-fwt-action="download-file"]');
+                                    if (saveBtn) {
+                                        saveBtn.href = fileUrl;
+                                        saveBtn.style.display = 'inline-flex';
+                                    }
+                                    if (cancelBtn) cancelBtn.style.display = 'none';
+
+                                    triggerFileDownload(fileUrl, st.filename || 'media.mp4');
+                                } else {
+                                    const fileUrl = '/api/tools/media-downloader/job-file/' + encodeURIComponent(jobEntry.jobId);
+                                    triggerFileDownload(fileUrl, st.filename || 'media.mp4');
+                                }
+                                finishJobClean(itemId);
+                            } else {
+                                const errStr = st.error || 'Download failed on server.';
+                                if (cardEl) {
+                                    finishJobError(cardEl, itemId, errStr);
+                                } else {
+                                    console.error('Favorite Web Tools: ' + errStr);
+                                }
+                            }
+                        } catch (netErr) {
+                            if (jobEntry.cancelled) return;
+                            pollDelay = Math.min(2500, pollDelay + 300);
+                            schedulePoll();
+                        }
+                    }, pollDelay);
+                }
+
+                schedulePoll();
+            } catch (e) {
+                if (cardEl) {
+                    finishJobError(cardEl, itemId, 'Connection error initiating download.');
+                } else {
+                    console.error('Favorite Web Tools: Connection error initiating download.');
+                }
+            }
+        }
+
+        function triggerFileDownload(url, filename) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename || 'download.mp4');
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function () {
+                if (link.parentNode) link.parentNode.removeChild(link);
+            }, 1000);
+        }
+
+        function setCardText(cardEl, bindKey, text) {
+            const el = cardEl.querySelector('[data-fwt-bind="' + bindKey + '"]');
+            if (el) el.textContent = text;
+        }
+
+        function setCardProgress(cardEl, pct) {
+            const bar = cardEl.querySelector('[data-fwt-progress-bar]');
+            if (bar) bar.style.width = pct + '%';
+        }
+
+        function finishJobClean(itemId) {
+            activeJobs.delete(itemId);
+            runningDownloads = Math.max(0, runningDownloads - 1);
+            processQueue();
+        }
+
+        function finishJobError(cardEl, itemId, errorMsg) {
+            activeJobs.delete(itemId);
+            runningDownloads = Math.max(0, runningDownloads - 1);
+
+            if (cardEl) {
+                cardEl.setAttribute('data-fwt-status', 'error');
+                setCardText(cardEl, 'status-pill', 'Failed');
+
+                const errBox = cardEl.querySelector('[data-fwt-bind="error-message"]');
+                if (errBox) {
+                    errBox.textContent = errorMsg;
+                    errBox.style.display = 'block';
+                }
+
+                const cancelBtn = cardEl.querySelector('[data-fwt-action="cancel"]');
+                if (cancelBtn) cancelBtn.style.display = 'none';
+
+                const retryBtn = cardEl.querySelector('[data-fwt-action="retry"]');
+                if (retryBtn) retryBtn.style.display = 'inline-flex';
+            }
+
+            processQueue();
+        }
+
+        function processQueue() {
+            while (runningDownloads < MAX_CONCURRENT_DOWNLOADS && downloadQueue.length > 0) {
+                const next = downloadQueue.shift();
+                handleSingleDownload(next.cardEl, next.isCompat);
+            }
+        }
+
+        function handleBatchDownload(container, isCompat) {
+            const cards = container.querySelectorAll('[data-fwt-cards-container] [data-fwt-item-id]');
+            cards.forEach(card => {
+                const status = card.getAttribute('data-fwt-status');
+                if (status !== 'working' && status !== 'completed') {
+                    downloadQueue.push({ cardEl: card, isCompat: isCompat });
+                }
+            });
+            processQueue();
+        }
+
+        function handleCancelJob(cardEl) {
+            if (!cardEl) return;
+            const itemId = cardEl.getAttribute('data-fwt-item-id');
+            if (!itemId) return;
+
+            const entry = activeJobs.get(itemId);
+            if (entry) {
+                entry.cancelled = true;
+                if (entry.pollTimer) clearTimeout(entry.pollTimer);
+                activeJobs.delete(itemId);
+            }
+
+            runningDownloads = Math.max(0, runningDownloads - 1);
+            cardEl.setAttribute('data-fwt-status', 'ready');
+            setCardText(cardEl, 'status-pill', 'Ready');
+            setCardProgress(cardEl, 0);
+
+            const progressSection = cardEl.querySelector('[data-fwt-section="progress"]');
+            if (progressSection) progressSection.style.display = 'none';
+
+            const cancelBtn = cardEl.querySelector('[data-fwt-action="cancel"]');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+
+            processQueue();
+        }
+
+        function handleCancelAll(container) {
+            downloadQueue.length = 0;
+            activeJobs.forEach((entry) => {
+                entry.cancelled = true;
+                if (entry.pollTimer) clearTimeout(entry.pollTimer);
+                if (entry.cardEl) {
+                    entry.cardEl.setAttribute('data-fwt-status', 'ready');
+                    setCardText(entry.cardEl, 'status-pill', 'Ready');
+                    setCardProgress(entry.cardEl, 0);
+                    const progressSection = entry.cardEl.querySelector('[data-fwt-section="progress"]');
+                    if (progressSection) progressSection.style.display = 'none';
+                    const cancelBtn = entry.cardEl.querySelector('[data-fwt-action="cancel"]');
+                    if (cancelBtn) cancelBtn.style.display = 'none';
+                }
+            });
+            activeJobs.clear();
+            runningDownloads = 0;
+        }
+
+        function handleRetryDownload(cardEl) {
+            if (!cardEl) return;
+            handleSingleDownload(cardEl, false);
+        }
+
+        function setGlobalQuality(container, qualityValue) {
+            const cards = container.querySelectorAll('[data-fwt-cards-container] [data-fwt-item-id]');
+            const targetQ = qualityValue.toLowerCase();
+
+            cards.forEach(card => {
+                const select = card.querySelector('[data-fwt-select="format"]');
+                if (!select || select.options.length === 0) return;
+
+                let matchedIndex = -1;
+                for (let i = 0; i < select.options.length; i++) {
+                    const opt = select.options[i];
+                    const optText = (opt.textContent + ' ' + (opt.getAttribute('data-quality') || '')).toLowerCase();
+                    const optStream = (opt.getAttribute('data-stream') || '').toLowerCase();
+
+                    if (targetQ === 'audio') {
+                        if (optStream.includes('audio') || optText.includes('audio') || optText.includes('mp3') || optText.includes('m4a')) {
+                            matchedIndex = i;
+                            break;
+                        }
+                    } else if (targetQ === 'best') {
+                        matchedIndex = 0;
+                        break;
+                    } else if (optText.includes(targetQ)) {
+                        matchedIndex = i;
+                        break;
+                    }
+                }
+
+                if (matchedIndex !== -1) {
+                    select.selectedIndex = matchedIndex;
+                }
+            });
+        }
+
+        function handleClearAll(container) {
+            handleCancelAll(container);
+            const inputEl = container.querySelector('[data-fwt-input="urls"]') ||
+                            container.querySelector('[data-fwt-input]') ||
+                            container.querySelector('textarea');
+            if (inputEl) inputEl.value = '';
+
+            const cardsContainer = container.querySelector('[data-fwt-cards-container]');
+            if (cardsContainer) cardsContainer.innerHTML = '';
+
+            const batchBar = container.querySelector('[data-fwt-section="batch-bar"]');
+            if (batchBar) batchBar.style.display = 'none';
+
+            const statusEl = container.querySelector('[data-fwt-bind="input-status"]');
+            if (statusEl) {
+                statusEl.textContent = '';
+                statusEl.style.display = 'none';
+            }
+        }
+
+        // Public JavaScript Action API
+        window.FavoriteWebTools = window.FavoriteWebTools || {};
+        window.FavoriteWebTools.media = window.FavoriteWebTools.media || {};
+        window.FavoriteWebTools.media.download = {
+            parseUrls: async function (urls) {
+                const resp = await fetch('/api/tools/media-downloader/parse-urls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ urls: urls })
+                });
+                return await resp.json();
+            },
+            getFormats: async function (url) {
+                const resp = await fetch('/api/tools/media-downloader/formats?url=' + encodeURIComponent(url), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                return await resp.json();
+            },
+            startJob: async function (options) {
+                const resp = await fetch('/api/tools/media-downloader/start-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(options)
+                });
+                return await resp.json();
+            },
+            getJobStatus: async function (jobId) {
+                const resp = await fetch('/api/tools/media-downloader/job-status/' + encodeURIComponent(jobId), {
+                    headers: { 'Accept': 'application/json', 'Cache-Control': 'no-store' }
+                });
+                return await resp.json();
+            },
+            getJobFileUrl: function (jobId) {
+                return '/api/tools/media-downloader/job-file/' + encodeURIComponent(jobId);
+            },
+            triggerDownload: triggerFileDownload,
+            setGlobalQuality: setGlobalQuality,
+            cancelAll: handleCancelAll,
+            executeBulkFormats: handleGetFormats
+        };
     }
 })();

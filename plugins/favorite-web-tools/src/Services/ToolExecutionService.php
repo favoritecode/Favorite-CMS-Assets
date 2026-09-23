@@ -180,7 +180,7 @@ class ToolExecutionService
      */
     public static function sanitizeMessageString(string $msg): string
     {
-        // 1. Strip Windows drive paths (e.g. C:\... or E:\...)
+        // 1. Strip Windows drive paths (drive letter followed by colon and path)
         $msg = (string)preg_replace('#[a-zA-Z]:[\\\\/][\w\s.-]+([\\\\/][\w\s.-]+)*#', '[path]', $msg);
 
         // 2. Strip Unix absolute paths

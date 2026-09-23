@@ -288,7 +288,7 @@ $currentEngine = strtoupper($tool->engine ?? 'PHP');
                         </div>
                     </div>
                     <div>
-                        <a href="/admin/web-tools/frontend-designs" target="_blank"
+                        <a href="/admin/page/favorite-web-tools-frontend-designs" target="_blank"
                            style="display: inline-flex; align-items: center; gap: 4px; padding: 9px 14px; font-size: 13px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; text-decoration: none; white-space: nowrap;">
                             🎨 Manage Designs ↗
                         </a>

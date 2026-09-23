@@ -15,7 +15,7 @@
     <?php endif; ?>
 
     <div style="margin-bottom: 20px;">
-        <a href="/admin/web-tools/frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">
+        <a href="/admin/page/favorite-web-tools-frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">
             ← Back to Frontend Designs
         </a>
         <h1 style="font-size: 22px; font-weight: 700; margin: 6px 0 0 0; color: #1e293b;">
@@ -38,8 +38,9 @@
         </div>
     </div>
 
-    <form method="POST" action="/admin/web-tools/frontend-designs" enctype="multipart/form-data"
+    <form method="POST" action="/admin/page/favorite-web-tools-frontend-designs" enctype="multipart/form-data"
           style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="action" value="import">
 
@@ -57,7 +58,7 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <a href="/admin/web-tools/frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">Cancel</a>
+            <a href="/admin/page/favorite-web-tools-frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">Cancel</a>
             <button type="submit" style="background: #0284c7; color: #ffffff; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;">
                 Upload & Import Design
             </button>

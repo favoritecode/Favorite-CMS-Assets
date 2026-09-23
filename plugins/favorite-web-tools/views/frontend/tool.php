@@ -192,10 +192,28 @@ $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
                         </script>
                     <?php endif; ?>
                 <?php else: ?>
-                    <!-- Standard Schema-Driven Tool Workspace (PHP / Python API / Fallback) -->
-                    <div class="fwt-tool-workspace">
-                        <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>" data-design="<?php echo htmlspecialchars($tool->getFrontendDesignSlug() ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-endpoint="/api/tools/<?php echo urlencode($tool->slug); ?>/execute">
-                            <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php
+                    $hasDesignWorkspace = ($toolDesign !== null && $toolDesign->isActive() && str_contains($toolDesign->getTemplateHtml(), 'data-fwt-input'));
+                    ?>
+                    <?php if ($hasDesignWorkspace): ?>
+                        <div class="fwt-tool-workspace fwt-design-workspace">
+                            <style id="fwt-design-scoped-css-<?php echo htmlspecialchars($toolDesign->getSlug(), ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php echo $toolDesign->getCssContent(); ?>
+                            </style>
+                            <div id="fwt-design-output" class="fwt-design-container" data-design="<?php echo htmlspecialchars($toolDesign->getSlug(), ENT_QUOTES, 'UTF-8'); ?>" style="display: block;">
+                                <?php echo \FavoriteCMS\Tools\Support\SafeTemplateRenderer::render($toolDesign->getTemplateHtml(), [
+                                    'is_initial' => true,
+                                    'has_items'  => false,
+                                    'items'      => [],
+                                    'csrf_token' => $csrfToken,
+                                ]); ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Standard Schema-Driven Tool Workspace (PHP / Python API / Fallback) -->
+                        <div class="fwt-tool-workspace">
+                            <form id="fwt-execution-form" data-slug="<?php echo htmlspecialchars($tool->slug, ENT_QUOTES, 'UTF-8'); ?>" data-design="<?php echo htmlspecialchars($tool->getFrontendDesignSlug() ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-endpoint="/api/tools/<?php echo urlencode($tool->slug); ?>/execute">
+                                <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                             <!-- Dynamic Inputs -->
                             <div class="fwt-inputs-container">
@@ -373,6 +391,7 @@ $submitLabel = $uiSchema['submit_label'] ?? 'Run Tool';
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             <?php endif; ?>
         </div>

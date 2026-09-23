@@ -96,7 +96,53 @@ class ToolExecutionApiController
         }
 
         try {
-            $result = $this->executionService->execute($slug, $inputs, $userId > 0 ? $userId : null, $isAdmin);
+            $rawUrlInput = $inputs['urls'] ?? ($inputs['video_url'] ?? ($inputs['url'] ?? ($inputs['text'] ?? null)));
+            $isBulkExecution = false;
+
+            if ($slug === 'favorite-media-downloader' && $rawUrlInput !== null && $this->app->has(\FavoriteCMS\Tools\Services\BulkMediaDownloadService::class)) {
+                $bulkService = $this->app->make(\FavoriteCMS\Tools\Services\BulkMediaDownloadService::class);
+                $parsed = $bulkService->parseBulkUrls($rawUrlInput);
+                if ($parsed['valid_count'] > 1) {
+                    $items = [];
+                    foreach ($parsed['valid_urls'] as $vUrl) {
+                        $rawFmt = $bulkService->discoverFormats($vUrl);
+                        if (empty($rawFmt['error'])) {
+                            $rawFmt['url'] = $vUrl;
+                            $rawFmt['source_url'] = $vUrl;
+                            $items[] = $rawFmt;
+                        }
+                    }
+                    if (!empty($items)) {
+                        $isBulkExecution = true;
+                        $result = [
+                            'success' => true,
+                            'tool'    => ['name' => 'Favorite Media Downloader', 'slug' => $slug],
+                            'data'    => [
+                                'type'  => 'JSON',
+                                'value' => [
+                                    'is_bulk' => true,
+                                    'items'   => $items,
+                                ],
+                                'data'  => [
+                                    'is_bulk' => true,
+                                    'items'   => $items,
+                                ],
+                            ],
+                            'result'  => [
+                                'type'  => 'JSON',
+                                'value' => [
+                                    'is_bulk' => true,
+                                    'items'   => $items,
+                                ],
+                            ],
+                        ];
+                    }
+                }
+            }
+
+            if (!$isBulkExecution) {
+                $result = $this->executionService->execute($slug, $inputs, $userId > 0 ? $userId : null, $isAdmin);
+            }
         } catch (Throwable $e) {
             $errMsg = ToolExecutionService::sanitizeErrorMessage($e);
             return Response::json([

@@ -18,3 +18,45 @@
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
+/* Admin dark-mode compatibility for plugin-owned surfaces. */
+html.dark .fwt-admin-wrap,
+body.dark .fwt-admin-wrap,
+[data-theme="dark"] .fwt-admin-wrap,
+.dark .fwt-admin-wrap{
+    color:#e2e8f0;
+    color-scheme:dark;
+}
+html.dark .fwt-admin-wrap input,
+html.dark .fwt-admin-wrap textarea,
+html.dark .fwt-admin-wrap select,
+body.dark .fwt-admin-wrap input,
+body.dark .fwt-admin-wrap textarea,
+body.dark .fwt-admin-wrap select,
+[data-theme="dark"] .fwt-admin-wrap input,
+[data-theme="dark"] .fwt-admin-wrap textarea,
+[data-theme="dark"] .fwt-admin-wrap select,
+.dark .fwt-admin-wrap input,
+.dark .fwt-admin-wrap textarea,
+.dark .fwt-admin-wrap select{
+    background:#111827!important;
+    color:#e2e8f0!important;
+    border-color:#334155!important;
+    color-scheme:dark;
+}
+html.dark .fwt-admin-wrap table,
+body.dark .fwt-admin-wrap table,
+[data-theme="dark"] .fwt-admin-wrap table,
+.dark .fwt-admin-wrap table{
+    color:#e2e8f0;
+}
+html.dark .fwt-admin-wrap th,
+html.dark .fwt-admin-wrap td,
+body.dark .fwt-admin-wrap th,
+body.dark .fwt-admin-wrap td,
+[data-theme="dark"] .fwt-admin-wrap th,
+[data-theme="dark"] .fwt-admin-wrap td,
+.dark .fwt-admin-wrap th,
+.dark .fwt-admin-wrap td{
+    border-color:#334155!important;
+}
+

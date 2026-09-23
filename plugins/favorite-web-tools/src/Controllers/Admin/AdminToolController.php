@@ -10,6 +10,7 @@ use FavoriteCMS\Core\Response;
 use FavoriteCMS\Models\User;
 use FavoriteCMS\Tools\Models\Tool;
 use FavoriteCMS\Tools\Repositories\CategoryRepository;
+use FavoriteCMS\Tools\Repositories\FrontendDesignRepository;
 use FavoriteCMS\Tools\Repositories\PythonServiceRepository;
 use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Services\ToolExecutionService;
@@ -24,19 +25,22 @@ class AdminToolController
     protected CategoryRepository $categoryRepo;
     protected PythonServiceRepository $pythonRepo;
     protected ToolExecutionService $executionService;
+    protected ?FrontendDesignRepository $designRepo;
 
     public function __construct(
         Application $app,
         ToolRepository $toolRepo,
         CategoryRepository $categoryRepo,
         PythonServiceRepository $pythonRepo,
-        ToolExecutionService $executionService
+        ToolExecutionService $executionService,
+        ?FrontendDesignRepository $designRepo = null
     ) {
         $this->app = $app;
         $this->toolRepo = $toolRepo;
         $this->categoryRepo = $categoryRepo;
         $this->pythonRepo = $pythonRepo;
         $this->executionService = $executionService;
+        $this->designRepo = $designRepo ?? ($app->has(FrontendDesignRepository::class) ? $app->make(FrontendDesignRepository::class) : null);
     }
 
     public function handle(Request $request): Response|string
@@ -163,7 +167,7 @@ class AdminToolController
         $flashError = $_SESSION['flash_error'] ?? null;
         unset($_SESSION['flash_error']);
 
-        $designs = $this->app->has(FrontendDesignRepository::class) ? $this->app->make(FrontendDesignRepository::class)->allActive() : [];
+        $designs = $this->getActiveDesigns();
 
         return ViewRenderer::render('admin/tools/form', [
             'tool'               => $tool,
@@ -203,7 +207,7 @@ class AdminToolController
             }
         }
         $registeredHandlers = \FavoriteCMS\Tools\Handlers\PhpHandlerRegistry::listHandlers();
-        $designs = $this->app->has(FrontendDesignRepository::class) ? $this->app->make(FrontendDesignRepository::class)->allActive() : [];
+        $designs = $this->getActiveDesigns();
 
         $flashSuccess = $_SESSION['flash_success'] ?? null;
         $flashError   = $_SESSION['flash_error'] ?? null;
@@ -491,6 +495,20 @@ class AdminToolController
             if (is_array($decoded)) {
                 return $decoded;
             }
+        }
+        return [];
+    }
+
+    /**
+     * @return array<\FavoriteCMS\Tools\Models\FrontendDesign>
+     */
+    protected function getActiveDesigns(): array
+    {
+        if ($this->designRepo !== null) {
+            return $this->designRepo->allActive();
+        }
+        if ($this->app->has(FrontendDesignRepository::class)) {
+            return $this->app->make(FrontendDesignRepository::class)->allActive();
         }
         return [];
     }

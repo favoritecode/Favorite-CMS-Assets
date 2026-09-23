@@ -135,6 +135,8 @@ final class ToolThemeShell
 
         $inlineCss = '';
         $cssFile = dirname(__DIR__, 2) . '/assets/css/tools-frontend.css';
+        $jsFile = dirname(__DIR__, 2) . '/assets/js/tools-frontend.js';
+
         if (is_file($cssFile)) {
             $cssContent = @file_get_contents($cssFile);
             if ($cssContent !== false && trim($cssContent) !== '') {
@@ -142,9 +144,12 @@ final class ToolThemeShell
             }
         }
 
+        $cssVer = $version . (is_file($cssFile) ? '.' . filemtime($cssFile) : '');
+        $jsVer = $version . (is_file($jsFile) ? '.' . filemtime($jsFile) : '');
+
         return $inlineCss
-             . '<link rel="stylesheet" href="' . $cssPath . '?v=' . urlencode($version) . '">' . "\n"
-             . '<script src="' . $jsPath . '?v=' . urlencode($version) . '" defer></script>';
+             . '<link rel="stylesheet" href="' . $cssPath . '?v=' . urlencode($cssVer) . '">' . "\n"
+             . '<script src="' . $jsPath . '?v=' . urlencode($jsVer) . '" defer></script>';
     }
 
     /** @return array{0:string,1:string} */

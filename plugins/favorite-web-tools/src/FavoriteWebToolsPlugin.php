@@ -13,6 +13,7 @@ use FavoriteCMS\Tools\Controllers\Admin\AdminDashboardController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminFrontendDesignController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminPythonServiceController;
 use FavoriteCMS\Tools\Controllers\Admin\AdminToolController;
+use FavoriteCMS\Tools\Controllers\Api\BulkMediaApiController;
 use FavoriteCMS\Tools\Controllers\Api\DownloadApiController;
 use FavoriteCMS\Tools\Controllers\Api\ToolApiController;
 use FavoriteCMS\Tools\Controllers\Api\ToolExecutionApiController;
@@ -26,6 +27,7 @@ use FavoriteCMS\Tools\Repositories\FrontendDesignRepository;
 use FavoriteCMS\Tools\Repositories\PythonServiceRepository;
 use FavoriteCMS\Tools\Repositories\ToolRepository;
 use FavoriteCMS\Tools\Services\AccessControlService;
+use FavoriteCMS\Tools\Services\BulkMediaDownloadService;
 use FavoriteCMS\Tools\Services\DesignPackageImporter;
 use FavoriteCMS\Tools\Services\DownloadManagerService;
 use FavoriteCMS\Tools\Services\PythonClientService;
@@ -36,7 +38,7 @@ use Throwable;
 
 final class FavoriteWebToolsPlugin
 {
-    public const VERSION = '1.2.0';
+    public const VERSION = '1.2.1';
 
     public const TABLES = [
         'favorite_web_tool_categories',
@@ -128,6 +130,13 @@ final class FavoriteWebToolsPlugin
             return new DownloadManagerService();
         });
 
+        $this->app->singleton(BulkMediaDownloadService::class, function ($app): BulkMediaDownloadService {
+            return new BulkMediaDownloadService(
+                $app->make(PythonServiceRepository::class),
+                $app->make(PythonClientService::class)
+            );
+        });
+
         $this->app->singleton(ToolRegistryService::class, function ($app): ToolRegistryService {
             return new ToolRegistryService(
                 $app->make(ToolRepository::class),
@@ -202,6 +211,14 @@ final class FavoriteWebToolsPlugin
             );
         });
 
+        $this->app->singleton(BulkMediaApiController::class, function ($app): BulkMediaApiController {
+            return new BulkMediaApiController(
+                $app,
+                $app->make(BulkMediaDownloadService::class),
+                new \FavoriteCMS\Tools\Normalizers\MediaResultNormalizer()
+            );
+        });
+
         $this->app->singleton(DownloadApiController::class, function ($app): DownloadApiController {
             return new DownloadApiController(
                 $app,
@@ -224,7 +241,8 @@ final class FavoriteWebToolsPlugin
                 $app->make(ToolRepository::class),
                 $app->make(CategoryRepository::class),
                 $app->make(PythonServiceRepository::class),
-                $app->make(ToolExecutionService::class)
+                $app->make(ToolExecutionService::class),
+                $app->has(FrontendDesignRepository::class) ? $app->make(FrontendDesignRepository::class) : null
             );
         });
 
@@ -388,6 +406,32 @@ final class FavoriteWebToolsPlugin
             add_route('POST', '/api/tools/{slug}/execute', function (Request $request, string $slug) {
                 $controller = $this->app->make(ToolExecutionApiController::class);
                 return $controller->execute($request, $slug);
+            });
+
+            // Bulk Media Downloader Dedicated APIs
+            add_route('POST', '/api/tools/media-downloader/parse-urls', function (Request $request) {
+                $controller = $this->app->make(BulkMediaApiController::class);
+                return $controller->parseUrls($request);
+            });
+
+            add_route(['GET', 'POST'], '/api/tools/media-downloader/formats', function (Request $request) {
+                $controller = $this->app->make(BulkMediaApiController::class);
+                return $controller->getFormats($request);
+            });
+
+            add_route('POST', '/api/tools/media-downloader/start-job', function (Request $request) {
+                $controller = $this->app->make(BulkMediaApiController::class);
+                return $controller->startJob($request);
+            });
+
+            add_route('GET', '/api/tools/media-downloader/job-status/{jobId}', function (Request $request, string $jobId) {
+                $controller = $this->app->make(BulkMediaApiController::class);
+                return $controller->getJobStatus($request, $jobId);
+            });
+
+            add_route('GET', '/api/tools/media-downloader/job-file/{jobId}', function (Request $request, string $jobId) {
+                $controller = $this->app->make(BulkMediaApiController::class);
+                return $controller->getJobFile($request, $jobId);
             });
 
             // Download API

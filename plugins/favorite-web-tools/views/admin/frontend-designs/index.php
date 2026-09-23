@@ -32,10 +32,10 @@
             </span>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="/admin/web-tools/frontend-designs?action=import" style="display: inline-flex; align-items: center; gap: 6px; background: #0284c7; color: #fff; text-decoration: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; font-size: 13px;">
+            <a href="/admin/page/favorite-web-tools-frontend-designs?action=import" style="display: inline-flex; align-items: center; gap: 6px; background: #0284c7; color: #fff; text-decoration: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; font-size: 13px;">
                 📥 Import ZIP Package
             </a>
-            <a href="/admin/web-tools/frontend-designs?action=create" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; text-decoration: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <a href="/admin/page/favorite-web-tools-frontend-designs?action=create" style="display: inline-flex; align-items: center; gap: 6px; background: #2563eb; color: #fff; text-decoration: none; padding: 9px 16px; border-radius: 6px; font-weight: 600; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                 + Create Design
             </a>
         </div>
@@ -112,20 +112,21 @@
                             </td>
                             <td style="padding: 12px 16px; text-align: right;">
                                 <div style="display: inline-flex; gap: 6px; align-items: center;">
-                                    <a href="/admin/web-tools/frontend-designs?action=preview&id=<?php echo (int)$design->getId(); ?>"
+                                    <a href="/admin/page/favorite-web-tools-frontend-designs?action=preview&id=<?php echo (int)$design->getId(); ?>"
                                        style="color: #0284c7; text-decoration: none; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #e0f2fe;">
                                         Preview
                                     </a>
-                                    <a href="/admin/web-tools/frontend-designs?action=edit&id=<?php echo (int)$design->getId(); ?>"
+                                    <a href="/admin/page/favorite-web-tools-frontend-designs?action=edit&id=<?php echo (int)$design->getId(); ?>"
                                        style="color: #2563eb; text-decoration: none; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #eff6ff;">
                                         Edit
                                     </a>
-                                    <a href="/admin/web-tools/frontend-designs?action=export&id=<?php echo (int)$design->getId(); ?>"
+                                    <a href="/admin/page/favorite-web-tools-frontend-designs?action=export&id=<?php echo (int)$design->getId(); ?>"
                                        style="color: #475569; text-decoration: none; font-weight: 500; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #f1f5f9;">
                                         Export
                                     </a>
 
-                                    <form method="POST" action="/admin/web-tools/frontend-designs" style="display: inline; margin: 0;">
+                                    <form method="POST" action="/admin/page/favorite-web-tools-frontend-designs" style="display: inline; margin: 0;">
+                                        <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                         <input type="hidden" name="action" value="duplicate">
                                         <input type="hidden" name="id" value="<?php echo (int)$design->getId(); ?>">
@@ -135,7 +136,8 @@
                                     </form>
 
                                     <?php if (!$design->isBuiltin() && $inUse === 0): ?>
-                                        <form method="POST" action="/admin/web-tools/frontend-designs" style="display: inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this custom design?');">
+                                        <form method="POST" action="/admin/page/favorite-web-tools-frontend-designs" style="display: inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this custom design?');">
+                                            <input type="hidden" name="_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo (int)$design->getId(); ?>">

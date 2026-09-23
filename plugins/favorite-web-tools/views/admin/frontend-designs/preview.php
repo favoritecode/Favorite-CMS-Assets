@@ -63,7 +63,7 @@ $sampleMedia = [
 <div class="fwt-admin-wrap" style="max-width: 1200px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
-            <a href="/admin/web-tools/frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">
+            <a href="/admin/page/favorite-web-tools-frontend-designs" style="color: #64748b; text-decoration: none; font-size: 13px;">
                 ← Back to Frontend Designs
             </a>
             <h1 style="font-size: 22px; font-weight: 700; margin: 6px 0 0 0; color: #1e293b;">
@@ -82,7 +82,7 @@ $sampleMedia = [
                     </option>
                 <?php endforeach; ?>
             </select>
-            <a href="/admin/web-tools/frontend-designs?action=edit&id=<?php echo (int)$currentDesign->getId(); ?>"
+            <a href="/admin/page/favorite-web-tools-frontend-designs?action=edit&id=<?php echo (int)$currentDesign->getId(); ?>"
                id="fwt-edit-current-link"
                style="padding: 8px 14px; font-size: 13px; font-weight: 600; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
                 Edit Design ↗
@@ -170,12 +170,14 @@ async function executePreview() {
 
     try {
         const formData = new FormData();
+        formData.append('_token', CSRF_TOKEN);
         formData.append('csrf_token', CSRF_TOKEN);
         formData.append('action', 'render_preview');
         formData.append('slug', CURRENT_SLUG);
         formData.append('mock_json', jsonStr);
 
-        const resp = await fetch('/admin/web-tools/frontend-designs', {
+        const postUrl = window.location.pathname.includes('favorite-web-tools-frontend-designs') ? window.location.pathname : '/admin/page/favorite-web-tools-frontend-designs';
+        const resp = await fetch(postUrl, {
             method: 'POST',
             body: formData
         });
