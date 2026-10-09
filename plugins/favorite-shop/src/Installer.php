@@ -17,6 +17,10 @@ final class Installer
         foreach (self::statements() as $sql) $pdo->exec($sql);
         self::ensureColumn($pdo, 'favorite_shop_products', 'labels_json', 'JSON NULL');
         self::ensureColumn($pdo, 'favorite_shop_offers', 'labels_json', 'JSON NULL');
+        self::ensureColumn($pdo, 'favorite_shop_coupons', 'labels_json', 'JSON NULL');
+        self::ensureColumn($pdo, 'favorite_shop_offers', 'buy_quantity', 'INT UNSIGNED NULL');
+        self::ensureColumn($pdo, 'favorite_shop_offers', 'get_quantity', 'INT UNSIGNED NULL');
+        self::ensureColumn($pdo, 'favorite_shop_offers', 'bundle_quantity', 'INT UNSIGNED NULL');
         self::ensureColumn($pdo, 'favorite_shop_products', 'low_stock_threshold', 'DECIMAL(14,3) NOT NULL DEFAULT 0');
         self::ensureColumn($pdo, 'favorite_shop_products', 'allow_backorder', 'TINYINT(1) NOT NULL DEFAULT 0');
         self::ensureColumn($pdo, 'favorite_shop_product_variants', 'low_stock_threshold', 'DECIMAL(14,3) NOT NULL DEFAULT 0');
