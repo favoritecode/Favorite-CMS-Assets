@@ -42,10 +42,10 @@ final class OfferPricing
      * so a percentage automatically produces a different discount for each category/label-matched item.
      * @return array{price_cents:int,discount_cents:int,offer_id:?int}
      */
-    public static function bestPriceForProduct(int $regularPriceCents, array $offers, array $productCategoryIds, array $productLabels, ?\\DateTimeImmutable $now = null): array
+    public static function bestPriceForProduct(int $regularPriceCents, array $offers, array $productCategoryIds, array $productLabels, ?\DateTimeImmutable $now = null): array
     {
-        if ($regularPriceCents < 0) throw new \\InvalidArgumentException('Regular price cannot be negative.');
-        $now = $now ?? new \\DateTimeImmutable('now', new \\DateTimeZone('UTC'));
+        if ($regularPriceCents < 0) throw new \InvalidArgumentException('Regular price cannot be negative.');
+        $now = $now ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $best = ['price_cents'=>$regularPriceCents, 'discount_cents'=>0, 'offer_id'=>null, 'priority'=>PHP_INT_MIN];
         foreach ($offers as $offer) {
             $status = OfferSchedule::state((string)($offer['status'] ?? 'scheduled'), (string)($offer['starts_at'] ?? ''), (string)($offer['ends_at'] ?? ''), $now);
