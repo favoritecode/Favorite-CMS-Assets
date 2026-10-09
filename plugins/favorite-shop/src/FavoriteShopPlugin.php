@@ -53,7 +53,7 @@ final class FavoriteShopPlugin
                             ? (string)$order['status']
                             : ((string)$order['status'] === 'pending' ? 'processing' : (string)$order['status']);
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='paid',status=? WHERE id=? AND payment_intent_id=?")->execute([$nextStatus,(int)$order['id'],$intentId]);
-                    } elseif (in_array((string)$order['status'], ['cancelled','returned'], true)) {
+                    } elseif (in_array((string)$order['status'], ['cancelled','returned'], true) && !in_array($status, ['refunded','partially_refunded'], true)) {
                         return;
                     } elseif ($status === 'failed' || $status === 'cancelled') {
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_intent_id=? AND payment_status<>'paid'")->execute([(int)$order['id'], $intentId]);
