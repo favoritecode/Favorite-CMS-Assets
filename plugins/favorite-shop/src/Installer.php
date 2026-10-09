@@ -65,7 +65,8 @@ final class Installer
         $type = strtolower((string)($current['Type'] ?? ''));
         $nullable = (string)($current['Null'] ?? 'YES') === 'YES';
         $currentDefault = $current['Default'] === null ? null : (string)$current['Default'];
-        if ($type === 'decimal(14,3)' && !$nullable && $currentDefault === $default) return;
+        $defaultMatches = $default === null ? $currentDefault === null : ($currentDefault !== null && is_numeric($currentDefault) && (float)$currentDefault === (float)$default);
+        if ($type === 'decimal(14,3)' && !$nullable && $defaultMatches) return;
         $defaultSql = $default === null ? '' : ' DEFAULT ' . $default;
         $pdo->exec('ALTER TABLE `' . $table . '` MODIFY COLUMN `' . $column . '` DECIMAL(14,3) NOT NULL' . $defaultSql);
     }
