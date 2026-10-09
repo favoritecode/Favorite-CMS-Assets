@@ -114,6 +114,13 @@ final class CustomerShopController
         $country=strtoupper((string)($oldAddress['country_code']??'BD'));
         $estimatedShipping=$this->shippingCents($this->db(),$country,(string)($oldAddress['division']??''),(string)($oldAddress['district']??''),(string)($oldAddress['city']??'Dhaka'),(string)($oldAddress['area']??''));
         $pricing=$this->calculate($items,'',$estimatedShipping);
+        $prepaidMethods = [];
+        if ($this->app->has(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)) {
+            try { $prepaidMethods = $this->app->make(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)->getAvailablePaymentMethods('BDT'); }
+            catch (\\Throwable $e) { error_log('[Favorite Shop checkout methods] '.$e->getMessage()); }
+        }
+        $paymentOptions = '<option value="cash_on_delivery">Cash on Delivery (COD)</option>';
+        if ($prepaidMethods) $paymentOptions .= '<option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option>';
         $body = '<h1>Checkout</h1>'. $this->flashMessages().'<form method="post" action="/shop/checkout">'.$this->csrf()
             .'<label>Recipient name<input name="recipient_name" maxlength="190" required value="'.self::e($_SESSION['favorite_shop_checkout']['recipient_name'] ?? '').'"></label>'
             .'<label>Phone<input name="phone" maxlength="40" required value="'.self::e($_SESSION['favorite_shop_checkout']['phone'] ?? '').'"></label>'
@@ -126,7 +133,7 @@ final class CustomerShopController
             .'<label>Country<select name="country_code"><option value="BD">Bangladesh</option><option value="US">United States</option><option value="GB">United Kingdom</option></select></label>'
             .'<label>Coupon code (optional)<input name="coupon_code" maxlength="100" value="'.self::e($_SESSION['favorite_shop_coupon_code'] ?? '').'"></label>'
             .'<label>Order note<textarea name="customer_note" maxlength="3000">'.self::e($_SESSION['favorite_shop_checkout']['customer_note'] ?? '').'</textarea></label>'
-            .'<label>Payment method<select name="payment_method"><option value="cash_on_delivery">Cash on Delivery (COD)</option><option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option></select></label><section class="card"><strong>Order estimate</strong><p>Items subtotal: '.self::money($pricing['subtotal_cents']).'</p><p>Estimated delivery: '.self::money($estimatedShipping).' ('.self::e($_SESSION['favorite_shop_shipping_zone']??'fallback zone').')</p><p>Estimated total before coupon: '.self::money($pricing['total_cents']).'</p><small>Final delivery rate and offers are recalculated on the server when you place the order.</small></section><button type="submit">Place order</button></form>';
+            .'<label>Payment method<select name="payment_method">'.$paymentOptions.'</select></label><section class="card"><strong>Order estimate</strong><p>Items subtotal: '.self::money($pricing['subtotal_cents']).'</p><p>Estimated delivery: '.self::money($estimatedShipping).' ('.self::e($_SESSION['favorite_shop_shipping_zone']??'fallback zone').')</p><p>Estimated total before coupon: '.self::money($pricing['total_cents']).'</p><small>Final delivery rate and offers are recalculated on the server when you place the order.</small></section><button type="submit">Place order</button></form>';
         return $this->shell('Checkout', $body);
     }
 
@@ -140,6 +147,16 @@ final class CustomerShopController
         }
         $_SESSION['favorite_shop_checkout'] = $input; $_SESSION['favorite_shop_coupon_code'] = $input['coupon_code'];
         if (!in_array($input['payment_method'], ['cash_on_delivery','favorite_pay'], true)) $input['payment_method'] = 'cash_on_delivery';
+        if ($input['payment_method'] === 'favorite_pay') {
+            if (!$this->app->has(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)) return $this->flashRedirect('/shop/checkout', 'Prepaid payments are unavailable. Please choose Cash on Delivery.');
+            try {
+                $available = $this->app->make(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)->getAvailablePaymentMethods('BDT');
+                if (!$available) return $this->flashRedirect('/shop/checkout', 'No prepaid gateway is currently configured. Please choose Cash on Delivery.');
+            } catch (\\Throwable $e) {
+                error_log('[Favorite Shop checkout validation] '.$e->getMessage());
+                return $this->flashRedirect('/shop/checkout', 'Could not load payment methods. Please choose Cash on Delivery or try again later.');
+            }
+        }
         if ($input['recipient_name']==='' || $input['phone']==='' || $input['address_line1']==='' || $input['city']==='') return $this->flashRedirect('/shop/checkout', 'Recipient, phone and delivery address are required.');
         if (!preg_match('/^[A-Z]{2}$/', strtoupper($input['country_code']))) $input['country_code']='BD';
         $pdo = $this->db();
