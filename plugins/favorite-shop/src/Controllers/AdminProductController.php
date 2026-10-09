@@ -136,7 +136,8 @@ final class AdminProductController
             $slug = $this->slug((string) $request->post('slug', ''), $name);
             $sku = trim((string) $request->post('sku', ''));
             $sku = $sku === '' ? null : substr($sku, 0, 100);
-            $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));\n            $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
+            $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));
+            $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
             $categoryIds = OfferPricing::normalizeScope((array)$request->post('category_ids', []), '')['category_ids'];
             if ($categoryIds) { $check = $this->db()->prepare('SELECT COUNT(*) FROM favorite_shop_product_categories WHERE id IN (' . implode(',', array_fill(0, count($categoryIds), '?')) . ')'); $check->execute($categoryIds); if ((int)$check->fetchColumn() !== count($categoryIds)) throw new \\InvalidArgumentException('One or more selected categories no longer exist.'); }
             $gallery = [];
