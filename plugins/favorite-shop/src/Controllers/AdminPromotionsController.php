@@ -18,7 +18,7 @@ final class AdminPromotionsController
     public function handle(Request $request): Response|string
     {
         if ((int)($_SESSION['auth_user_id'] ?? 0) <= 0 && !isset($GLOBALS['_test_current_user'])) return Response::redirect('/admin/login');
-        if (function_exists('current_user_can') && !current_user_can('manage_options')) return Response::make('<h1>403 Access Denied</h1>',403);
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) return Response::make('<h1>403 Access Denied</h1>',403);
         return $request->method()==='POST' ? $this->save($request) : $this->page((string)$request->get('kind',$this->defaultKind),(string)$request->get('action','index'),(int)$request->get('id',0));
     }
     private function db(): \PDO {
