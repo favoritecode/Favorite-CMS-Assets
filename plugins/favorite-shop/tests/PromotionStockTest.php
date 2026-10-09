@@ -40,7 +40,8 @@ expectSame(8500, OfferPricing::discountedPriceCents(10000,20,1500), 'Offer maxim
 $scope = OfferPricing::normalizeScope(['2','4'], 'Summer, clearance; Featured');
 expectSame([2,4], $scope['category_ids'], 'Normalize offer category scope');
 expectSame(['Summer','clearance','Featured'], $scope['labels'], 'Normalize offer label scope');
-expectSame(true, OfferPricing::matchesScope([4], ['Other'], [4], ['Summer']), 'Match category scope');
+expectSame(false, OfferPricing::matchesScope([4], ['Other'], [4], ['Summer']), 'Require label when category and label scopes are both set');
+expectSame(true, OfferPricing::matchesScope([4], ['Summer'], [4], ['Summer']), 'Match combined category and label scope');
 expectSame(true, OfferPricing::matchesScope([9], ['summer'], [4], ['Summer']), 'Match label case-insensitively');
 expectSame(false, OfferPricing::matchesScope([9], ['winter'], [4], ['Summer']), 'Reject unmatched scope');
 $pricing = OfferPricing::bestPriceForProduct(10000, [
