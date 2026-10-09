@@ -51,3 +51,11 @@ This is still a foundation release, not a production-ready store. Product/admin 
 - Stock status rules distinguish in stock, low stock, out of stock and explicitly enabled backorders. Product and variant low-stock thresholds are configurable; zero stock does not silently allow orders.
 - The new domain tests cover schedule boundaries, discount caps, free shipping, expiry and stock/overselling rules.
 - Admin navigation now includes Products, Offers & Sales, and Coupons. Basic offer/coupon create, list and edit screens are included, along with product low-stock threshold and explicit backorder controls. These screens persist schedules and policy settings; they do not yet make the frontend checkout automatically apply promotions. Checkout integration, atomic stock reservation/decrement, restoration on cancellation/return, per-customer redemption enforcement, variant-level stock UI, and full end-to-end verification remain required before production use.
+
+
+## Category/label-targeted scheduled offers
+- Admin can create product categories under Favorite Shop → Categories, assign one or more categories to each product, and add comma-separated product labels such as `summer`, `clearance` or `featured`.
+- Each scheduled offer can target multiple categories, multiple product labels, or all products. If both category and label filters are selected, a product must match both filters; each selected filter group accepts any match within that group.
+- Percentage offers are calculated against each matched product's own regular price in integer minor currency units. For example, a 15% offer on ৳100 calculates a ৳15 discount and a ৳85 offer price. The stored regular price is not overwritten.
+- The `OfferPricing::bestPriceForProduct()` domain function selects the lowest eligible scheduled price and uses priority to break ties. Tests cover scope matching, expiry, percent math and discount totals.
+- Storefront/cart/checkout integration must call this pricing function and snapshot the final applied offer/price on order items before percentage offers are considered fully live for customers.
