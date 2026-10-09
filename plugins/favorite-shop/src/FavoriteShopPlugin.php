@@ -41,6 +41,8 @@ final class FavoriteShopPlugin
         }
         if (function_exists('add_route')) {
             add_route(['GET','POST'], '/admin/page/favorite-shop-orders', fn(Request $request) => (new AdminOrderController($this->app))->handle($request));
+            add_route(['GET','POST'], '/admin/page/favorite-shop-delivery', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\AdminDeliveryZoneController($this->app))->handle($request));
+
         }
         if (function_exists('add_admin_menu')) {
             $categories = function (Request $request) { return (new AdminCategoryController($this->app))->handle($request); };
@@ -57,6 +59,8 @@ final class FavoriteShopPlugin
                 add_admin_submenu('favorite-shop', 'favorite-shop-coupons', 'Coupons', $coupons, 'manage_options');
                 $orders = function (Request $request) { return (new AdminOrderController($this->app))->handle($request); };
                 add_admin_submenu('favorite-shop', 'favorite-shop-orders', 'Orders', $orders, 'manage_options');
+                $delivery = function (Request $request) { return (new \\FavoriteCMS\\Shop\\Controllers\\AdminDeliveryZoneController($this->app))->handle($request); };
+                add_admin_submenu('favorite-shop', 'favorite-shop-delivery', 'Delivery Zones', $delivery, 'manage_options');
             }
         }
     }
