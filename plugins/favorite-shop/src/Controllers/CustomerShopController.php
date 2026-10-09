@@ -262,9 +262,10 @@ final class CustomerShopController
             return $this->shell('Prepaid payment unavailable', '<p class="notice">Favorite Pay is not active. Your order has been created, but prepaid payment is unavailable. Please contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
         }
         $payments = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class);
-        // bKash returns here; execute the provider API before marking the order paid.
+        // Verify bKash callback state against the provider; browser query parameters alone are not authoritative.
+        $callbackStatus = strtolower(trim((string)$request->get('status', '')));
         if ((string)($order['payment_method'] ?? '') === 'bkash_direct'
-            && (string)$request->get('status', '') !== ''
+            && in_array($callbackStatus, ['success','failure','cancel'], true)
             && (string)$request->get('paymentID', '') !== ''
             && method_exists($payments, 'getAttemptsForTransaction')
             && method_exists($payments, 'markAttemptSuccessfulViaWebhook')
@@ -273,17 +274,30 @@ final class CustomerShopController
                 $attempts = $payments->getAttemptsForTransaction((string)($order['payment_intent_id'] ?? ''));
                 $attempt = null;
                 foreach ($attempts as $candidate) {
-                    if ($candidate->getGatewayId() === 'bkash_direct') { $attempt = $candidate; break; }
+                    if ($candidate->getGatewayId() === 'bkash_direct'
+                        && hash_equals((string)$candidate->getTransactionReference(), (string)$request->get('paymentID', ''))) {
+                        $attempt = $candidate;
+                        break;
+                    }
                 }
-                if ($attempt && hash_equals((string)$attempt->getTransactionReference(), (string)$request->get('paymentID', ''))
-                    && !in_array($attempt->getStatus()->value, ['succeeded','failed','cancelled'], true)) {
+                if ($attempt && !in_array($attempt->getStatus()->value, ['succeeded','failed','cancelled'], true)) {
                     $gateway = $this->app->make(\FavoriteCMS\Pay\Services\GatewayRegistry::class)->get('bkash_direct');
-                    if (method_exists($gateway, 'executeCallback')) {
+                    if ($callbackStatus === 'success' && method_exists($gateway, 'executeCallback')) {
                         $verifiedAttempt = $gateway->executeCallback($attempt, $request->all());
                         if ($verifiedAttempt->getStatus()->value === 'succeeded') {
                             $payments->markAttemptSuccessfulViaWebhook($attempt->getId(), $verifiedAttempt->getTransactionReference(), $verifiedAttempt->getMetadata());
                         } else {
-                            $payments->markAttemptFailedViaWebhook($attempt->getId(), $verifiedAttempt->getErrorMessage() ?? 'bKash payment was not completed.', $verifiedAttempt->getTransactionReference(), $verifiedAttempt->getMetadata());
+                            $payments->markAttemptFailedViaWebhook($attempt->getId(), $verifiedAttempt->getErrorMessage() ?? 'bKash payment verification failed.', $verifiedAttempt->getTransactionReference(), $verifiedAttempt->getMetadata());
+                        }
+                    } elseif (method_exists($gateway, 'queryStatus')) {
+                        $providerStatus = $gateway->queryStatus($attempt);
+                        if ($providerStatus === \FavoriteCMS\Pay\Domain\PaymentStatus::SUCCEEDED && method_exists($gateway, 'executeCallback')) {
+                            $verifiedAttempt = $gateway->executeCallback($attempt, array_merge($request->all(), ['status' => 'success']));
+                            if ($verifiedAttempt->getStatus()->value === 'succeeded') {
+                                $payments->markAttemptSuccessfulViaWebhook($attempt->getId(), $verifiedAttempt->getTransactionReference(), $verifiedAttempt->getMetadata());
+                            }
+                        } elseif (in_array($providerStatus, [\FavoriteCMS\Pay\Domain\PaymentStatus::FAILED, \FavoriteCMS\Pay\Domain\PaymentStatus::CANCELLED], true)) {
+                            $payments->markAttemptFailedViaWebhook($attempt->getId(), 'The payment provider confirmed that the bKash payment did not complete.', $attempt->getTransactionReference(), ['provider_status' => $providerStatus->value]);
                         }
                     }
                 }
