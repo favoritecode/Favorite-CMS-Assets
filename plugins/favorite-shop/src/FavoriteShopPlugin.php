@@ -5,6 +5,7 @@ use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Database;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Shop\Controllers\AdminProductController;
+use FavoriteCMS\Shop\Controllers\AdminCategoryController;
 use FavoriteCMS\Shop\Controllers\AdminPromotionsController;
 final class FavoriteShopPlugin
 {
@@ -30,6 +31,7 @@ final class FavoriteShopPlugin
     public function boot(): void {
         Installer::register($this->app);
         if (function_exists('add_admin_menu')) {
+            $categories = function (Request $request) { return (new AdminCategoryController($this->app))->handle($request); };
             $products = function (Request $request) {
                 return (new AdminProductController($this->app))->handle($request);
             };
@@ -38,6 +40,7 @@ final class FavoriteShopPlugin
             $coupons = function (Request $request) { return (new AdminPromotionsController($this->app, 'coupons'))->handle($request); };
             if (function_exists('add_admin_submenu')) {
                 add_admin_submenu('favorite-shop', 'favorite-shop-products', 'Products', $products, 'manage_options');
+                add_admin_submenu('favorite-shop', 'favorite-shop-categories', 'Categories', $categories, 'manage_options');
                 add_admin_submenu('favorite-shop', 'favorite-shop-offers', 'Offers & Sales', $offers, 'manage_options');
                 add_admin_submenu('favorite-shop', 'favorite-shop-coupons', 'Coupons', $coupons, 'manage_options');
             }
