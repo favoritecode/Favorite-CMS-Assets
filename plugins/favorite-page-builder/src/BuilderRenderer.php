@@ -63,18 +63,37 @@ final class BuilderRenderer {
     }
     private function productGrid(array $s): string {
         try {
-            if(!$this->db->tableExists('favorite_digital_products'))return '<p class="fpb-empty">Activate a compatible product plugin to show products.</p>';
+            $custom = \FavoriteCMS\Core\Hook::applyFilters('favorite_page_builder_products', null, $s, $this->db);
+            if (is_array($custom)) return $this->renderProductCards($custom, $s);
+            if (!$this->db->tableExists('favorite_digital_products')) return '<p class="fpb-empty">Activate a compatible product plugin to show products.</p>';
+            // Favorite Digital does not define native product categories/tags in its core product schema.
+            // Providers can implement these filters through favorite_page_builder_products.
+            if (trim((string)($s['category'] ?? '')) !== '' || trim((string)($s['tag'] ?? '')) !== '') {
+                return '<p class="fpb-empty">Product category/tag filters need a commerce taxonomy provider. Configure the Favorite Page Builder product adapter hook to enable this filter.</p>';
+            }
             $limit=max(1,min(24,(int)($s['limit']??6)));$id=(int)($s['product_id']??0);
-            $sql="SELECT id,name,slug,short_description,price,cover_image_url FROM `favorite_digital_products` WHERE status='published'";
+            $sql="SELECT id,title,slug,description,final_price,currency,cover_image_url FROM `favorite_digital_products` WHERE status='published'";
             $args=[];
             if($id>0){$sql.=' AND id=?';$args[]=$id;}
-            $cat=trim((string)($s['category']??''));if($cat!==''){$sql.=' AND category_id=?';$args[]=(int)$cat;}
             $sql.=' ORDER BY id DESC LIMIT '.$limit;$rows=$this->db->select($sql,$args);
-            if(!$rows)return '<p class="fpb-empty">No matching products found.</p>';
-            $cols=max(1,min(4,(int)($s['columns']??3)));$out='<div class="fpb-grid fpb-grid-'.$cols.'">';
-            foreach($rows as $r){$title=htmlspecialchars((string)($r->name??'Product'),ENT_QUOTES,'UTF-8');$slug=rawurlencode((string)($r->slug??''));$url=site_path('/product/'.$slug);$price=htmlspecialchars((string)($r->price??''),ENT_QUOTES,'UTF-8');$img=(string)($r->cover_image_url??'');$out.='<article class="fpb-card">'.($img!==''?'<img loading="lazy" src="'.htmlspecialchars($img,ENT_QUOTES,'UTF-8').'" alt="'.$title.'">':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3><p>'.$price.'</p></article>';}
-            return $out.'</div>';
+            return $this->renderProductCards($rows, $s);
         } catch(\Throwable){return '<p class="fpb-empty">Product grid is not available.</p>';}
+    }
+    private function renderProductCards(array $rows, array $s): string {
+        if(!$rows)return '<p class="fpb-empty">No matching products found.</p>';
+        $cols=max(1,min(4,(int)($s['columns']??3)));$out='<div class="fpb-grid fpb-grid-'.$cols.'">';
+        foreach($rows as $r){
+            $r=is_object($r)?(array)$r:$r;
+            $title=htmlspecialchars((string)($r['title']??$r['name']??'Product'),ENT_QUOTES,'UTF-8');
+            $slug=rawurlencode((string)($r['slug']??''));
+            $url=site_path('/store/'.$slug);
+            $price=htmlspecialchars((string)($r['final_price']??$r['price']??''),ENT_QUOTES,'UTF-8');
+            $currency=htmlspecialchars((string)($r['currency']??'BDT'),ENT_QUOTES,'UTF-8');
+            $img=(string)($r['cover_image_url']??$r['image_url']??'');
+            $description=htmlspecialchars(mb_substr(strip_tags((string)($r['description']??$r['short_description']??'')),0,160),ENT_QUOTES,'UTF-8');
+            $out.='<article class="fpb-card">'.($img!==''?'<img loading="lazy" src="'.htmlspecialchars($img,ENT_QUOTES,'UTF-8').'" alt="'.$title.'">':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3>'.($description!==''?'<p>'.$description.'</p>':'').'<p>'.$price.' '.$currency.'</p></article>';
+        }
+        return $out.'</div>';
     }
     private function textStyle(array $s): string {return 'color:'.$this->color($s['color']??'#172033').';font-size:'.$this->length($s['size']??'16px').';text-align:'.(in_array(($s['alignment']??'left'),['left','center','right'],true)?$s['alignment']:'left').';';}
     private function style(array $s): string {return 'padding:'.$this->length($s['padding']??'48px').' '.$this->length($s['padding_x']??'20px').';background:'.$this->color($s['background']??'#ffffff').';';}
