@@ -54,7 +54,7 @@ final class BuilderRenderer {
                     $details='<div class="fpb-order-summary"><p><strong>Order:</strong> '.$e($order['order_number']).'</p><p><strong>Status:</strong> '.$e($order['status']).' · '.$e($order['payment_status']).'</p><p><strong>Total:</strong> '.$e($order['total_amount']).' '.$e($order['currency']).'</p><p><a href="'.htmlspecialchars(site_path('/account/orders/'.rawurlencode($order['order_number'])),ENT_QUOTES,'UTF-8').'">View order details</a></p></div>';
                 }
                 return '<section class="fpb-confirmation"><div class="fpb-confirm-icon">✓</div><h2>'.$e($s['heading']??'Thank you for your order').'</h2><p>'.$e($s['text']??'Your order has been received.').'</p>'.$details.'</section>';
-            case 'html': return '<div class="fpb-custom-html">'.\FavoriteCMS\Themes\BuilderElementRegistry::sanitizeHtml((string)($s['html']??'')).'</div>';
+            case 'html': return '<div class="fpb-custom-html">'.\FavoriteCMS\Services\ContentSanitizer::sanitizeMarkup((string)($s['html']??'')).'</div>';
             default: return '';
         }
     }
