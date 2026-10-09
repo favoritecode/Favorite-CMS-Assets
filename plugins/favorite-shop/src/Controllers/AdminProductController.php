@@ -87,8 +87,8 @@ final class AdminProductController
         $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';\n        $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);\n        $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
         $categoryStmt = $this->db()->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id = ?');
         $categoryStmt->execute([(int)$product['id']]);
-        $product['category_ids'] = array_map('intval', $categoryStmt->fetchAll(\\PDO::FETCH_COLUMN));
-        $product['categories'] = $this->db()->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\\PDO::FETCH_ASSOC);
+        $product['category_ids'] = array_map('intval', $categoryStmt->fetchAll(\PDO::FETCH_COLUMN));
+        $product['categories'] = $this->db()->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\PDO::FETCH_ASSOC);
         return $this->view('products/form', [
             'product'=>$product,'csrfToken'=>$this->csrf(),'isEdit'=>$id > 0,
             'flashError'=>$_SESSION['flash_error'] ?? null,
@@ -177,7 +177,7 @@ final class AdminProductController
             $_SESSION['flash_success'] = 'Product saved successfully.';
             return Response::redirect('/admin/page/favorite-shop-products?action=edit&id=' . $id);
         } catch (Throwable $e) {
-            if (isset($pdo) && $pdo instanceof \\PDO && $pdo->inTransaction()) $pdo->rollBack();
+            if (isset($pdo) && $pdo instanceof \PDO && $pdo->inTransaction()) $pdo->rollBack();
             $_SESSION['flash_error'] = $e instanceof \InvalidArgumentException ? $e->getMessage() : 'Could not save product. Check SKU/slug uniqueness and database configuration.';
             // Keep the current screen stable; error details are shown without dumping raw request data.
             return Response::redirect('/admin/page/favorite-shop-products' . ($id > 0 ? '?action=edit&id=' . $id : '?action=create'));
