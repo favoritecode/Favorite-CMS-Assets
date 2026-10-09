@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace FavoriteCMS\\Shop\\Domain;
+namespace FavoriteCMS\Shop\Domain;
 
 /**
  * Deterministic cart-level promotion and coupon calculator.
