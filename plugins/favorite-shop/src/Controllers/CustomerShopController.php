@@ -293,6 +293,12 @@ final class CustomerShopController
             }
         }
 
+        if (in_array((string)$order['payment_status'], ['pending','awaiting_verification'], true)) {
+            $statusMessage = (string)$order['payment_status'] === 'awaiting_verification'
+                ? 'Your manual payment details are awaiting verification. Please wait for the store to confirm the transaction.'
+                : 'Your online payment is pending provider confirmation. Please wait before starting another payment attempt.';
+            return $this->shell('Payment status', '<p class="notice">'.self::e($statusMessage).'</p><a href="/shop/order/'.self::e($orderNumber).'">View order status</a>');
+        }
         try {
             $methods = $payments->getAvailablePaymentMethods('BDT');
         } catch (\Throwable $e) {
