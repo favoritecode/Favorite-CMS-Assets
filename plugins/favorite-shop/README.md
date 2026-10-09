@@ -42,3 +42,12 @@ A COD checkout creates an order with payment status unpaid. An order may be deli
 
 ## Current release status
 This is still a foundation release, not a production-ready store. Product/admin CRUD, a fully wired management dashboard, storefront, cart/checkout routes, delivery-rate engine, permission/CSRF integration, Favorite Pay adapter, migration-runner compatibility, and end-to-end database tests remain to be implemented. The CI workflow packages a clearly labelled foundation ZIP; do not use it as a live store.
+
+
+## Scheduled offers, coupons and stock rules
+- Sale offers have UTC start/end timestamps. They evaluate as scheduled, active, expired, draft or paused; expired offers must stop applying without overwriting the product's regular price.
+- Coupons normalize codes, validate date windows and usage limits, support fixed/percentage/free-shipping discounts, minimum subtotal, maximum discount, per-customer limits and stacking preference.
+- Coupon redemptions are stored in a plugin-owned table with an order-level uniqueness constraint to avoid duplicate redemption rows.
+- Stock status rules distinguish in stock, low stock, out of stock and explicitly enabled backorders. Product and variant low-stock thresholds are configurable; zero stock does not silently allow orders.
+- The new domain tests cover schedule boundaries, discount caps, free shipping, expiry and stock/overselling rules.
+- Note: domain rules and schema are added here; admin CRUD screens, checkout integration, transactional stock reservation and full end-to-end verification still need completion before this can be called production-ready.
