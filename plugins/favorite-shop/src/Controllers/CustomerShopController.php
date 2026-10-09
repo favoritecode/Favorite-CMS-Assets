@@ -155,7 +155,7 @@ final class CustomerShopController
                     $vq=$pdo->prepare("SELECT * FROM favorite_shop_product_variants WHERE id=? AND product_id=? AND status='active' FOR UPDATE");
                     $vq->execute([$variantId,(int)$p['id']]);$v=$vq->fetch(\PDO::FETCH_ASSOC);
                     if(!$v)throw new \RuntimeException('A selected product variant is no longer available.');
-                    if((float)$v['stock_quantity']+0.0000001<$qty)throw new \RuntimeException('Insufficient stock for selected variant of '.(string)$p['name'].'.');
+                    if((float)$v['stock_quantity']+0.0000001<$qty&&(int)($v['allow_backorder']??0)!==1)throw new \RuntimeException('Insufficient stock for selected variant of '.(string)$p['name'].'.');
                 }elseif((int)$p['manage_stock']===1&&(float)$p['stock_quantity']+0.0000001<$qty&&(int)$p['allow_backorder']!==1)throw new \RuntimeException('Insufficient stock for '.(string)$p['name'].'.');
                 $unit=$v&&$v['price_cents']!==null?(int)$v['price_cents']:(int)$p['price_cents'];
                 $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
