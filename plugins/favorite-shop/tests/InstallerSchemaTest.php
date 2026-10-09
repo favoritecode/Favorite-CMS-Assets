@@ -19,7 +19,7 @@ foreach([
  'favorite_shop_coupons'=>['labels_json'=>'JSON NULL'],
  'favorite_shop_order_addresses'=>['division'=>'VARCHAR(120) NULL'],
  'favorite_shop_orders'=>['shipping_zone_snapshot'=>'VARCHAR(190) NULL','coupon_code_snapshot'=>'VARCHAR(100) NULL','discount_details_json'=>'JSON NULL'],
- 'favorite_shop_order_items'=>['stock_managed_snapshot'=>'TINYINT(1) NOT NULL DEFAULT 1','unit_snapshot'=>"VARCHAR(20) NOT NULL DEFAULT 'piece'",'unit_quantity_snapshot'=>'DECIMAL(14,6) NOT NULL DEFAULT 1','unit_label_snapshot'=>'VARCHAR(80) NULL','shipping_weight_grams_snapshot'=>'INT NULL'],
+ 'favorite_shop_order_items'=>['stock_managed_snapshot'=>'TINYINT(1) NOT NULL DEFAULT 1','stock_reserved_quantity'=>'DECIMAL(14,3) NOT NULL DEFAULT 0','unit_snapshot'=>"VARCHAR(20) NOT NULL DEFAULT 'piece'",'unit_quantity_snapshot'=>'DECIMAL(14,6) NOT NULL DEFAULT 1','unit_label_snapshot'=>'VARCHAR(80) NULL','shipping_weight_grams_snapshot'=>'INT NULL'],
 ] as $table=>$columns){
  foreach($columns as $column=>$definition){
   $q=$pdo->prepare("SHOW COLUMNS FROM $table LIKE ?");$q->execute([$column]);
