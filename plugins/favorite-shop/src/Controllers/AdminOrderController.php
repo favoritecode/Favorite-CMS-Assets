@@ -73,7 +73,7 @@ final class AdminOrderController
             } else continue;
             $q2=$pdo->query("SELECT stock_quantity FROM {$table} WHERE {$col}=".(int)$key);$after=(float)$q2->fetchColumn();
             $pdo->prepare("INSERT INTO favorite_shop_inventory_movements (product_id,variant_id,movement_type,quantity_delta,quantity_after,reference_type,reference_id,note,actor_user_id) VALUES (?,?, 'restore',?,?, 'order',?,'Stock restored on cancel/return',?)")
-                ->execute([(int)($item['product_id']??0),$item['variant_id']??null,$qty,$after,'order',(int)$order['id'],(int)($_SESSION['auth_user_id']??0)]);
+                ->execute([(int)($item['product_id']??0),$item['variant_id']??null,$qty,$after,(int)$order['id'],(int)($_SESSION['auth_user_id']??0)]);
         }
     }
     private function index(Request $r):string {
