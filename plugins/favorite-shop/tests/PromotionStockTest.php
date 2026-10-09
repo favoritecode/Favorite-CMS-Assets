@@ -43,4 +43,12 @@ expectSame(['Summer','clearance','Featured'], $scope['labels'], 'Normalize offer
 expectSame(true, OfferPricing::matchesScope([4], ['Other'], [4], ['Summer']), 'Match category scope');
 expectSame(true, OfferPricing::matchesScope([9], ['summer'], [4], ['Summer']), 'Match label case-insensitively');
 expectSame(false, OfferPricing::matchesScope([9], ['winter'], [4], ['Summer']), 'Reject unmatched scope');
+$pricing = OfferPricing::bestPriceForProduct(10000, [
+ ['id'=>1,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>15,'category_ids_json'=>'[4]','labels_json'=>'[]','priority'=>1],
+ ['id'=>2,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>10,'category_ids_json'=>'[]','labels_json'=>'["summer"]','priority'=>2]
+], [4], ['Summer'], $now);
+expectSame(8500, $pricing['price_cents'], 'Automatically calculate scoped percentage offer');
+expectSame(1500, $pricing['discount_cents'], 'Calculate discount amount from product price');
+expectSame(1, $pricing['offer_id'], 'Choose best product offer');
+
 echo "Promotion and stock domain tests passed.\n";
