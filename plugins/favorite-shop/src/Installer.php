@@ -50,11 +50,26 @@ final class Installer
             'favorite_shop_order_items' => ['quantity'],
         ] as $table => $columns) {
             foreach ($columns as $column) {
-                $pdo->exec('ALTER TABLE `' . $table . '` MODIFY COLUMN `' . $column . '` DECIMAL(14,3) NOT NULL' . ($column === 'quantity' && $table === 'favorite_shop_cart_items' ? ' DEFAULT 1' : ($column === 'stock_quantity' ? ' DEFAULT 0' : '')));
+                $default = $column === 'quantity' && $table === 'favorite_shop_cart_items' ? '1' : ($column === 'stock_quantity' ? '0' : null);
+                self::ensureDecimalColumn($pdo, $table, $column, $default);
             }
         }
         self::$ran = true;
     }
+    private static function ensureDecimalColumn(\PDO $pdo, string $table, string $column, ?string $default): void
+    {
+        $stmt = $pdo->prepare('SHOW COLUMNS FROM \`' . $table . '\` LIKE ?');
+        $stmt->execute([$column]);
+        $current = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$current) throw new \RuntimeException('Expected inventory column is missing: ' . $table . '.' . $column);
+        $type = strtolower((string)($current['Type'] ?? ''));
+        $nullable = (string)($current['Null'] ?? 'YES') === 'YES';
+        $currentDefault = $current['Default'] === null ? null : (string)$current['Default'];
+        if ($type === 'decimal(14,3)' && !$nullable && $currentDefault === $default) return;
+        $defaultSql = $default === null ? '' : ' DEFAULT ' . $default;
+        $pdo->exec('ALTER TABLE \`' . $table . '\` MODIFY COLUMN \`' . $column . '\` DECIMAL(14,3) NOT NULL' . $defaultSql);
+    }
+
     private static function ensureColumn(\PDO $pdo, string $table, string $column, string $definition): void
     {
         // Identifiers are hard-coded by the plugin; definitions are static literals.
