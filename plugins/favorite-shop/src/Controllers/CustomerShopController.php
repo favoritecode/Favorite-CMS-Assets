@@ -197,24 +197,57 @@ final class CustomerShopController
 
     private function calculateWithPDO(\PDO $pdo, array $items, string $couponCode, int $shipping): array
     {
-        $subtotal=0;foreach($items as $i)$subtotal+=(int)$i['unit_price_cents']*(int)$i['quantity'];
+        $subtotal=0;
+        foreach($items as $i)$subtotal+=(int)$i['unit_price_cents']*(int)$i['quantity'];
         $offerRows=$pdo->query("SELECT * FROM favorite_shop_offers WHERE status IN ('scheduled','active') AND starts_at<=UTC_TIMESTAMP() AND ends_at>UTC_TIMESTAMP() ORDER BY priority DESC")->fetchAll(\PDO::FETCH_ASSOC);
         $offers=PromotionEngine::applyOffers($items,$offerRows,$shipping);
-        $discount=(int)$offers['discount_cents'];$shipDiscount=(int)$offers['shipping_discount_cents'];$couponId=null;$couponDiscount=0;$couponCodeSaved=null;
+        $offerDiscount=(int)$offers['discount_cents'];
+        $discount=$offerDiscount;
+        $shipDiscount=(int)$offers['shipping_discount_cents'];
+        $couponId=null;$couponDiscount=0;$couponCodeSaved=null;
         if($couponCode!==''){
-            $q=$pdo->prepare("SELECT * FROM favorite_shop_coupons WHERE code=? AND status='active' LIMIT 1");$q->execute([strtoupper(trim($couponCode))]);$coupon=$q->fetch(\PDO::FETCH_ASSOC);
+            $q=$pdo->prepare("SELECT * FROM favorite_shop_coupons WHERE code=? AND status='active' LIMIT 1");
+            $q->execute([strtoupper(trim($couponCode))]);$coupon=$q->fetch(\PDO::FETCH_ASSOC);
             if(!$coupon)throw new \InvalidArgumentException('Coupon code is invalid or inactive.');
-            $uses=(int)$coupon['usage_count'];$customerKey=isset($_SESSION['auth_user_id'])?'user:'.(int)$_SESSION['auth_user_id']:'guest:'.hash('sha256',(string)($_SESSION['favorite_shop_checkout']['phone'] ?? ''));
-            $cq=$pdo->prepare('SELECT COUNT(*) FROM favorite_shop_coupon_redemptions WHERE coupon_id=? AND customer_key=?');$cq->execute([(int)$coupon['id'],$customerKey]);$customerUses=(int)$cq->fetchColumn();
+            $uses=(int)$coupon['usage_count'];
+            $customerKey=isset($_SESSION['auth_user_id'])?'user:'.(int)$_SESSION['auth_user_id']:'guest:'.hash('sha256',(string)($_SESSION['favorite_shop_checkout']['phone'] ?? ''));
+            $cq=$pdo->prepare('SELECT COUNT(*) FROM favorite_shop_coupon_redemptions WHERE coupon_id=? AND customer_key=?');
+            $cq->execute([(int)$coupon['id'],$customerKey]);$customerUses=(int)$cq->fetchColumn();
             if(CouponPolicy::state($coupon,$uses,$customerUses)!=='active')throw new \InvalidArgumentException('Coupon is not active or its usage limit has been reached.');
             if($subtotal<(int)$coupon['min_subtotal_cents'])throw new \InvalidArgumentException('Cart subtotal does not meet the coupon minimum.');
             $couponDiscount=PromotionEngine::couponDiscount($coupon,$offers['items'],$shipping);
-            if((string)$coupon['discount_type']==='free_shipping')$shipDiscount=max($shipDiscount,$couponDiscount);else $discount+=$couponDiscount;
-            $couponId=(int)$coupon['id'];$couponCodeSaved=$coupon['code'];
+            if($couponDiscount<=0)throw new \InvalidArgumentException('This coupon does not apply to the current cart.');
+            if((string)$coupon['discount_type']==='free_shipping'){
+                if(!empty($coupon['stackable']))$shipDiscount=max($shipDiscount,$couponDiscount);
+                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$discount=0;$offerDiscount=0;$shipDiscount=$couponDiscount;}
+                else $couponDiscount=0;
+            } else {
+                if(!empty($coupon['stackable']))$discount=min($subtotal,$offerDiscount+$couponDiscount);
+                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$offerDiscount=0;$discount=min($subtotal,$couponDiscount);}
+                else $couponDiscount=0;
+            }
+            if($couponDiscount>0 || ((string)$coupon['discount_type']==='free_shipping' && $shipDiscount>0)){
+                $couponId=(int)$coupon['id'];$couponCodeSaved=$coupon['code'];
+            }
         }
+        $discount=min($subtotal,max(0,$discount));
         $total=max(0,$subtotal-$discount+max(0,$shipping-$shipDiscount));
-        $lineItems=$offers['items'];
-        return ['items'=>$lineItems,'subtotal_cents'=>$subtotal,'discount_cents'=>$discount,'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount,'shipping_cents'=>max(0,$shipping-$shipDiscount),'tax_cents'=>0,'total_cents'=>$total,'coupon_id'=>$couponId,'coupon_code'=>$couponCodeSaved,'details_json'=>json_encode(['offers'=>$offers['applied'],'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount]),'zone'=>(string)($_SESSION['favorite_shop_shipping_zone'] ?? 'fallback'),'discounts'=>$offers];
+        return [
+            'items'=>$offers['items'],'subtotal_cents'=>$subtotal,'discount_cents'=>$discount,
+            'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount,
+            'shipping_cents'=>max(0,$shipping-$shipDiscount),'tax_cents'=>0,'total_cents'=>$total,
+            'coupon_id'=>$couponId,'coupon_code'=>$couponCodeSaved,
+            'details_json'=>json_encode(['offers'=>$offers['applied'],'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount]),
+            'zone'=>(string)($_SESSION['favorite_shop_shipping_zone'] ?? 'fallback'),'discounts'=>$offers
+        ];
+    }
+
+    private function clearLineOffers(array &$offers): void
+    {
+        foreach($offers['items'] as &$item){$item['offer_discount_cents']=0;$item['offer_id']=null;}
+        unset($item);
+        $offers['discount_cents']=0;
+        $offers['applied']=array_values(array_filter($offers['applied'],static fn($x)=>($x['type']??'')==='free_shipping'));
     }
 
     private function cartItems(): array
