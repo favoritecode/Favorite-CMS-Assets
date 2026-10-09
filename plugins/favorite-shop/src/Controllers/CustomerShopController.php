@@ -117,7 +117,10 @@ final class CustomerShopController
         $items = $this->cartItems();
         if (!$items) return Response::redirect('/shop/cart');
         if ($request->method() === 'POST') return $this->placeOrder($request, $items);
-        $pricing = $this->calculate($items, '', 0);
+        $oldAddress=$_SESSION['favorite_shop_checkout']??[];
+        $country=strtoupper((string)($oldAddress['country_code']??'BD'));
+        $estimatedShipping=$this->shippingCents($this->db(),$country,(string)($oldAddress['division']??''),(string)($oldAddress['district']??''),(string)($oldAddress['city']??'Dhaka'),(string)($oldAddress['area']??''));
+        $pricing=$this->calculate($items,'',$estimatedShipping);
         $body = '<h1>Checkout</h1>'. $this->flashMessages().'<form method="post" action="/shop/checkout">'.$this->csrf()
             .'<label>Recipient name<input name="recipient_name" maxlength="190" required value="'.self::e($_SESSION['favorite_shop_checkout']['recipient_name'] ?? '').'"></label>'
             .'<label>Phone<input name="phone" maxlength="40" required value="'.self::e($_SESSION['favorite_shop_checkout']['phone'] ?? '').'"></label>'
@@ -130,7 +133,7 @@ final class CustomerShopController
             .'<label>Country<select name="country_code"><option value="BD">Bangladesh</option><option value="US">United States</option><option value="GB">United Kingdom</option></select></label>'
             .'<label>Coupon code (optional)<input name="coupon_code" maxlength="100" value="'.self::e($_SESSION['favorite_shop_coupon_code'] ?? '').'"></label>'
             .'<label>Order note<textarea name="customer_note" maxlength="3000">'.self::e($_SESSION['favorite_shop_checkout']['customer_note'] ?? '').'</textarea></label>'
-            .'<p>Payment: <strong>Cash on Delivery (COD)</strong></p><button type="submit">Place order</button></form><p>Subtotal before shipping/discount: '.self::money($pricing['subtotal_cents']).'</p>';
+            .'<p>Payment: <strong>Cash on Delivery (COD)</strong></p><section class="card"><strong>Order estimate</strong><p>Items subtotal: '.self::money($pricing['subtotal_cents']).'</p><p>Estimated delivery: '.self::money($estimatedShipping).' ('.self::e($_SESSION['favorite_shop_shipping_zone']??'fallback zone').')</p><p>Estimated total before coupon: '.self::money($pricing['total_cents']).'</p><small>Final delivery rate and offers are recalculated on the server when you place the order.</small></section><button type="submit">Place order</button></form>';
         return $this->shell('Checkout', $body);
     }
 
