@@ -11,7 +11,7 @@ if (is_array($old) && $old) { $product = array_merge($product, $old); unset($_SE
 </style>
 <header class="fs-top"><div><h1 class="fs-title"><?= $isEdit ? 'Edit product' : 'Add product' ?></h1><p class="fs-sub">Keep the essentials clear. You can edit pricing, selling unit and inventory at any time.</p></div><a class="fs-btn" href="/admin/page/favorite-shop-products">← Back to products</a></header>
 <?php if (!empty($flashError)): ?><div class="fs-alert"><?= $e($flashError) ?></div><?php endif ?>
-<form method="post" action="/admin/page/favorite-shop-products">
+<form method="post" enctype="multipart/form-data" action="/admin/page/favorite-shop-products">
 <input type="hidden" name="_token" value="<?= $e($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int)$product['id'] ?>">
 <div class="fs-layout"><main>
 <section class="fs-card"><h2>Basic information</h2><div class="fs-grid">
@@ -39,7 +39,8 @@ if (is_array($old) && $old) { $product = array_merge($product, $old); unset($_SE
 <label class="fs-check"><input type="checkbox" name="manage_stock" value="1" <?= !empty($product['manage_stock'])?'checked':'' ?>> Track inventory for this product</label>
 </div></section>
 <section class="fs-card"><h2>Product images</h2><div class="fs-grid">
-<div class="fs-field full"><label for="cover_image_url">Main image URL</label><input id="cover_image_url" name="cover_image_url" type="url" value="<?= $e($product['cover_image_url']) ?>" placeholder="https://example.com/product.jpg"><span class="fs-help">Direct image URL for now. Local media upload is planned as a separate safe integration.</span></div>
+<div class="fs-field full"><label for="cover_image">Upload main image to CMS Media Library</label><input id="cover_image" name="cover_image" type="file" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,image/bmp,image/x-icon"><span class="fs-help">Choose an image from your device. The CMS Media Library validates and stores the file. If you upload a new image, it replaces the URL below.</span><?php if (!empty($product['cover_image_url'])): ?><p class="fs-help">Current image: <a href="<?= $e($product['cover_image_url']) ?>" target="_blank" rel="noopener noreferrer">View image</a></p><?php endif ?></div>
+<div class="fs-field full"><label for="cover_image_url">Or use main image URL</label><input id="cover_image_url" name="cover_image_url" type="url" value="<?= $e($product['cover_image_url']) ?>" placeholder="https://example.com/product.jpg"><span class="fs-help">Accepts a direct HTTP/HTTPS image URL or an existing CMS Media Library URL.</span></div>
 <div class="fs-field full"><label for="gallery_text">Gallery image URLs</label><textarea id="gallery_text" name="gallery_text" rows="4" placeholder="One HTTPS image URL per line"><?= $e($product['gallery_text']) ?></textarea></div>
 </div></section>
 </main><aside>
