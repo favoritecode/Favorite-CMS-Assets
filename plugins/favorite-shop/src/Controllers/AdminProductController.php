@@ -286,7 +286,10 @@ final class AdminProductController
         if ($value === '') return null;
         // Local URLs are accepted only for CMS-managed media and never for traversal paths.
         if (str_starts_with($value, '/uploads/')) {
-            if (str_contains($value, '..') || str_contains($value, "\\\\") || preg_match('/[\\x00-\\x1F]/', $value)) {
+            $relativePath = substr($value, strlen('/uploads/'));
+            if ($relativePath === '' || preg_match('~[^A-Za-z0-9._/-]~', $relativePath)
+                || str_contains($relativePath, '..') || str_contains($relativePath, '//')
+                || str_contains($relativePath, '\\') || preg_match('/[\x00-\x1F]/', $relativePath)) {
                 throw new \InvalidArgumentException('The local media URL is invalid.');
             }
             return substr($value, 0, 2048);
