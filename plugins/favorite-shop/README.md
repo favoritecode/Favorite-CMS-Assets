@@ -40,6 +40,21 @@ A COD checkout creates an order with payment status unpaid. An order may be deli
 - Orders have fields for matched shipping-zone, coupon code and discount detail snapshots.
 - Installer upgrades are additive and confined to Favorite Shop tables. Existing installations should be backed up before upgrading.
 
+## Promotion and coupon builder
+
+The admin builder supports category and product-label targeting for both offers and coupons. Category-only and label-only targeting work independently; when both are selected, a product must match both. Leaving both empty means all products.
+
+Offer types available in the builder:
+- Percentage discount: calculate the discount automatically from each eligible item's price.
+- Fixed amount off and sale price.
+- Free shipping.
+- Buy X Get Y: set the qualifying quantity and free quantity.
+- Bundle price: set the bundle quantity and the bundle's total price in minor currency units.
+
+Coupons support fixed amount, percentage, or free-shipping benefits, plus code normalization, date window, minimum subtotal, maximum discount, total/per-customer usage limits, stacking preference, and category/label targeting. The cart-level `PromotionEngine` domain calculator evaluates product offers and coupon eligibility in server-side code. Prices and quantities must come from trusted server-side product/cart records; do not trust browser-calculated totals.
+
+Important release boundary: the admin builder and deterministic domain calculator are implemented, but the current Favorite Shop branch still does not have the complete storefront/cart/checkout and order-redemption pipeline wired to this engine. Do not enable these offers on a live shop until that integration and end-to-end database tests are complete.
+
 ## Current release status
 This is still a foundation release, not a production-ready store. Product/admin CRUD, a fully wired management dashboard, storefront, cart/checkout routes, delivery-rate engine, permission/CSRF integration, Favorite Pay adapter, migration-runner compatibility, and end-to-end database tests remain to be implemented. The CI workflow packages a clearly labelled foundation ZIP; do not use it as a live store.
 
