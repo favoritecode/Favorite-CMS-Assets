@@ -58,7 +58,7 @@ final class Installer
     }
     private static function ensureDecimalColumn(\PDO $pdo, string $table, string $column, ?string $default): void
     {
-        $stmt = $pdo->prepare('SHOW COLUMNS FROM \`' . $table . '\` LIKE ?');
+        $stmt = $pdo->prepare('SHOW COLUMNS FROM `' . $table . '` LIKE ?');
         $stmt->execute([$column]);
         $current = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$current) throw new \RuntimeException('Expected inventory column is missing: ' . $table . '.' . $column);
@@ -67,7 +67,7 @@ final class Installer
         $currentDefault = $current['Default'] === null ? null : (string)$current['Default'];
         if ($type === 'decimal(14,3)' && !$nullable && $currentDefault === $default) return;
         $defaultSql = $default === null ? '' : ' DEFAULT ' . $default;
-        $pdo->exec('ALTER TABLE \`' . $table . '\` MODIFY COLUMN \`' . $column . '\` DECIMAL(14,3) NOT NULL' . $defaultSql);
+        $pdo->exec('ALTER TABLE `' . $table . '` MODIFY COLUMN `' . $column . '` DECIMAL(14,3) NOT NULL' . $defaultSql);
     }
 
     private static function ensureColumn(\PDO $pdo, string $table, string $column, string $definition): void
