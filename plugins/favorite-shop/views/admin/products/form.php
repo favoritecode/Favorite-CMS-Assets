@@ -1,0 +1,48 @@
+<?php
+declare(strict_types=1);
+$e = static fn($v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+$money = static fn($cents): string => number_format(((int)$cents)/100, 2, '.', '');
+$old = $_SESSION['old_input'] ?? [];
+if (is_array($old) && $old) { $product = array_merge($product, $old); unset($_SESSION['old_input']); }
+?>
+<div class="fs-admin">
+<style>
+.fs-admin{--line:#e5e7eb;--muted:#64748b;--ink:#0f172a;color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;max-width:1120px;margin:18px auto;padding:0 18px}.fs-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}.fs-title{font-size:27px;font-weight:750;margin:0}.fs-sub{color:var(--muted);margin:4px 0}.fs-btn{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:10px 14px;text-decoration:none;background:#fff;color:var(--ink);font-weight:650;cursor:pointer}.fs-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8}.fs-alert{padding:12px 14px;border-radius:10px;margin-bottom:12px;background:#fef2f2;color:#991b1b}.fs-layout{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}.fs-card{border:1px solid var(--line);border-radius:14px;background:var(--card,#fff);padding:20px;margin-bottom:15px}.fs-card h2{font-size:16px;margin:0 0 15px}.fs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.fs-field{display:flex;flex-direction:column;gap:6px}.fs-field.full{grid-column:1/-1}.fs-field label{font-weight:650}.fs-field input,.fs-field select,.fs-field textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:transparent;color:inherit;font:inherit}.fs-field textarea{min-height:100px;resize:vertical}.fs-help{font-size:12px;color:var(--muted)}.fs-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.fs-check{display:flex;gap:8px;align-items:center}.fs-check input{width:auto}@media(max-width:850px){.fs-layout{grid-template-columns:1fr}.fs-grid{grid-template-columns:1fr}.fs-field.full{grid-column:auto}}
+</style>
+<header class="fs-top"><div><h1 class="fs-title"><?= $isEdit ? 'Edit product' : 'Add product' ?></h1><p class="fs-sub">Keep the essentials clear. You can edit pricing, selling unit and inventory at any time.</p></div><a class="fs-btn" href="/admin/page/favorite-shop-products">← Back to products</a></header>
+<?php if (!empty($flashError)): ?><div class="fs-alert"><?= $e($flashError) ?></div><?php endif ?>
+<form method="post" action="/admin/page/favorite-shop-products">
+<input type="hidden" name="_token" value="<?= $e($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int)$product['id'] ?>">
+<div class="fs-layout"><main>
+<section class="fs-card"><h2>Basic information</h2><div class="fs-grid">
+<div class="fs-field full"><label for="name">Product name *</label><input id="name" name="name" required maxlength="255" value="<?= $e($product['name']) ?>" placeholder="e.g. Premium cotton T-shirt"></div>
+<div class="fs-field"><label for="slug">Product slug</label><input id="slug" name="slug" value="<?= $e($product['slug']) ?>" placeholder="premium-cotton-t-shirt"><span class="fs-help">Used for a readable product URL.</span></div>
+<div class="fs-field"><label for="sku">SKU</label><input id="sku" name="sku" maxlength="100" value="<?= $e($product['sku']) ?>" placeholder="Optional stock code"></div>
+<div class="fs-field full"><label for="short_description">Short description</label><textarea id="short_description" name="short_description" rows="2"><?= $e($product['short_description']) ?></textarea></div>
+<div class="fs-field full"><label for="description">Full description</label><textarea id="description" name="description" rows="5"><?= $e($product['description']) ?></textarea></div>
+</div></section>
+<section class="fs-card"><h2>Pricing</h2><div class="fs-grid">
+<div class="fs-field"><label for="price">Regular price (BDT) *</label><input id="price" name="price" type="number" min="0" step="0.01" required value="<?= $e(isset($old['price'])?$old['price']:$money($product['price_cents'])) ?>"></div>
+<div class="fs-field"><label for="sale_price">Sale price (BDT)</label><input id="sale_price" name="sale_price" type="number" min="0" step="0.01" value="<?= $e(isset($old['sale_price'])?$old['sale_price']:($product['sale_price_cents']===null?'':$money($product['sale_price_cents']))) ?>"><span class="fs-help">Optional. Must not exceed regular price.</span></div>
+<div class="fs-field"><label for="cost">Cost price (BDT)</label><input id="cost" name="cost" type="number" min="0" step="0.01" value="<?= $e(isset($old['cost'])?$old['cost']:($product['cost_cents']===null?'':$money($product['cost_cents']))) ?>"><span class="fs-help">For internal margin reporting.</span></div>
+</div></section>
+<section class="fs-card"><h2>Selling unit & inventory</h2><div class="fs-grid">
+<div class="fs-field"><label for="unit_type">Selling unit</label><select id="unit_type" name="unit_type"><?php foreach(['piece'=>'Piece','kg'=>'Kilogram (kg)','g'=>'Gram (g)','litre'=>'Litre','ml'=>'Millilitre (ml)','custom'=>'Custom unit'] as $k=>$label): ?><option value="<?= $e($k) ?>" <?= $product['unit_type']===$k?'selected':'' ?>><?= $e($label) ?></option><?php endforeach ?></select></div>
+<div class="fs-field"><label for="unit_quantity">Package/unit quantity</label><input id="unit_quantity" name="unit_quantity" type="number" min="0.000001" step="0.000001" value="<?= $e($product['unit_quantity']) ?>" required></div>
+<div class="fs-field" id="custom-unit-field"><label for="unit_label">Custom unit label</label><input id="unit_label" name="unit_label" maxlength="80" value="<?= $e($product['unit_label']) ?>" placeholder="pack, bottle, bundle"></div>
+<div class="fs-field"><label for="stock_quantity">Available stock</label><input id="stock_quantity" name="stock_quantity" type="number" min="0" step="<?= $product['unit_type']==='piece'?'1':'0.001' ?>" value="<?= $e($product['stock_quantity']) ?>" required><span class="fs-help">Weight-based inventory can be fractional, e.g. 12.500 kg.</span></div>
+<div class="fs-field"><label for="weight_grams">Shipping weight (grams)</label><input id="weight_grams" name="weight_grams" type="number" min="0" step="1" value="<?= $e($product['weight_grams']) ?>"><span class="fs-help">Optional. Separate from the selling unit.</span></div>
+<label class="fs-check"><input type="checkbox" name="manage_stock" value="1" <?= !empty($product['manage_stock'])?'checked':'' ?>> Track inventory for this product</label>
+</div></section>
+<section class="fs-card"><h2>Product images</h2><div class="fs-grid">
+<div class="fs-field full"><label for="cover_image_url">Main image URL</label><input id="cover_image_url" name="cover_image_url" type="url" value="<?= $e($product['cover_image_url']) ?>" placeholder="https://example.com/product.jpg"><span class="fs-help">Direct image URL for now. Local media upload is planned as a separate safe integration.</span></div>
+<div class="fs-field full"><label for="gallery_text">Gallery image URLs</label><textarea id="gallery_text" name="gallery_text" rows="4" placeholder="One HTTPS image URL per line"><?= $e($product['gallery_text']) ?></textarea></div>
+</div></section>
+</main><aside>
+<section class="fs-card"><h2>Publish</h2><div class="fs-field"><label for="status">Product status</label><select id="status" name="status"><?php foreach(['draft'=>'Draft','published'=>'Published','archived'=>'Archived'] as $k=>$label): ?><option value="<?= $e($k) ?>" <?= $product['status']===$k?'selected':'' ?>><?= $e($label) ?></option><?php endforeach ?></select><span class="fs-help">Draft products stay unpublished.</span></div><div class="fs-actions"><button class="fs-btn fs-primary" type="submit">Save product</button></div></section>
+<section class="fs-card"><h2>Before you publish</h2><p class="fs-help">Check the name, regular price, selling unit, stock and main image. A custom unit requires a label. Keep shipping weight separate from the unit you sell.</p></section>
+</aside></div></form>
+<script>
+(function(){const unit=document.getElementById('unit_type'),field=document.getElementById('custom-unit-field'),stock=document.getElementById('stock_quantity');function update(){field.style.display=unit.value==='custom'?'':'none';stock.step=unit.value==='piece'?'1':'0.001';}unit.addEventListener('change',update);update();})();
+</script>
+</div>

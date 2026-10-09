@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace FavoriteCMS\Shop;
 use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Database;
+use FavoriteCMS\Core\Request;
+use FavoriteCMS\Shop\Controllers\AdminProductController;
 final class FavoriteShopPlugin
 {
     public const VERSION = '1.0.0';
@@ -24,6 +26,17 @@ final class FavoriteShopPlugin
             if (method_exists($db, 'registerPrefixableTables')) $db->registerPrefixableTables(self::TABLES);
         }
     }
-    public function boot(): void { Installer::register($this->app); }
+    public function boot(): void {
+        Installer::register($this->app);
+        if (function_exists('add_admin_menu')) {
+            $products = function (Request $request) {
+                return (new AdminProductController($this->app))->handle($request);
+            };
+            add_admin_menu('favorite-shop', 'Favorite Shop', '🛍️', $products, 'manage_options', 57);
+            if (function_exists('add_admin_submenu')) {
+                add_admin_submenu('favorite-shop', 'favorite-shop-products', 'Products', $products, 'manage_options');
+            }
+        }
+    }
     public static function reset(): void { self::$instance = null; Installer::reset(); }
 }
