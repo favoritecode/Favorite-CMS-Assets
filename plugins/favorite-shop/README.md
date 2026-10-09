@@ -24,7 +24,7 @@ Favorite Shop is the physical-goods commerce plugin for Favorite CMS Universal, 
 - See `docs/PRODUCT-MEASUREMENTS.md` for rules and examples.
 
 ## Variations, offers and shipping
-- Color/size variants can each have price, sale price, SKU, stock and optional image. Admin can bulk-set prices across all variants with individual overrides.
+- Color/size variants can each have price, sale price, SKU, stock and optional image, managed through the product editor's variant JSON editor. A dedicated bulk-price update UI is not yet implemented.
 - Admin configures inside-Dhaka/outside-Dhaka rates and custom delivery zones. Zones, labels and region options are editable for other countries.
 - Region selectors are optional. If a customer skips them, use the admin-configured fallback delivery charge and display it before checkout submission.
 - Automatic free-delivery threshold works without coupon entry. Optional coupons support fixed discount, percentage discount or free shipping.
@@ -56,8 +56,10 @@ Coupons support fixed amount, percentage, or free-shipping benefits, plus code n
 Important release boundary: the admin builder and deterministic domain calculator are implemented, but the current Favorite Shop branch still does not have the complete storefront/cart/checkout and order-redemption pipeline wired to this engine. Do not enable these offers on a live shop until that integration and end-to-end database tests are complete.
 
 ## Current release status
-This is still a foundation release, not a production-ready store. Product/admin CRUD, a fully wired management dashboard, storefront, cart/checkout routes, delivery-rate engine, permission/CSRF integration, Favorite Pay adapter, migration-runner compatibility, and end-to-end database tests remain to be implemented. The CI workflow packages a clearly labelled foundation ZIP; do not use it as a live store.
 
+The current branch includes product/category administration, simple and variable product records, variant JSON editing, label/category-scoped offer and coupon administration, a session cart, guest COD checkout, server-side price/stock revalidation, order snapshots, order status/COD collection management, and editable delivery zones.
+
+It is still a **foundation / preview build, not production-ready**. Before live use, complete and verify: image upload/media-library integration; bulk variant price updates; automated end-to-end MySQL migration/checkout/concurrency tests; compatibility-tested Favorite Pay prepaid adapter; full delivery-zone UX/region datasets and shipping-weight rules; production-grade CMS permission integration; and invoice/tracking UX. The current CI suite is syntax/domain tests and does not prove database installation or checkout integration. Back up the database before installing or upgrading.
 
 ## Scheduled offers, coupons and stock rules
 - Sale offers have UTC start/end timestamps. They evaluate as scheduled, active, expired, draft or paused; expired offers must stop applying without overwriting the product's regular price.
