@@ -109,7 +109,10 @@ final class CustomerShopController
             .'<label>Phone<input name="phone" maxlength="40" required value="'.self::e($_SESSION['favorite_shop_checkout']['phone'] ?? '').'"></label>'
             .'<label>Address<input name="address_line1" maxlength="255" required value="'.self::e($_SESSION['favorite_shop_checkout']['address_line1'] ?? '').'"></label>'
             .'<label>Area<input name="area" maxlength="120" value="'.self::e($_SESSION['favorite_shop_checkout']['area'] ?? '').'"></label>'
-            .'<label>City / district<input name="city" maxlength="120" required value="'.self::e($_SESSION['favorite_shop_checkout']['city'] ?? 'Dhaka').'"></label>'
+            .'<label>City<input name="city" maxlength="120" required value="'.self::e($_SESSION['favorite_shop_checkout']['city'] ?? 'Dhaka').'"></label>'
+            .'<label>District<input name="district" maxlength="120" value="'.self::e($_SESSION['favorite_shop_checkout']['district'] ?? '').'"></label>'
+            .'<label>Division / state<input name="division" maxlength="120" value="'.self::e($_SESSION['favorite_shop_checkout']['division'] ?? '').'"></label>'
+            .'<label>Postal code<input name="postal_code" maxlength="30" value="'.self::e($_SESSION['favorite_shop_checkout']['postal_code'] ?? '').'"></label>'
             .'<label>Country<select name="country_code"><option value="BD">Bangladesh</option><option value="US">United States</option><option value="GB">United Kingdom</option></select></label>'
             .'<label>Coupon code (optional)<input name="coupon_code" maxlength="100" value="'.self::e($_SESSION['favorite_shop_coupon_code'] ?? '').'"></label>'
             .'<label>Order note<textarea name="customer_note" maxlength="3000">'.self::e($_SESSION['favorite_shop_checkout']['customer_note'] ?? '').'</textarea></label>'
@@ -121,7 +124,7 @@ final class CustomerShopController
     {
         if (!$this->validCsrf($request)) return $this->flashRedirect('/shop/checkout', 'Session expired. Please try again.');
         $input = [];
-        foreach (['recipient_name'=>190,'phone'=>40,'address_line1'=>255,'address_line2'=>255,'area'=>120,'city'=>120,'country_code'=>2,'customer_note'=>3000,'coupon_code'=>100] as $key=>$max) {
+        foreach (['recipient_name'=>190,'phone'=>40,'address_line1'=>255,'address_line2'=>255,'area'=>120,'city'=>120,'district'=>120,'division'=>120,'postal_code'=>30,'country_code'=>2,'customer_note'=>3000,'coupon_code'=>100] as $key=>$max) {
             $value = trim((string)$request->post($key, ''));
             $input[$key] = (function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max));
         }
@@ -142,7 +145,7 @@ final class CustomerShopController
                 $unit=(int)$p['price_cents']; if ((int)($p['sale_price_cents'] ?? 0)>0) $unit=min($unit,(int)$p['sale_price_cents']);
                 $locked[]=['product_id'=>(int)$p['id'],'name'=>$p['name'],'sku'=>$p['sku'],'quantity'=>$qty,'unit_price_cents'=>$unit,'category_ids'=>$this->categoryIds($pdo,(int)$p['id']),'labels'=>json_decode((string)($p['labels_json'] ?? '[]'),true) ?: [],'manage_stock'=>(int)$p['manage_stock']];
             }
-            $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['city'], $input['area']);
+            $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['division'], $input['district'], $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
             $shipping = (int)$pricing['shipping_cents'];
             $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(10)));
@@ -150,8 +153,8 @@ final class CustomerShopController
             $pdo->prepare("INSERT INTO favorite_shop_orders (order_number,user_id,phone,status,payment_method,payment_status,currency,subtotal_cents,discount_cents,shipping_cents,tax_cents,total_cents,customer_note,coupon_code_snapshot,discount_details_json,shipping_zone_snapshot) VALUES (?,?,?,'pending','cash_on_delivery','unpaid','BDT',?,?,?,?,?,?,?, ?,?)")
                 ->execute([$orderNumber,$userId,$input['phone'],$pricing['subtotal_cents'],$pricing['discount_cents'],$shipping,$pricing['tax_cents'],$pricing['total_cents'],$input['customer_note'] ?: null,$pricing['coupon_code'],$pricing['details_json'],$pricing['zone']]);
             $orderId=(int)$pdo->lastInsertId();
-            $pdo->prepare("INSERT INTO favorite_shop_order_addresses (order_id,address_type,recipient_name,phone,address_line1,address_line2,area,city,district,country_code) VALUES (?,'shipping',?,?,?,?,?,?,?,?,?)")
-                ->execute([$orderId,$input['recipient_name'],$input['phone'],$input['address_line1'],$input['address_line2'] ?: null,$input['area'] ?: null,$input['city'],$input['city'],null,$input['country_code']]);
+            $pdo->prepare("INSERT INTO favorite_shop_order_addresses (order_id,address_type,recipient_name,phone,address_line1,address_line2,area,city,district,division,postal_code,country_code) VALUES (?,'shipping',?,?,?,?,?,?,?,?,?,?,?)")
+                ->execute([$orderId,$input['recipient_name'],$input['phone'],$input['address_line1'],$input['address_line2'] ?: null,$input['area'] ?: null,$input['city'],$input['district'] ?: $input['city'],$input['division'] ?: null,$input['postal_code'] ?: null,$input['country_code']]);
             foreach ($pricing['items'] as $item) {
                 $pdo->prepare("INSERT INTO favorite_shop_order_items (order_id,product_id,sku_snapshot,name_snapshot,unit_price_cents,quantity,line_total_cents,unit_snapshot,unit_quantity_snapshot,unit_label_snapshot,shipping_weight_grams_snapshot) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
                     ->execute([$orderId,$item['product_id'],$item['sku'],$item['name'],$item['unit_price_cents'],(int)$item['quantity'],(int)($item['quantity']*$item['unit_price_cents'])-(int)($item['offer_discount_cents'] ?? 0),$item['unit_type'] ?? 'piece',$item['unit_quantity'] ?? 1,$item['unit_label'] ?? null,$item['weight_grams'] ?? null]);
@@ -267,13 +270,13 @@ final class CustomerShopController
         return $items;
     }
     private function categoryIds(\PDO $pdo,int $id):array{$q=$pdo->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id=?');$q->execute([$id]);return array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));}
-    private function shippingCents(\PDO $pdo,string $country,string $city,string $area):int{
+    private function shippingCents(\PDO $pdo,string $country,string $division,string $district,string $city,string $area):int{
         $q=$pdo->prepare("SELECT * FROM favorite_shop_delivery_zones WHERE country_code=? AND enabled=1 ORDER BY priority DESC,id DESC");$q->execute([$country]);$zones=$q->fetchAll(\PDO::FETCH_ASSOC);$best=null;$bestSpecificity=-1;
         foreach($zones as $z){$level=(string)$z['region_level'];$value=strtolower(trim((string)($z['region_value']??'')));$specificity=0;
             if($level==='area'){if($value===''||$value!==strtolower(trim($area)))continue;$specificity=6;}
             elseif($level==='city'){if($value!==strtolower(trim($city)))continue;$specificity=5;}
-            elseif($level==='district'){if($value!==strtolower(trim($city)))continue;$specificity=4;}
-            elseif($level==='division')continue;
+            elseif($level==='district'){if($value!==strtolower(trim($district)))continue;$specificity=4;}
+            elseif($level==='division'){if($value!==strtolower(trim($division)))continue;$specificity=3;}
             elseif($level==='country')$specificity=2;
             elseif($level==='default')$specificity=1;
             else continue;
