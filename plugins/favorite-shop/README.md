@@ -4,27 +4,29 @@ Favorite Shop is the physical-goods commerce plugin for Favorite CMS Universal, 
 
 ## Boundaries
 - Favorite Shop: physical product catalog, SKUs/variants, stock, cart, shipping addresses, delivery/tracking, order lifecycle, and COD collection.
-- Favorite Pay: shared payment/rate integration. The default checkout method is COD; optional prepaid methods must be discovered from Favorite Pay's enabled configuration through a verified adapter. No payment gateway is hardcoded into Favorite Shop.
+- Favorite Pay: shared payment/rate integration. COD is the default checkout method; optional prepaid methods come from enabled Favorite Pay configuration through a verified adapter. No gateway is hardcoded.
 - Favorite Digital: unchanged; this plugin does not read or modify its products, orders, digital delivery, wallet, or refund tables.
 - Favorite CMS Universal core: unchanged.
 
-## Payment and COD rules
-- Cash on Delivery is the default selected method when enabled.
-- Customers may optionally select a prepaid method configured/enabled in Favorite Pay.
-- A prepaid order is not marked paid until a trusted server-side Favorite Pay confirmation verifies the transaction.
+## Simple checkout and payments
+- Guest checkout; login/registration optional.
+- One-page checkout asks for recipient name, phone, address, and optional note.
+- Country-aware Division/State/Province and District/City selectors are optional and configurable. Missing region data never blocks checkout.
+- COD is selected by default. Customer may choose an enabled Favorite Pay prepaid method to pay early.
+- A prepaid order is not marked paid until trusted server-side Favorite Pay verification confirms payment.
 - If no compatible prepaid methods are available, checkout still works with COD.
-- COD checkout creates an order with payment status unpaid. Delivery/order status and payment status are separate. An order may be delivered while payment remains unpaid until staff records the collected amount. Only full collection marks payment collected; partial collection remains unpaid.
+- COD orders remain unpaid until staff records money collection; delivery and payment status are separate.
 
-## Required simple customer experience
-- Guest checkout is allowed; login/registration is optional.
-- One-page checkout asks only for recipient name, phone, delivery address, and optional note.
-- Color and size are selected on the product page. Every combination may have its own price, sale price, SKU, stock, and optional image.
-- Admin can apply a shared price to all variants in one bulk action, with individual overrides available.
-- An automatic free-delivery threshold applies without requiring a coupon.
-- Coupons are optional and support fixed discount, percentage discount, or free delivery. Invalid coupon attempts must not clear the cart or checkout fields.
-- Show a transparent total: subtotal, delivery, discounts, final amount.
+## Variations, offers and shipping
+- Color/size variants can each have price, sale price, SKU, stock and optional image. Admin can bulk-set prices across all variants with individual overrides.
+- Admin configures inside-Dhaka/outside-Dhaka rates and custom delivery zones. Zones, labels and region options are editable for other countries.
+- Region selectors are optional. If a customer skips them, use the admin-configured fallback delivery charge and display it before checkout submission.
+- Automatic free-delivery threshold works without coupon entry. Optional coupons support fixed discount, percentage discount or free shipping.
+- Invalid coupon attempts preserve cart and entered fields.
+- Order items and applied shipping/discount totals are snapshotted so future configuration changes do not rewrite historical orders.
 
-## Foundation scope
-The initial foundation includes metadata, autoloading, plugin-owned schema, and COD lifecycle rules. Admin CRUD, storefront, cart/checkout routes, permissions/CSRF, Favorite Pay adapter, migration-runner compatibility, and release ZIP packaging still require implementation and testing. This is not yet a production-ready store.
+## COD invariant
+A COD checkout creates an order with payment status unpaid. An order may be delivered while payment remains unpaid until staff records the collected amount. Only full collection marks payment collected; partial collection remains unpaid.
 
-Money is stored in integer minor units (BDT poisha). Order items must snapshot SKU/name/variant/price so later product edits cannot rewrite historical orders. Inventory movement ledger supports traceable stock changes.
+## Foundation status
+Current branch contains plugin metadata, autoloading, plugin-owned schema and domain rules/specifications. Admin CRUD, storefront, cart/checkout routes, delivery-rate engine, permissions/CSRF, Favorite Pay adapter, migration-runner compatibility, and release ZIP still require implementation and testing. This is not yet a production-ready store.
