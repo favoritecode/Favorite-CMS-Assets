@@ -73,6 +73,9 @@ $freeShip = PromotionEngine::applyOffers([
  ['id'=>12,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'free_shipping','discount_value'=>0,'category_ids_json'=>'[]','labels_json'=>'[]'],
 ], 2500, $now);
 expectSame(2500, $freeShip['shipping_discount_cents'], 'Free shipping offer applies shipping discount');
+expectSame(0, PromotionEngine::couponDiscount(['discount_type'=>'free_shipping','category_ids_json'=>'[4]','labels_json'=>'["summer"]'], [
+ ['quantity'=>1,'unit_price_cents'=>10000,'category_ids'=>[8],'labels'=>['winter']],
+], 2500), 'Scoped free-shipping coupon requires a matching cart item');
 $targetedCoupon = ['discount_type'=>'percent','discount_value'=>10,'max_discount_cents'=>null,'category_ids_json'=>'[4]','labels_json'=>'["summer"]'];
 expectSame(2000, PromotionEngine::couponDiscount($targetedCoupon, [
  ['quantity'=>2,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['Summer']],
