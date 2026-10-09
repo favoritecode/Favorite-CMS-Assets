@@ -5,6 +5,7 @@ require_once __DIR__ . '/../src/Domain/OfferSchedule.php';
 require_once __DIR__ . '/../src/Domain/CouponPolicy.php';
 require_once __DIR__ . '/../src/Domain/StockStatus.php';
 require_once __DIR__ . '/../src/Domain/OfferPricing.php';
+require_once __DIR__ . '/../src/Domain/PromotionEngine.php';
 
 use FavoriteCMS\Shop\Domain\CouponPolicy;
 use FavoriteCMS\Shop\Domain\OfferSchedule;
