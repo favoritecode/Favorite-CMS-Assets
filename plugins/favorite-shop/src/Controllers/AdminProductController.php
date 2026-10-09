@@ -9,6 +9,7 @@ use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
 use FavoriteCMS\Shop\Domain\ProductMeasurement;
 use FavoriteCMS\Shop\Domain\Quantity;
+use FavoriteCMS\Shop\Domain\StockStatus;
 use Throwable;
 
 final class AdminProductController
@@ -71,7 +72,7 @@ final class AdminProductController
             'id'=>0,'name'=>'','slug'=>'','sku'=>'','description'=>'','short_description'=>'',
             'product_type'=>'simple','unit_type'=>'piece','unit_quantity'=>'1','unit_label'=>'',
             'price_cents'=>0,'sale_price_cents'=>'','cost_cents'=>'','stock_quantity'=>'0',
-            'stock_status'=>'in_stock','manage_stock'=>1,'weight_grams'=>'','cover_image_url'=>'',
+            'stock_status'=>'in_stock','manage_stock'=>1,'low_stock_threshold'=>'0','allow_backorder'=>0,'weight_grams'=>'','cover_image_url'=>'',
             'gallery_json'=>'[]','status'=>'draft',
         ];
         if ($id > 0) {
@@ -110,6 +111,14 @@ final class AdminProductController
             $quantity = rtrim(rtrim(number_format((float)$stockRaw, 3, '.', ''), '0'), '.');
             if ($quantity === '') $quantity = '0';
             if ($unit['unit'] === 'piece' && floor((float) $quantity) !== (float) $quantity) throw new \InvalidArgumentException('Piece stock must be a whole number.');
+            $thresholdRaw = $request->post('low_stock_threshold', '0');
+            if (!is_numeric($thresholdRaw) || !is_finite((float)$thresholdRaw) || (float)$thresholdRaw < 0) throw new \InvalidArgumentException('Low-stock threshold must be non-negative.');
+            $threshold = rtrim(rtrim(number_format((float)$thresholdRaw, 3, '.', ''), '0'), '.');
+            if ($threshold === '') $threshold = '0';
+            if ($unit['unit'] === 'piece' && floor((float)$threshold) !== (float)$threshold) throw new \InvalidArgumentException('Piece-based low-stock threshold must be a whole number.');
+            $allowBackorder = $request->post('allow_backorder') ? 1 : 0;
+            $manageStock = $request->post('manage_stock') ? 1 : 0;
+            $stockStatus = StockStatus::resolve($quantity, (bool)$manageStock, (bool)$allowBackorder, $threshold);
             $price = $this->moneyToCents($request->post('price', '0'));
             $saleRaw = trim((string) $request->post('sale_price', ''));
             $sale = $saleRaw === '' ? null : $this->moneyToCents($saleRaw);
@@ -134,8 +143,8 @@ final class AdminProductController
                 'product_type'=>$type,'unit_type'=>$unit['unit'],'unit_quantity'=>$unit['unit_quantity'],
                 'unit_label'=>$unit['unit_label'],'status'=>$status,'price_cents'=>$price,
                 'sale_price_cents'=>$sale,'cost_cents'=>$cost,'stock_quantity'=>$quantity,
-                'stock_status'=>(float)$quantity > 0 ? 'in_stock' : 'out_of_stock',
-                'manage_stock'=>$request->post('manage_stock') ? 1 : 0,
+                'stock_status'=>$stockStatus,
+                'manage_stock'=>$manageStock,'low_stock_threshold'=>$threshold,'allow_backorder'=>$allowBackorder,
                 'weight_grams'=>$unit['weight_grams'],'cover_image_url'=>$cover,
                 'gallery_json'=>json_encode(array_values(array_unique($gallery)), JSON_UNESCAPED_SLASHES),
                 'metadata_json'=>null,
