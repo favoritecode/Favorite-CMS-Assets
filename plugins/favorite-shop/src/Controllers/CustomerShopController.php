@@ -228,7 +228,7 @@ final class CustomerShopController
         $pdo = $this->db();
         $q = $pdo->prepare('SELECT * FROM favorite_shop_orders WHERE order_number=? LIMIT 1');
         $q->execute([$orderNumber]);
-        $order = $q->fetch(\\PDO::FETCH_ASSOC);
+        $order = $q->fetch(\PDO::FETCH_ASSOC);
         if (!$order) return Response::make('<h1>Order not found</h1>', 404);
         if ((int)($order['user_id'] ?? 0) > 0 && (int)($_SESSION['auth_user_id'] ?? 0) !== (int)$order['user_id']) {
             return Response::make('<h1>403 Access denied</h1>', 403);
@@ -239,13 +239,13 @@ final class CustomerShopController
         if ((string)$order['payment_status'] === 'paid') {
             return Response::redirect('/shop/order/'.$orderNumber);
         }
-        if (!$this->app->has(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)) {
+        if (!$this->app->has(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class)) {
             return $this->shell('Prepaid payment unavailable', '<p class="notice">Favorite Pay is not active. Your order has been created, but prepaid payment is unavailable. Please contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
         }
-        $payments = $this->app->make(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class);
+        $payments = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class);
         try {
             $methods = $payments->getAvailablePaymentMethods('BDT');
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             error_log('[Favorite Shop payment methods] '.$e->getMessage());
             $methods = [];
         }
@@ -259,7 +259,7 @@ final class CustomerShopController
                 $intentId = trim((string)($order['payment_intent_id'] ?? ''));
                 $intent = $intentId !== '' ? $payments->getIntent($intentId) : null;
                 if (!$intent || in_array($intent->getStatus()->value, ['failed','cancelled'], true)) {
-                    $intent = $payments->createIntent('favorite-shop', $orderNumber, new \\FavoriteCMS\\Pay\\Domain\\Money((int)$order['total_cents'], 'BDT'), [
+                    $intent = $payments->createIntent('favorite-shop', $orderNumber, new \FavoriteCMS\Pay\Domain\Money((int)$order['total_cents'], 'BDT'), [
                         'gateway_id' => $gatewayId,
                         'customer_id' => (int)($order['user_id'] ?? 0) > 0 ? (int)$order['user_id'] : null,
                         'metadata' => ['shop_order_id' => (int)$order['id'], 'order_number' => $orderNumber],
@@ -293,7 +293,7 @@ final class CustomerShopController
                     return Response::redirect($target);
                 }
                 return $this->shell('Payment initiated', '<p class="notice">The payment provider accepted the initiation request but did not return a redirect URL. Check the configured gateway settings or contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
-            } catch (\\Throwable $e) {
+            } catch (\Throwable $e) {
                 error_log('[Favorite Shop prepaid checkout] '.$e->getMessage());
                 $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_status<>'paid'")->execute([(int)$order['id']]);
                 return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Could not start this payment. Check the gateway configuration and try again.');
