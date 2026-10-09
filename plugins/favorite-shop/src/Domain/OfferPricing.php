@@ -31,7 +31,8 @@ final class OfferPricing
             $label = trim(preg_replace('/\s+/', ' ', (string)$label) ?? '');
             if ($label === '') continue;
             if (strlen($label) > 80) throw new \InvalidArgumentException('Each product label must be 80 characters or fewer.');
-            $key = function_exists('mb_strtolower') ? mb_strtolower($label, 'UTF-8') : strtolower($label);\n            $labels[$key] = $label;
+            $key = function_exists('mb_strtolower') ? mb_strtolower($label, 'UTF-8') : strtolower($label);
+            $labels[$key] = $label;
         }
         return ['category_ids'=>array_values(array_unique($ids)), 'labels'=>array_values($labels)];
     }
