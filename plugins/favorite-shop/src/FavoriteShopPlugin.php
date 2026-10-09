@@ -30,6 +30,15 @@ final class FavoriteShopPlugin
     }
     public function boot(): void {
         Installer::register($this->app);
+        if (function_exists('add_route')) {
+            $shop = fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->index($request);
+            add_route('GET', '/shop', $shop);
+            add_route('GET', '/shop/cart', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->cart($request));
+            add_route('POST', '/shop/cart/add/{id}', fn(Request $request, string $id) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->add($request, $id));
+            add_route('POST', '/shop/cart/remove/{id}', fn(Request $request, string $id) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->remove($request, $id));
+            add_route(['GET','POST'], '/shop/checkout', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->checkout($request));
+            add_route('GET', '/shop/order/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->order($request, $orderNumber));
+        }
         if (function_exists('add_admin_menu')) {
             $categories = function (Request $request) { return (new AdminCategoryController($this->app))->handle($request); };
             $products = function (Request $request) {
