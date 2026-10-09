@@ -7,6 +7,7 @@ use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Database;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
+use FavoriteCMS\Services\MediaService;
 use FavoriteCMS\Shop\Domain\ProductMeasurement;
 use FavoriteCMS\Shop\Domain\OfferPricing;
 use FavoriteCMS\Shop\Domain\Quantity;
@@ -166,6 +167,26 @@ final class AdminProductController
             $sku = trim((string) $request->post('sku', ''));
             $sku = $sku === '' ? null : substr($sku, 0, 100);
             $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));
+            $coverUpload = $request->file('cover_image');
+            if (is_array($coverUpload) && (int)($coverUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                if ((int)($coverUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                    throw new \\InvalidArgumentException('The product image upload did not complete. Please try again.');
+                }
+                $tmpName = (string)($coverUpload['tmp_name'] ?? '');
+                if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+                    throw new \\InvalidArgumentException('The product image upload is invalid.');
+                }
+                $finfo = new \\finfo(FILEINFO_MIME_TYPE);
+                $mime = (string)$finfo->file($tmpName);
+                if (!str_starts_with($mime, 'image/')) {
+                    throw new \\InvalidArgumentException('Please upload an image file (JPEG, PNG, GIF, WebP, or an allowed safe SVG).');
+                }
+                $media = $this->app->make(MediaService::class)->upload($coverUpload, $userId);
+                if (!isset($media->url) || !is_string($media->url) || $media->url === '') {
+                    throw new \\RuntimeException('The media library did not return an image URL.');
+                }
+                $cover = $this->safeImageUrl($media->url);
+            }
             $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
             $categoryIds = OfferPricing::normalizeScope((array)$request->post('category_ids', []), '')['category_ids'];
             if ($categoryIds) { $check = $this->db()->prepare('SELECT COUNT(*) FROM favorite_shop_product_categories WHERE id IN (' . implode(',', array_fill(0, count($categoryIds), '?')) . ')'); $check->execute($categoryIds); if ((int)$check->fetchColumn() !== count($categoryIds)) throw new \InvalidArgumentException('One or more selected categories no longer exist.'); }
@@ -263,8 +284,15 @@ final class AdminProductController
     {
         $value = trim($value);
         if ($value === '') return null;
+        // Local URLs are accepted only for CMS-managed media and never for traversal paths.
+        if (str_starts_with($value, '/uploads/')) {
+            if (str_contains($value, '..') || str_contains($value, "\\\\") || preg_match('/[\\x00-\\x1F]/', $value)) {
+                throw new \\InvalidArgumentException('The local media URL is invalid.');
+            }
+            return substr($value, 0, 2048);
+        }
         if (!filter_var($value, FILTER_VALIDATE_URL) || !in_array(strtolower((string) parse_url($value, PHP_URL_SCHEME)), ['http','https'], true)) {
-            throw new \InvalidArgumentException('Images must use a valid HTTP or HTTPS URL.');
+            throw new \\InvalidArgumentException('Images must use a valid HTTP/HTTPS URL or a CMS Media Library image.');
         }
         return substr($value, 0, 2048);
     }
