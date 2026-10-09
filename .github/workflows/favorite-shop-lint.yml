@@ -8,6 +8,23 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: favorite_shop_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      FAVORITE_SHOP_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=favorite_shop_test;charset=utf8mb4
+      FAVORITE_SHOP_TEST_USER: root
+      FAVORITE_SHOP_TEST_PASSWORD: root
     steps:
       - uses: actions/checkout@v4
       - name: PHP syntax checks
@@ -18,6 +35,8 @@ jobs:
         run: php plugins/favorite-shop/tests/ProductMeasurementTest.php
       - name: Promotion, coupon and stock rules tests
         run: php plugins/favorite-shop/tests/PromotionStockTest.php
+      - name: MySQL installer schema smoke test
+        run: php plugins/favorite-shop/tests/InstallerSchemaTest.php
       - name: Validate manifest
         run: php -r '$m=json_decode(file_get_contents("plugins/favorite-shop/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($m["id"] ?? "") !== "favorite-shop") exit(1);'
       - name: Build foundation ZIP
