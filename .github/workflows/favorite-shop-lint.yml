@@ -37,6 +37,8 @@ jobs:
         run: php plugins/favorite-shop/tests/PromotionStockTest.php
       - name: MySQL installer schema smoke test
         run: php plugins/favorite-shop/tests/InstallerSchemaTest.php
+      - name: Theme layout integration checks
+        run: php plugins/favorite-shop/tests/ThemeIntegrationTest.php
       - name: Validate manifest
         run: php -r '$m=json_decode(file_get_contents("plugins/favorite-shop/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($m["id"] ?? "") !== "favorite-shop") exit(1);'
       - name: Build preview ZIP

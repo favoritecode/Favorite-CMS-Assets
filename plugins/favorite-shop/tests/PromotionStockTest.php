@@ -36,6 +36,8 @@ expectSame('out_of_stock', StockStatus::resolve(0), 'Zero stock');
 expectSame('low_stock', StockStatus::resolve(2,true,false,3), 'Low stock');
 expectSame('on_backorder', StockStatus::resolve(0,true,true), 'Explicit backorder');
 expectSame(false, StockStatus::canFulfil(2,3), 'Prevent overselling');
+expectSame(true, StockStatus::canFulfil(0,3,true,true), 'Permit explicitly enabled zero-stock backorder');
+expectSame(false, StockStatus::canFulfil(0,3,true,false), 'Reject zero-stock item when backorders are disabled');
 expectSame(true, StockStatus::canFulfil(2,3,false), 'Unmanaged stock');
 expectSame(9000, OfferPricing::discountedPriceCents(10000,10), 'Auto percentage price calculation');
 expectSame(8500, OfferPricing::discountedPriceCents(10000,20,1500), 'Offer maximum discount cap');
