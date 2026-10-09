@@ -67,20 +67,26 @@ final class CustomerShopController
 
     public function add(Request $request, string $id): Response
     {
-        if (!$this->validCsrf($request)) return $this->flashRedirect('/shop', 'Session expired. Please try again.');
-        $productId = filter_var($id, FILTER_VALIDATE_INT);
-        $qtyRaw = trim((string)$request->post('quantity', '1'));
-        if (!$productId || $productId < 1) return $this->flashRedirect('/shop', 'Choose a valid product quantity.');
-        $q = $this->db()->prepare("SELECT id,unit_type,stock_quantity,manage_stock,allow_backorder FROM favorite_shop_products WHERE id=? AND status='published'");
-        $q->execute([$productId]); $p = $q->fetch(\PDO::FETCH_ASSOC);
-        if (!$p) return $this->flashRedirect('/shop', 'This product is not available.');
-        try { $qty=Quantity::forUnit($qtyRaw,(string)($p['unit_type']??'piece')); } catch(\InvalidArgumentException $e) { return $this->flashRedirect('/shop',$e->getMessage()); }
-        $cart = $this->sessionCart();
-        $newQty = (float)($cart[$productId] ?? 0) + (float)$qty;
-        if($newQty>999999) return $this->flashRedirect('/shop','Cart quantity is too large.');
-        if ((int)$p['manage_stock'] === 1 && (float)$p['stock_quantity'] < $newQty && (int)$p['allow_backorder'] !== 1) return $this->flashRedirect('/shop', 'Not enough stock for that quantity.');
-        $cart[$productId] = Quantity::normalize($newQty); $_SESSION['favorite_shop_cart'] = $cart;
-        return $this->flashRedirect('/shop/cart', 'Product added to cart.');
+        if(!$this->validCsrf($request))return $this->flashRedirect('/shop','Session expired. Please try again.');
+        $productId=filter_var($id,FILTER_VALIDATE_INT);$qtyRaw=trim((string)$request->post('quantity','1'));
+        if(!$productId||$productId<1)return $this->flashRedirect('/shop','Choose a valid product quantity.');
+        $q=$this->db()->prepare("SELECT * FROM favorite_shop_products WHERE id=? AND status='published'");$q->execute([$productId]);$p=$q->fetch(\PDO::FETCH_ASSOC);
+        if(!$p)return $this->flashRedirect('/shop','This product is not available.');
+        $variantId=0;$variant=null;
+        if(($p['product_type']??'simple')==='variable'){
+            $variantId=filter_var($request->post('variant_id',''),FILTER_VALIDATE_INT);
+            if(!$variantId||$variantId<1)return $this->flashRedirect('/shop','Choose a product variant.');
+            $vq=$this->db()->prepare("SELECT * FROM favorite_shop_product_variants WHERE id=? AND product_id=? AND status='active'");$vq->execute([$variantId,$productId]);$variant=$vq->fetch(\PDO::FETCH_ASSOC);
+            if(!$variant)return $this->flashRedirect('/shop','Selected variant is no longer available.');
+        }
+        $unit=(string)(($variant['unit_type']??null)?:($p['unit_type']??'piece'));
+        try{$qty=Quantity::forUnit($qtyRaw,$unit);}catch(\InvalidArgumentException $e){return $this->flashRedirect('/shop',$e->getMessage());}
+        $cart=$this->sessionCart();$key=$variantId>0?$productId.':'.$variantId:(string)$productId;$newQty=(float)($cart[$key]??0)+(float)$qty;
+        if($newQty>999999)return $this->flashRedirect('/shop','Cart quantity is too large.');
+        $manageStock=$variantId>0?true:(int)$p['manage_stock']===1;$stock=$variantId>0?(float)$variant['stock_quantity']:(float)$p['stock_quantity'];$backorder=$variantId>0?false:(int)$p['allow_backorder']===1;
+        if($manageStock&&$stock<$newQty&&!$backorder)return $this->flashRedirect('/shop','Not enough stock for that quantity.');
+        $cart[$key]=Quantity::normalize($newQty);$_SESSION['favorite_shop_cart']=$cart;
+        return $this->flashRedirect('/shop/cart','Product added to cart.');
     }
 
     public function cart(Request $request): string
@@ -92,7 +98,7 @@ final class CustomerShopController
         foreach ($items as $item) {
             $line = (int)round($item['unit_price_cents'] * (float)$item['quantity']); $subtotal += $line;
             $body .= '<article class="card"><strong>'.self::e($item['name']).'</strong> — '.self::money($item['unit_price_cents']).' × '.self::e($item['quantity']).' = '.self::money($line)
-                .'<form method="post" action="/shop/cart/remove/'.(int)$item['product_id'].'">'.$this->csrf().'<button>Remove</button></form></article>';
+                .'<form method="post" action="/shop/cart/remove/'.self::e($item['cart_key']).'">'.$this->csrf().'<button>Remove</button></form></article>';
         }
         $body .= '<p><strong>Subtotal: '.self::money($subtotal).'</strong></p><a class="btn" href="/shop/checkout">Proceed to checkout</a> · <a href="/shop">Continue shopping</a>';
         return $this->shell('Cart', $body);
@@ -100,9 +106,9 @@ final class CustomerShopController
 
     public function remove(Request $request, string $id): Response
     {
-        if (!$this->validCsrf($request)) return $this->flashRedirect('/shop/cart', 'Session expired. Please try again.');
-        $id = filter_var($id, FILTER_VALIDATE_INT);
-        $cart = $this->sessionCart(); if ($id) unset($cart[$id]); $_SESSION['favorite_shop_cart'] = $cart;
+        if(!$this->validCsrf($request))return $this->flashRedirect('/shop/cart','Session expired. Please try again.');
+        if(!preg_match('/^\d+(?::\d+)?$/',$id))return Response::redirect('/shop/cart');
+        $cart=$this->sessionCart();unset($cart[$id]);$_SESSION['favorite_shop_cart']=$cart;
         return Response::redirect('/shop/cart');
     }
 
@@ -272,9 +278,23 @@ final class CustomerShopController
 
     private function cartItems(): array
     {
-        $cart=$this->sessionCart();if(!$cart)return [];
-        $ids=array_keys($cart);$q=$this->db()->prepare("SELECT * FROM favorite_shop_products WHERE status='published' AND id IN (".implode(',',array_fill(0,count($ids),'?')).")");$q->execute($ids);$rows=$q->fetchAll(\PDO::FETCH_ASSOC);$items=[];
-        foreach($rows as $p){$price=(int)$p['price_cents'];if((int)($p['sale_price_cents']??0)>0)$price=min($price,(int)$p['sale_price_cents']);$items[]=['product_id'=>(int)$p['id'],'name'=>$p['name'],'sku'=>$p['sku'],'quantity'=>Quantity::forUnit($cart[$p['id']],(string)($p['unit_type']??'piece')),'unit_price_cents'=>$price,'category_ids'=>$this->categoryIds($this->db(),(int)$p['id']),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'unit_type'=>$p['unit_type']??'piece','unit_quantity'=>$p['unit_quantity']??1,'unit_label'=>$p['unit_label']??null,'weight_grams'=>$p['weight_grams']??null,'manage_stock'=>(int)$p['manage_stock']];}
+        $cart=$this->sessionCart();$items=[];$pdo=$this->db();
+        foreach($cart as $key=>$rawQty){
+            if(!preg_match('/^(\d+)(?::(\d+))?$/',(string)$key,$m))continue;
+            $productId=(int)$m[1];$variantId=isset($m[2])?(int)$m[2]:0;
+            $q=$pdo->prepare("SELECT * FROM favorite_shop_products WHERE id=? AND status='published'");$q->execute([$productId]);$p=$q->fetch(\PDO::FETCH_ASSOC);if(!$p)continue;
+            $v=null;
+            if(($p['product_type']??'simple')==='variable'){
+                if($variantId<1)continue;$vq=$pdo->prepare("SELECT * FROM favorite_shop_product_variants WHERE id=? AND product_id=? AND status='active'");$vq->execute([$variantId,$productId]);$v=$vq->fetch(\PDO::FETCH_ASSOC);if(!$v)continue;
+            }
+            $unit=(string)(($v['unit_type']??null)?:($p['unit_type']??'piece'));
+            try{$qty=Quantity::forUnit($rawQty,$unit);}catch(\Throwable){continue;}
+            $price=$v&&$v['price_cents']!==null?(int)$v['price_cents']:(int)$p['price_cents'];
+            $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
+            if($sale!==null&&(int)$sale>0)$price=min($price,(int)$sale);
+            $options=$v?json_decode((string)$v['option_values_json'],true)?:[]:[];
+            $items[]=['cart_key'=>(string)$key,'product_id'=>$productId,'variant_id'=>$variantId?:null,'name'=>$p['name'].($options?' — '.implode(' / ',array_map(fn($k,$value)=>$k.': '.$value,array_keys($options),array_values($options))):''),'sku'=>($v['sku']??null)?:$p['sku'],'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,'quantity'=>$qty,'unit_price_cents'=>$price,'category_ids'=>$this->categoryIds($pdo,$productId),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'unit_type'=>$unit,'unit_quantity'=>($v['unit_quantity']??null)?:($p['unit_quantity']??1),'unit_label'=>($v['unit_label']??null)?:($p['unit_label']??null),'weight_grams'=>($v['weight_grams']??null)??($p['weight_grams']??null),'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity'],'allow_backorder'=>$variantId>0?0:(int)$p['allow_backorder]];
+        }
         return $items;
     }
     private function categoryIds(\PDO $pdo,int $id):array{$q=$pdo->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id=?');$q->execute([$id]);return array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));}
