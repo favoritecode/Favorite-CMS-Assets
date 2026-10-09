@@ -24,7 +24,7 @@ final class AdminProductController
         if (function_exists('current_user_can') && !current_user_can('manage_options')) {
             return Response::make('<h1>403 Access Denied</h1>', 403);
         }
-        if ($request->method() === 'POST') return $this->save($request);
+        if ($request->method() === 'POST') return (string)$request->post('action','')==='bulk_variant_price' ? $this->bulkVariantPrice($request) : $this->save($request);
         $action = (string) $request->get('action', 'index');
         return match ($action) {
             'create' => $this->form(),
@@ -63,8 +63,29 @@ final class AdminProductController
         }
         return $this->view('products/index', [
             'products'=>$products,'counts'=>$counts,'search'=>$search,'status'=>$status,
-            'csrfToken'=>$this->csrf(),'flashSuccess'=>$_SESSION['flash_success'] ?? null,'flashError'=>$_SESSION['flash_error'] ?? null,
+            'csrfToken'=>$this->csrf(),'categories'=>$pdo->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\\PDO::FETCH_ASSOC),'flashSuccess'=>$_SESSION['flash_success'] ?? null,'flashError'=>$_SESSION['flash_error'] ?? null,
         ]);
+    }
+
+    private function bulkVariantPrice(Request $request):Response
+    {
+        if(!hash_equals((string)($_SESSION['_token']??''),(string)$request->post('_token',''))){$_SESSION['flash_error']='Security token expired.';return Response::redirect('/admin/page/favorite-shop-products');}
+        try{
+            $target=(string)$request->post('target','all');$operation=(string)$request->post('operation','increase_percent');$value=$request->post('value','');
+            if(!in_array($target,['all','category','selected'],true))throw new \InvalidArgumentException('Choose a valid variant target.');
+            if(!in_array($operation,['increase_percent','decrease_percent','set_price'],true))throw new \InvalidArgumentException('Choose a valid price operation.');
+            if(!is_numeric($value)||(float)$value<0||(float)$value>999999999999)throw new \InvalidArgumentException('Enter a valid non-negative value.');
+            if($operation!=='set_price'&&(float)$value>1000)throw new \InvalidArgumentException('Percentage change cannot exceed 1000%.');
+            $params=[];$sql="SELECT v.id,COALESCE(v.price_cents,p.price_cents) AS current_price FROM favorite_shop_product_variants v JOIN favorite_shop_products p ON p.id=v.product_id WHERE v.status='active'";
+            if($target==='category'){$categoryId=filter_var($request->post('category_id',''),FILTER_VALIDATE_INT);if(!$categoryId||$categoryId<1)throw new \InvalidArgumentException('Choose a category.');$sql.=' AND EXISTS (SELECT 1 FROM favorite_shop_product_category_map m WHERE m.product_id=p.id AND m.category_id=?)';$params[]=$categoryId;}
+            if($target==='selected'){$ids=(array)$request->post('variant_ids',[]);if(!$ids)$ids=preg_split('/[,;\\s]+/',trim((string)$request->post('variant_ids_text','')))?:[];$ids=array_values(array_unique(array_filter(array_map('intval',$ids),static fn($n)=>$n>0)));if(!$ids)throw new \InvalidArgumentException('Enter at least one variant ID.');$sql.=' AND v.id IN ('.implode(',',array_fill(0,count($ids),'?')).')';array_push($params,...$ids);}
+            $pdo=$this->db();$pdo->beginTransaction();$q=$pdo->prepare($sql.' FOR UPDATE');$q->execute($params);$rows=$q->fetchAll(\PDO::FETCH_ASSOC);if(!$rows)throw new \InvalidArgumentException('No active variants matched the selected target.');
+            $amount=$operation==='set_price'?$this->moneyToCents($value):(int)round((float)$value*100);
+            $update=$pdo->prepare('UPDATE favorite_shop_product_variants SET price_cents=? WHERE id=?');
+            foreach($rows as $row){$current=(int)$row['current_price'];$new=match($operation){'increase_percent'=>(int)round($current*(1+(float)$value/100)),'decrease_percent'=>(int)round($current*(1-(float)$value/100)),default=>$amount};$update->execute([max(0,$new),(int)$row['id']]);}
+            $pdo->commit();$_SESSION['flash_success']='Updated regular prices for '.count($rows).' variants. SKU, stock and sale-price overrides were preserved.';
+        }catch(Throwable $e){if(isset($pdo)&&$pdo instanceof \PDO&&$pdo->inTransaction())$pdo->rollBack();$_SESSION['flash_error']=$e instanceof \InvalidArgumentException?$e->getMessage():'Could not bulk-update variant prices.';}
+        return Response::redirect('/admin/page/favorite-shop-products');
     }
 
     private function form(int $id = 0): string
