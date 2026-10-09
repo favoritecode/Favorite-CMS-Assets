@@ -12,7 +12,7 @@ final class FavoriteShopPlugin
         'favorite_shop_products','favorite_shop_product_categories','favorite_shop_product_category_map',
         'favorite_shop_product_variants','favorite_shop_inventory_movements','favorite_shop_carts',
         'favorite_shop_cart_items','favorite_shop_orders','favorite_shop_order_items',
-        'favorite_shop_order_addresses','favorite_shop_shipments','favorite_shop_order_events','favorite_shop_settings'
+        'favorite_shop_order_addresses','favorite_shop_shipments','favorite_shop_order_events','favorite_shop_offers','favorite_shop_coupons','favorite_shop_coupon_redemptions','favorite_shop_settings'
     ];
     private static ?self $instance = null;
     private function __construct(private Application $app) {}
