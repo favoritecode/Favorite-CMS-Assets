@@ -65,10 +65,10 @@ final class BuilderRenderer {
                     $args=[$tax,$term,$term];
                 }
             }
-            $sql.=' ORDER BY id DESC LIMIT '.$limit;$rows=$this->db->select($sql,$args);
+            $sql.=' ORDER BY p.id DESC LIMIT '.$limit;$rows=$this->db->select($sql,$args);
             if(!$rows)return '<p class="fpb-empty">No posts found.</p>';
             $cols=max(1,min(4,(int)($s['columns']??3)));$out='<div class="fpb-grid fpb-grid-'.$cols.'">';
-            foreach($rows as $r){$title=htmlspecialchars((string)$r->title,ENT_QUOTES,'UTF-8');$url=site_path('/post/'.rawurlencode((string)$r->slug));$image=(string)($r->image_url??'');$out.='<article class="fpb-card">'.($image!==''?'<a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'"><img loading="lazy" src="'.htmlspecialchars($image,ENT_QUOTES,'UTF-8').'" alt="'.$title.'"></a>':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3><p>'.htmlspecialchars(mb_substr(strip_tags((string)($r->excerpt??'')),0,160),ENT_QUOTES,'UTF-8').'</p></article>';}
+            foreach($rows as $r){$title=htmlspecialchars((string)$r->title,ENT_QUOTES,'UTF-8');$url=site_path('/post/'.rawurlencode((string)$r->slug));$image=$this->safeUrl((string)($r->image_url??''))??'';$out.='<article class="fpb-card">'.($image!==''?'<a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'"><img loading="lazy" src="'.htmlspecialchars($image,ENT_QUOTES,'UTF-8').'" alt="'.$title.'"></a>':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3><p>'.htmlspecialchars(mb_substr(strip_tags((string)($r->excerpt??'')),0,160),ENT_QUOTES,'UTF-8').'</p></article>';}
             return $out.'</div>';
         } catch(\Throwable){return '<p class="fpb-empty">Post grid is not available.</p>';}
     }
@@ -100,7 +100,7 @@ final class BuilderRenderer {
             $url=site_path('/store/'.$slug);
             $price=htmlspecialchars((string)($r['final_price']??$r['price']??''),ENT_QUOTES,'UTF-8');
             $currency=htmlspecialchars((string)($r['currency']??'BDT'),ENT_QUOTES,'UTF-8');
-            $img=(string)($r['cover_image_url']??$r['image_url']??'');
+            $img=$this->safeUrl((string)($r['cover_image_url']??$r['image_url']??''))??'';
             $description=htmlspecialchars(mb_substr(strip_tags((string)($r['description']??$r['short_description']??'')),0,160),ENT_QUOTES,'UTF-8');
             $out.='<article class="fpb-card">'.($img!==''?'<img loading="lazy" src="'.htmlspecialchars($img,ENT_QUOTES,'UTF-8').'" alt="'.$title.'">':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3>'.($description!==''?'<p>'.$description.'</p>':'').'<p>'.$price.' '.$currency.'</p></article>';
         }
@@ -110,5 +110,5 @@ final class BuilderRenderer {
     private function style(array $s): string {return 'padding:'.$this->length($s['padding']??'48px').' '.$this->length($s['padding_x']??'20px').';background:'.$this->color($s['background']??'#ffffff').';';}
     private function length(mixed $v): string {$v=(string)$v;return preg_match('/^(0|\d+(\.\d+)?(px|rem|em|%|vw|vh))$/i',$v)?$v:'0px';}
     private function color(mixed $v): string {$v=(string)$v;return preg_match('/^(#[0-9a-f]{3,8}|rgba?\([0-9.,%\s]+\)|[a-z]{3,20})$/i',$v)?$v:'#172033';}
-    private function safeUrl(string $v): ?string {$v=trim($v);if($v==='' )return null;if(str_starts_with($v,'/'))return $v;return preg_match('#^https?://#i',$v)?$v:null;}
+    private function safeUrl(string $v): ?string {$v=trim($v);if($v==='' )return null;if(str_starts_with($v,'/') && !str_starts_with($v,'//'))return $v;return preg_match('#^https?://#i',$v)?$v:null;}
 }
