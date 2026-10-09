@@ -10,6 +10,7 @@ $checks = [
     'form supports multipart uploads' => str_contains($form, 'enctype="multipart/form-data"'),
     'form has image file input' => str_contains($form, 'name="cover_image"') && str_contains($form, 'type="file"'),
     'URL fallback remains available' => str_contains($form, 'name="cover_image_url"'),
+    'local media URLs can be edited without browser URL rejection' => str_contains($form, 'id="cover_image_url" name="cover_image_url" type="text" inputmode="url"'),
 ];
 $failed = [];
 foreach ($checks as $label => $passed) {
