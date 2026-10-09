@@ -38,7 +38,7 @@ final class AdminOrderController
                 $new=(string)$r->post('status','');
                 if(!in_array($new,['pending','processing','shipped','delivered','cancelled','returned'],true))throw new \InvalidArgumentException('Invalid order status.');
                 if(in_array($old,['cancelled','returned'],true)&&$new!==$old)throw new \InvalidArgumentException('Cancelled or returned orders cannot be reopened here.');
-                if(in_array($new,['cancelled','returned'],true)&&!in_array($old,['cancelled','returned'],true)&&(string)($order['payment_method']??'cash_on_delivery')!=='cash_on_delivery'&&in_array((string)($order['payment_status']??''),['paid','partially_refunded'],true))throw new \InvalidArgumentException('Refund the prepaid order fully in Favorite Pay before cancelling or returning it.');
+                if(in_array($new,['cancelled','returned'],true)&&!in_array($old,['cancelled','returned'],true)&&(string)($order['payment_method']??'cash_on_delivery')!=='cash_on_delivery'&&in_array((string)($order['payment_status']??''),['pending','awaiting_verification','paid','partially_refunded'],true))throw new \InvalidArgumentException('Resolve the prepaid payment in Favorite Pay first: verify or reject pending payments, and fully refund paid orders before cancelling or returning them.');
                 if(in_array($new,['cancelled','returned'],true)&&!in_array($old,['cancelled','returned'],true))$this->restoreStock($pdo,$order);
                 $pdo->prepare('UPDATE favorite_shop_orders SET status=? WHERE id=?')->execute([$new,$id]);
             } elseif($action==='update_tracking') {
