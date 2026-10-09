@@ -5,6 +5,7 @@ use FavoriteCMS\Core\Application;
 use FavoriteCMS\Core\Database;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Shop\Controllers\AdminProductController;
+use FavoriteCMS\Shop\Controllers\AdminPromotionsController;
 final class FavoriteShopPlugin
 {
     public const VERSION = '1.0.0';
@@ -32,9 +33,12 @@ final class FavoriteShopPlugin
             $products = function (Request $request) {
                 return (new AdminProductController($this->app))->handle($request);
             };
-            add_admin_menu('favorite-shop', 'Favorite Shop', '🛍️', $products, 'manage_options', 57);\n            $promotions = function (Request $request) { return (new AdminPromotionsController($this->app))->handle($request); };
+            add_admin_menu('favorite-shop', 'Favorite Shop', '🛍️', $products, 'manage_options', 57);
+            $promotions = function (Request $request) { return (new AdminPromotionsController($this->app))->handle($request); };
             if (function_exists('add_admin_submenu')) {
-                add_admin_submenu('favorite-shop', 'favorite-shop-products', 'Products', $products, 'manage_options');\n                add_admin_submenu('favorite-shop', 'favorite-shop-offers', 'Offers & Sales', $promotions, 'manage_options');\n                add_admin_submenu('favorite-shop', 'favorite-shop-coupons', 'Coupons', $promotions, 'manage_options');
+                add_admin_submenu('favorite-shop', 'favorite-shop-products', 'Products', $products, 'manage_options');
+                add_admin_submenu('favorite-shop', 'favorite-shop-offers', 'Offers & Sales', $promotions, 'manage_options');
+                add_admin_submenu('favorite-shop', 'favorite-shop-coupons', 'Coupons', $promotions, 'manage_options');
             }
         }
     }
