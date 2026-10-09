@@ -34,8 +34,8 @@ final class FavoriteShopPlugin
     public function boot(): void {
         try { Installer::register($this->app); }
         catch (Throwable $e) { error_log('[Favorite Shop] Schema initialization failed: ' . $e->getMessage()); }
-        if (class_exists(\\FavoriteCMS\\Core\\Hook::class)) {
-            \\FavoriteCMS\\Core\\Hook::addAction('favorite.pay.intent.status_updated', function (array $event): void {
+        if (class_exists(\FavoriteCMS\Core\Hook::class)) {
+            \FavoriteCMS\Core\Hook::addAction('favorite.pay.intent.status_updated', function (array $event): void {
                 if (($event['source_plugin'] ?? '') !== 'favorite-shop') return;
                 $orderNumber = (string)($event['source_reference'] ?? '');
                 $intentId = (string)($event['intent_id'] ?? '');
@@ -43,10 +43,10 @@ final class FavoriteShopPlugin
                 if ($orderNumber === '' || $intentId === '' || !in_array($status, ['awaiting_verification','pending','processing','succeeded','failed','cancelled'], true)) return;
                 try {
                     $db = $this->app->make(Database::class);
-                    if (!method_exists($db, 'getConnection') || !($pdo = $db->getConnection()) instanceof \\PDO) return;
+                    if (!method_exists($db, 'getConnection') || !($pdo = $db->getConnection()) instanceof \PDO) return;
                     $query = $pdo->prepare('SELECT id,status,payment_status FROM favorite_shop_orders WHERE order_number=? AND payment_intent_id=? AND payment_method<>? LIMIT 1');
                     $query->execute([$orderNumber, $intentId, 'cash_on_delivery']);
-                    $order = $query->fetch(\\PDO::FETCH_ASSOC);
+                    $order = $query->fetch(\PDO::FETCH_ASSOC);
                     if (!$order || in_array((string)$order['status'], ['cancelled','returned'], true)) return;
                     if ($status === 'succeeded') {
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='paid',status=CASE WHEN status='pending' THEN 'processing' ELSE status END WHERE id=? AND payment_intent_id=?")->execute([(int)$order['id'], $intentId]);
@@ -70,7 +70,7 @@ final class FavoriteShopPlugin
             add_route('POST', '/shop/cart/remove/{id}', fn(Request $request, string $id) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->remove($request, $id));
             add_route(['GET','POST'], '/shop/checkout', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->checkout($request));
             add_route('GET', '/shop/order/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->order($request, $orderNumber));
-            add_route(['GET','POST'], '/shop/pay/{orderNumber}', fn(Request $request, string $orderNumber) => (new \\FavoriteCMS\\Shop\\Controllers\\CustomerShopController($this->app))->payment($request, $orderNumber));
+            add_route(['GET','POST'], '/shop/pay/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->payment($request, $orderNumber));
         }
         if (function_exists('add_route')) {
             add_route(['GET','POST'], '/admin/page/favorite-shop-orders', fn(Request $request) => (new AdminOrderController($this->app))->handle($request));
