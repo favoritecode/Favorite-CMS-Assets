@@ -10,12 +10,12 @@ $checks = [
     'uses active theme footer' => "require \$themeDir . '/footer.php';",
     'uses active theme sidebar when present' => "\$sidebar = \$themeDir . '/sidebar.php';",
     'sets theme-scoped body class' => "\$bodyClass = 'favorite-shop-page';",
-    'does not emit a separate HTML document' => !str_contains(\$controller, "'<!doctype html>"),
+    'does not emit a separate HTML document' => !str_contains($controller, "'<!doctype html>"),
 ];
-foreach (\$checks as \$label => \$needle) {
-    \$passed = is_bool(\$needle) ? \$needle : str_contains(\$controller, \$needle);
-    if (!\$passed) {
-        throw new RuntimeException('Theme integration check failed: ' . \$label);
+foreach ($checks as $label => $needle) {
+    $passed = is_bool($needle) ? $needle : str_contains($controller, $needle);
+    if (!$passed) {
+        throw new RuntimeException('Theme integration check failed: ' . $label);
     }
 }
 echo "Theme integration checks passed.\n";
