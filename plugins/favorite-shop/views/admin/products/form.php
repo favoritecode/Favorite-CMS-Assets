@@ -20,6 +20,7 @@ if (is_array($old) && $old) { $product = array_merge($product, $old); unset($_SE
 <div class="fs-field"><label for="sku">SKU</label><input id="sku" name="sku" maxlength="100" value="<?= $e($product['sku']) ?>" placeholder="Optional stock code"></div>
 <div class="fs-field full"><label for="short_description">Short description</label><textarea id="short_description" name="short_description" rows="2"><?= $e($product['short_description']) ?></textarea></div>
 <div class="fs-field full"><label for="description">Full description</label><textarea id="description" name="description" rows="5"><?= $e($product['description']) ?></textarea></div>
+<div class="fs-field full"><label for="labels">Product labels / tags</label><input id="labels" name="labels" value="<?= $e($product['labels_text'] ?? '') ?>" placeholder="summer, clearance, featured"><span class="fs-help">Comma-separated labels used for label-specific offers. Labels match without case sensitivity.</span></div>
 </div></section>
 <section class="fs-card"><h2>Pricing</h2><div class="fs-grid">
 <div class="fs-field"><label for="price">Regular price (BDT) *</label><input id="price" name="price" type="number" min="0" step="0.01" required value="<?= $e(isset($old['price'])?$old['price']:$money($product['price_cents'])) ?>"></div>
