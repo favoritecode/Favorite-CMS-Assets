@@ -56,6 +56,7 @@ final class PromotionEngine
                     $applied[] = ['offer_id'=>(int)($offer['id'] ?? 0),'type'=>$type,'discount_cents'=>$shippingCents];
                     continue;
                 } else continue;
+                if (isset($offer['max_discount_cents']) && $offer['max_discount_cents'] !== null) $discount = min($discount, max(0, (int)$offer['max_discount_cents']));
                 $priority = (int)($offer['priority'] ?? 0);
                 if ($discount > $best['discount'] || ($discount === $best['discount'] && $discount > 0 && $priority > $best['priority'])) {
                     $best = ['discount'=>$discount,'id'=>(int)($offer['id'] ?? 0),'priority'=>$priority,'type'=>$type];
