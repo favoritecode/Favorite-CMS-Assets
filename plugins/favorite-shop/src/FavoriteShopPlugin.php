@@ -39,6 +39,9 @@ final class FavoriteShopPlugin
             add_route(['GET','POST'], '/shop/checkout', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->checkout($request));
             add_route('GET', '/shop/order/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->order($request, $orderNumber));
         }
+        if (function_exists('add_route')) {
+            add_route(['GET','POST'], '/admin/page/favorite-shop-orders', fn(Request $request) => (new AdminOrderController($this->app))->handle($request));
+        }
         if (function_exists('add_admin_menu')) {
             $categories = function (Request $request) { return (new AdminCategoryController($this->app))->handle($request); };
             $products = function (Request $request) {
@@ -52,6 +55,8 @@ final class FavoriteShopPlugin
                 add_admin_submenu('favorite-shop', 'favorite-shop-categories', 'Categories', $categories, 'manage_options');
                 add_admin_submenu('favorite-shop', 'favorite-shop-offers', 'Offers & Sales', $offers, 'manage_options');
                 add_admin_submenu('favorite-shop', 'favorite-shop-coupons', 'Coupons', $coupons, 'manage_options');
+                $orders = function (Request $request) { return (new AdminOrderController($this->app))->handle($request); };
+                add_admin_submenu('favorite-shop', 'favorite-shop-orders', 'Orders', $orders, 'manage_options');
             }
         }
     }
