@@ -183,7 +183,7 @@ final class CustomerShopController
             }
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['division'], $input['district'], $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
-            if ($input['payment_method'] === 'favorite_pay' && (int)$pricing['total_cents'] <= 0) throw new \\InvalidArgumentException('This order total is zero; choose Cash on Delivery or contact the store.');
+            if ($input['payment_method'] === 'favorite_pay' && (int)$pricing['total_cents'] <= 0) throw new \InvalidArgumentException('This order total is zero; choose Cash on Delivery or contact the store.');
             $shipping = (int)$pricing['shipping_cents'];
             $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(10)));
             $userId=(int)($_SESSION['auth_user_id'] ?? 0); if ($userId<1) $userId=null;
