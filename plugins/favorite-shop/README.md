@@ -24,7 +24,7 @@ Favorite Shop is the physical-goods commerce plugin for Favorite CMS Universal, 
 - See `docs/PRODUCT-MEASUREMENTS.md` for rules and examples.
 
 ## Variations, offers and shipping
-- Color/size variants can each have price, sale price, SKU, stock and optional image, managed through the product editor's variant JSON editor. A dedicated bulk-price update UI is not yet implemented.
+- Color/size variants can each have price, sale price, SKU, stock and optional image, managed through the product editor's variant JSON editor. Bulk regular-price updates target all active variants, a category, or selected variant IDs while preserving SKU, stock and sale-price overrides.
 - Admin configures inside-Dhaka/outside-Dhaka rates and custom delivery zones. Zones, labels and region options are editable for other countries.
 - Region selectors are optional. If a customer skips them, use the admin-configured fallback delivery charge and display it before checkout submission.
 - Automatic free-delivery threshold works without coupon entry. Optional coupons support fixed discount, percentage discount or free shipping.
@@ -59,7 +59,7 @@ Important release boundary: the admin builder and deterministic domain calculato
 
 The current branch includes product/category administration, simple and variable product records, variant JSON editing, label/category-scoped offer and coupon administration, a session cart, guest COD checkout, server-side price/stock revalidation, order snapshots, order status/COD collection management, and editable delivery zones.
 
-It is still a **foundation / preview build, not production-ready**. Before live use, complete and verify: image upload/media-library integration; bulk variant price updates; automated end-to-end MySQL migration/checkout/concurrency tests; compatibility-tested Favorite Pay prepaid adapter; full delivery-zone UX/region datasets and shipping-weight rules; production-grade CMS permission integration; and invoice/tracking UX. The current CI suite is syntax/domain tests and does not prove database installation or checkout integration. Back up the database before installing or upgrading.
+It is still a **foundation / preview build, not production-ready**. Before live use, complete and verify: image upload/media-library integration; a richer visual variant matrix editor (the current editor uses JSON); automated end-to-end MySQL migration/checkout/concurrency tests; compatibility-tested Favorite Pay prepaid adapter; full delivery-zone UX/region datasets and shipping-weight rules; production-grade CMS permission integration; and invoice/tracking UX. The current CI suite is syntax/domain tests and does not prove database installation or checkout integration. Back up the database before installing or upgrading.
 
 ## Scheduled offers, coupons and stock rules
 - Sale offers have UTC start/end timestamps. They evaluate as scheduled, active, expired, draft or paused; expired offers must stop applying without overwriting the product's regular price.
