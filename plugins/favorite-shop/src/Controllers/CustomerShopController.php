@@ -39,7 +39,7 @@ final class CustomerShopController
         $sql .= " ORDER BY p.created_at DESC LIMIT 100";
         $q = $this->db()->prepare($sql); $q->execute($params);
         $rows = $q->fetchAll(\PDO::FETCH_ASSOC);
-        $html = $this->shell('Shop', '<form method="get"><input name="q" value="'.self::e($search).'" placeholder="Search products"><button>Search</button></form><div class="grid">'; 
+         
         foreach ($rows as $p) {
             $price = (int)($p['sale_price_cents'] ?? 0) > 0 ? (int)$p['sale_price_cents'] : (int)$p['price_cents'];
             $image = trim((string)($p['cover_image_url'] ?? ''));
@@ -123,7 +123,7 @@ final class CustomerShopController
         $input = [];
         foreach (['recipient_name'=>190,'phone'=>40,'address_line1'=>255,'address_line2'=>255,'area'=>120,'city'=>120,'country_code'=>2,'customer_note'=>3000,'coupon_code'=>100] as $key=>$max) {
             $value = trim((string)$request->post($key, ''));
-            $input[$key] = mb_substr($value, 0, $max);
+            $input[$key] = (function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max));
         }
         $_SESSION['favorite_shop_checkout'] = $input; $_SESSION['favorite_shop_coupon_code'] = $input['coupon_code'];
         if ($input['recipient_name']==='' || $input['phone']==='' || $input['address_line1']==='' || $input['city']==='') return $this->flashRedirect('/shop/checkout', 'Recipient, phone and delivery address are required.');
@@ -144,6 +144,7 @@ final class CustomerShopController
             }
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
+            $shipping = (int)$pricing['shipping_cents'];
             $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(5)));
             $userId=(int)($_SESSION['auth_user_id'] ?? 0); if ($userId<1) $userId=null;
             $pdo->prepare("INSERT INTO favorite_shop_orders (order_number,user_id,phone,status,payment_method,payment_status,currency,subtotal_cents,discount_cents,shipping_cents,tax_cents,total_cents,customer_note,coupon_code_snapshot,discount_details_json,shipping_zone_snapshot) VALUES (?,?,?,'pending','cash_on_delivery','unpaid','BDT',?,?,?,?,?,?,?, ?,?)")
