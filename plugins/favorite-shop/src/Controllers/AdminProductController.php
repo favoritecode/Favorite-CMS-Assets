@@ -8,6 +8,7 @@ use FavoriteCMS\Core\Database;
 use FavoriteCMS\Core\Request;
 use FavoriteCMS\Core\Response;
 use FavoriteCMS\Shop\Domain\ProductMeasurement;
+use FavoriteCMS\Shop\Domain\OfferPricing;
 use FavoriteCMS\Shop\Domain\Quantity;
 use FavoriteCMS\Shop\Domain\StockStatus;
 use Throwable;
@@ -73,7 +74,7 @@ final class AdminProductController
             'product_type'=>'simple','unit_type'=>'piece','unit_quantity'=>'1','unit_label'=>'',
             'price_cents'=>0,'sale_price_cents'=>'','cost_cents'=>'','stock_quantity'=>'0',
             'stock_status'=>'in_stock','manage_stock'=>1,'low_stock_threshold'=>'0','allow_backorder'=>0,'weight_grams'=>'','cover_image_url'=>'',
-            'gallery_json'=>'[]','status'=>'draft',
+            'gallery_json'=>'[]','labels_json'=>'[]','status'=>'draft',
         ];
         if ($id > 0) {
             $stmt = $this->db()->prepare('SELECT * FROM favorite_shop_products WHERE id = ?');
@@ -83,7 +84,7 @@ final class AdminProductController
             $product = array_merge($product, $found);
         }
         $gallery = json_decode((string) ($product['gallery_json'] ?? '[]'), true);
-        $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';
+        $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';\n        $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);\n        $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
         return $this->view('products/form', [
             'product'=>$product,'csrfToken'=>$this->csrf(),'isEdit'=>$id > 0,
             'flashError'=>$_SESSION['flash_error'] ?? null,
@@ -130,7 +131,7 @@ final class AdminProductController
             $slug = $this->slug((string) $request->post('slug', ''), $name);
             $sku = trim((string) $request->post('sku', ''));
             $sku = $sku === '' ? null : substr($sku, 0, 100);
-            $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));
+            $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));\n            $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
             $gallery = [];
             foreach (preg_split('/\R/', (string) $request->post('gallery_text', '')) ?: [] as $url) {
                 $url = $this->safeImageUrl(trim($url));
