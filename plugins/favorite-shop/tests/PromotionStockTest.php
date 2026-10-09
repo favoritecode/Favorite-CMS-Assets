@@ -79,4 +79,30 @@ expectSame(2000, PromotionEngine::couponDiscount($targetedCoupon, [
  ['quantity'=>1,'unit_price_cents'=>5000,'category_ids'=>[8],'labels'=>['Summer']],
 ], 2500), 'Coupon only discounts category and label eligible items');
 
+$fractional = PromotionEngine::applyOffers([
+ ['product_id'=>30,'quantity'=>0.5,'unit_price_cents'=>3000,'category_ids'=>[4],'labels'=>['weight']],
+], [
+ ['id'=>30,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>10,'category_ids_json'=>'[]','labels_json'=>'[]','stackable'=>1],
+], 0, $now);
+expectSame(150, $fractional['discount_cents'], 'Fractional quantity promotion uses rounded minor-unit subtotal');
+$nonStacking = PromotionEngine::applyOffers([
+ ['product_id'=>31,'quantity'=>1,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['promo']],
+], [
+ ['id'=>31,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>10,'category_ids_json'=>'[]','labels_json'=>'[]','stackable'=>0],
+ ['id'=>32,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'free_shipping','discount_value'=>0,'category_ids_json'=>'[]','labels_json'=>'[]','stackable'=>0],
+], 2500, $now);
+expectSame(0, $nonStacking['discount_cents'], 'Non-stacking free shipping chooses better benefit over product discount');
+expectSame(2500, $nonStacking['shipping_discount_cents'], 'Non-stacking free shipping is applied alone');
+$stacking = PromotionEngine::applyOffers([
+ ['product_id'=>32,'quantity'=>1,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['promo']],
+], [
+ ['id'=>33,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>10,'category_ids_json'=>'[]','labels_json'=>'[]','stackable'=>1],
+ ['id'=>34,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'free_shipping','discount_value'=>0,'category_ids_json'=>'[]','labels_json'=>'[]','stackable'=>1],
+], 2500, $now);
+expectSame(1000, $stacking['discount_cents'], 'Stackable product offer remains active with free shipping');
+expectSame(2500, $stacking['shipping_discount_cents'], 'Explicitly stackable free shipping remains active');
+expectSame(8500, OfferPricing::bestPriceForProduct(10000, [
+ ['id'=>9,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>50,'max_discount_cents'=>1500,'category_ids_json'=>'[]','labels_json'=>'[]']
+], [], [], $now)['price_cents'], 'Offer resolver respects maximum discount cap');
+
 echo "Promotion and stock domain tests passed.\n";
