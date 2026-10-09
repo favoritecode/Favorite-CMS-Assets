@@ -68,7 +68,7 @@ final class CustomerShopController
         $q = $this->db()->prepare("SELECT id,stock_quantity,manage_stock,allow_backorder FROM favorite_shop_products WHERE id=? AND status='published'");
         $q->execute([$productId]); $p = $q->fetch(\PDO::FETCH_ASSOC);
         if (!$p) return $this->flashRedirect('/shop', 'This product is not available.');
-        $cart = $this->cart();
+        $cart = $this->sessionCart();
         $newQty = (int)($cart[$productId] ?? 0) + $qty;
         if ((int)$p['manage_stock'] === 1 && (float)$p['stock_quantity'] < $newQty && (int)$p['allow_backorder'] !== 1) return $this->flashRedirect('/shop', 'Not enough stock for that quantity.');
         $cart[$productId] = $newQty; $_SESSION['favorite_shop_cart'] = $cart;
@@ -219,14 +219,14 @@ final class CustomerShopController
 
     private function cartItems(): array
     {
-        $cart=$this->cart();if(!$cart)return [];
+        $cart=$this->sessionCart();if(!$cart)return [];
         $ids=array_keys($cart);$q=$this->db()->prepare("SELECT * FROM favorite_shop_products WHERE status='published' AND id IN (".implode(',',array_fill(0,count($ids),'?')).")");$q->execute($ids);$rows=$q->fetchAll(\PDO::FETCH_ASSOC);$items=[];
         foreach($rows as $p){$price=(int)$p['price_cents'];if((int)($p['sale_price_cents']??0)>0)$price=min($price,(int)$p['sale_price_cents']);$items[]=['product_id'=>(int)$p['id'],'name'=>$p['name'],'sku'=>$p['sku'],'quantity'=>(int)$cart[$p['id']],'unit_price_cents'=>$price,'category_ids'=>$this->categoryIds($this->db(),(int)$p['id']),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'unit_type'=>$p['unit_type']??'piece','unit_quantity'=>$p['unit_quantity']??1,'unit_label'=>$p['unit_label']??null,'weight_grams'=>$p['weight_grams']??null,'manage_stock'=>(int)$p['manage_stock']];}
         return $items;
     }
     private function categoryIds(\PDO $pdo,int $id):array{$q=$pdo->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id=?');$q->execute([$id]);return array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));}
     private function shippingCents(\PDO $pdo,string $country,string $city,string $area):int{$q=$pdo->prepare("SELECT setting_value FROM favorite_shop_settings WHERE setting_key=?");$q->execute([$country==='BD'?'shipping_bd_default_cents':'shipping_intl_default_cents']);$v=$q->fetchColumn();return $v===false?0:max(0,(int)$v);}
-    private function cart():array{$c=$_SESSION['favorite_shop_cart']??[];return is_array($c)?$c:[];}
+    private function sessionCart():array{$c=$_SESSION['favorite_shop_cart']??[];return is_array($c)?$c:[];}
     private function validCsrf(Request $r):bool{$submitted=(string)$r->post('_token','');$session=(string)($_SESSION['_token']??'');return $submitted!==''&&$session!==''&&hash_equals($session,$submitted);}
     private function csrf():string{if(empty($_SESSION['_token']))$_SESSION['_token']=bin2hex(random_bytes(32));return '<input type="hidden" name="_token" value="'.self::e($_SESSION['_token']).'">';}
     private function flashRedirect(string $url,string $message):Response{$_SESSION['flash_error']=$message;return Response::redirect($url);}
