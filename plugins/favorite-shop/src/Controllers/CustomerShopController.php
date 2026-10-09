@@ -126,7 +126,7 @@ final class CustomerShopController
             .'<label>Country<select name="country_code"><option value="BD">Bangladesh</option><option value="US">United States</option><option value="GB">United Kingdom</option></select></label>'
             .'<label>Coupon code (optional)<input name="coupon_code" maxlength="100" value="'.self::e($_SESSION['favorite_shop_coupon_code'] ?? '').'"></label>'
             .'<label>Order note<textarea name="customer_note" maxlength="3000">'.self::e($_SESSION['favorite_shop_checkout']['customer_note'] ?? '').'</textarea></label>'
-            .'<p>Payment: <strong>Cash on Delivery (COD)</strong></p><section class="card"><strong>Order estimate</strong><p>Items subtotal: '.self::money($pricing['subtotal_cents']).'</p><p>Estimated delivery: '.self::money($estimatedShipping).' ('.self::e($_SESSION['favorite_shop_shipping_zone']??'fallback zone').')</p><p>Estimated total before coupon: '.self::money($pricing['total_cents']).'</p><small>Final delivery rate and offers are recalculated on the server when you place the order.</small></section><button type="submit">Place order</button></form>';
+            .'<label>Payment method<select name="payment_method"><option value="cash_on_delivery">Cash on Delivery (COD)</option><option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option></select></label><section class="card"><strong>Order estimate</strong><p>Items subtotal: '.self::money($pricing['subtotal_cents']).'</p><p>Estimated delivery: '.self::money($estimatedShipping).' ('.self::e($_SESSION['favorite_shop_shipping_zone']??'fallback zone').')</p><p>Estimated total before coupon: '.self::money($pricing['total_cents']).'</p><small>Final delivery rate and offers are recalculated on the server when you place the order.</small></section><button type="submit">Place order</button></form>';
         return $this->shell('Checkout', $body);
     }
 
@@ -134,11 +134,12 @@ final class CustomerShopController
     {
         if (!$this->validCsrf($request)) return $this->flashRedirect('/shop/checkout', 'Session expired. Please try again.');
         $input = [];
-        foreach (['recipient_name'=>190,'phone'=>40,'address_line1'=>255,'address_line2'=>255,'area'=>120,'city'=>120,'district'=>120,'division'=>120,'postal_code'=>30,'country_code'=>2,'customer_note'=>3000,'coupon_code'=>100] as $key=>$max) {
+        foreach (['recipient_name'=>190,'phone'=>40,'address_line1'=>255,'address_line2'=>255,'area'=>120,'city'=>120,'district'=>120,'division'=>120,'postal_code'=>30,'country_code'=>2,'customer_note'=>3000,'coupon_code'=>100,'payment_method'=>40] as $key=>$max) {
             $value = trim((string)$request->post($key, ''));
             $input[$key] = (function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max));
         }
         $_SESSION['favorite_shop_checkout'] = $input; $_SESSION['favorite_shop_coupon_code'] = $input['coupon_code'];
+        if (!in_array($input['payment_method'], ['cash_on_delivery','favorite_pay'], true)) $input['payment_method'] = 'cash_on_delivery';
         if ($input['recipient_name']==='' || $input['phone']==='' || $input['address_line1']==='' || $input['city']==='') return $this->flashRedirect('/shop/checkout', 'Recipient, phone and delivery address are required.');
         if (!preg_match('/^[A-Z]{2}$/', strtoupper($input['country_code']))) $input['country_code']='BD';
         $pdo = $this->db();
@@ -168,8 +169,8 @@ final class CustomerShopController
             $shipping = (int)$pricing['shipping_cents'];
             $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(10)));
             $userId=(int)($_SESSION['auth_user_id'] ?? 0); if ($userId<1) $userId=null;
-            $pdo->prepare("INSERT INTO favorite_shop_orders (order_number,user_id,phone,status,payment_method,payment_status,currency,subtotal_cents,discount_cents,shipping_cents,tax_cents,total_cents,customer_note,coupon_code_snapshot,discount_details_json,shipping_zone_snapshot) VALUES (?,?,?,'pending','cash_on_delivery','unpaid','BDT',?,?,?,?,?,?,?, ?,?)")
-                ->execute([$orderNumber,$userId,$input['phone'],$pricing['subtotal_cents'],$pricing['discount_cents'],$shipping,$pricing['tax_cents'],$pricing['total_cents'],$input['customer_note'] ?: null,$pricing['coupon_code'],$pricing['details_json'],$pricing['zone']]);
+            $pdo->prepare("INSERT INTO favorite_shop_orders (order_number,user_id,phone,status,payment_method,payment_status,currency,subtotal_cents,discount_cents,shipping_cents,tax_cents,total_cents,customer_note,coupon_code_snapshot,discount_details_json,shipping_zone_snapshot) VALUES (?,?,?,'pending',?,'unpaid','BDT',?,?,?,?,?,?,?, ?,?)")
+                ->execute([$orderNumber,$userId,$input['phone'],$input['payment_method'],$pricing['subtotal_cents'],$pricing['discount_cents'],$shipping,$pricing['tax_cents'],$pricing['total_cents'],$input['customer_note'] ?: null,$pricing['coupon_code'],$pricing['details_json'],$pricing['zone']]);
             $orderId=(int)$pdo->lastInsertId();
             $pdo->prepare("INSERT INTO favorite_shop_order_addresses (order_id,address_type,recipient_name,phone,address_line1,address_line2,area,city,district,division,postal_code,country_code) VALUES (?,'shipping',?,?,?,?,?,?,?,?,?,?)")
                 ->execute([$orderId,$input['recipient_name'],$input['phone'],$input['address_line1'],$input['address_line2'] ?: null,$input['area'] ?: null,$input['city'],$input['district'] ?: $input['city'],$input['division'] ?: null,$input['postal_code'] ?: null,$input['country_code']]);
@@ -209,6 +210,10 @@ final class CustomerShopController
             }
             $pdo->commit();
             unset($_SESSION['favorite_shop_cart'],$_SESSION['favorite_shop_checkout'],$_SESSION['favorite_shop_coupon_code']);
+            if ($input['payment_method'] === 'favorite_pay') {
+                $_SESSION['flash_success'] = 'Order created. Complete your prepaid payment to confirm it.';
+                return Response::redirect('/shop/pay/'.$orderNumber);
+            }
             $_SESSION['flash_success']='Order placed. Pay cash on delivery; payment remains unpaid until collected.';
             return Response::redirect('/shop/order/'.$orderNumber);
         } catch(Throwable $e) {
@@ -218,13 +223,121 @@ final class CustomerShopController
         }
     }
 
+    public function payment(Request $request, string $orderNumber): Response|string
+    {
+        $pdo = $this->db();
+        $q = $pdo->prepare('SELECT * FROM favorite_shop_orders WHERE order_number=? LIMIT 1');
+        $q->execute([$orderNumber]);
+        $order = $q->fetch(\\PDO::FETCH_ASSOC);
+        if (!$order) return Response::make('<h1>Order not found</h1>', 404);
+        if ((int)($order['user_id'] ?? 0) > 0 && (int)($_SESSION['auth_user_id'] ?? 0) !== (int)$order['user_id']) {
+            return Response::make('<h1>403 Access denied</h1>', 403);
+        }
+        if (in_array((string)$order['status'], ['cancelled','returned'], true)) {
+            return $this->shell('Payment unavailable', '<p class="notice">This order is cancelled or returned. Please contact the store before attempting payment.</p>');
+        }
+        if ((string)$order['payment_status'] === 'paid') {
+            return Response::redirect('/shop/order/'.$orderNumber);
+        }
+        if (!$this->app->has(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class)) {
+            return $this->shell('Prepaid payment unavailable', '<p class="notice">Favorite Pay is not active. Your order has been created, but prepaid payment is unavailable. Please contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
+        }
+        $payments = $this->app->make(\\FavoriteCMS\\Pay\\Contracts\\PaymentServiceInterface::class);
+        try {
+            $methods = $payments->getAvailablePaymentMethods('BDT');
+        } catch (\\Throwable $e) {
+            error_log('[Favorite Shop payment methods] '.$e->getMessage());
+            $methods = [];
+        }
+        if ($request->method() === 'POST') {
+            if (!$this->validCsrf($request)) return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Session expired. Please try again.');
+            $gatewayId = trim((string)$request->post('gateway_id', ''));
+            $method = null;
+            foreach ($methods as $candidate) if (($candidate['id'] ?? '') === $gatewayId) { $method = $candidate; break; }
+            if (!$method) return $this->flashRedirect('/shop/pay/'.$orderNumber, 'That payment method is not currently enabled or configured.');
+            try {
+                $intentId = trim((string)($order['payment_intent_id'] ?? ''));
+                $intent = $intentId !== '' ? $payments->getIntent($intentId) : null;
+                if (!$intent || in_array($intent->getStatus()->value, ['failed','cancelled'], true)) {
+                    $intent = $payments->createIntent('favorite-shop', $orderNumber, new \\FavoriteCMS\\Pay\\Domain\\Money((int)$order['total_cents'], 'BDT'), [
+                        'gateway_id' => $gatewayId,
+                        'customer_id' => (int)($order['user_id'] ?? 0) > 0 ? (int)$order['user_id'] : null,
+                        'metadata' => ['shop_order_id' => (int)$order['id'], 'order_number' => $orderNumber],
+                    ]);
+                    $intentId = $intent->getId();
+                    $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=? WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
+                    $order['payment_intent_id'] = $intentId;
+                    $order['payment_method'] = $gatewayId;
+                }
+                if (!empty($method['is_manual'])) {
+                    $trx = trim((string)$request->post('transaction_reference', ''));
+                    $sender = trim((string)$request->post('sender_account', ''));
+                    if ($trx === '' || strlen($trx) > 190 || $sender === '' || strlen($sender) > 100) {
+                        return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Enter your sender account/number and transaction reference (TrxID).');
+                    }
+                    $payments->submitManualVerification($intentId, $gatewayId, $trx, [
+                        'sender_account' => $sender,
+                        'notes' => substr(trim((string)$request->post('notes', '')), 0, 1000),
+                        'idempotency_key' => 'shop-'.$orderNumber.'-'.hash('sha256', strtolower($gatewayId.':'.$trx)),
+                        'metadata' => ['shop_order_number' => $orderNumber],
+                    ]);
+                    $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=?,payment_status='awaiting_verification' WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
+                    $_SESSION['flash_success'] = 'Payment details submitted. The store will verify the transaction before confirming your order.';
+                    return Response::redirect('/shop/order/'.$orderNumber);
+                }
+                $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=?,payment_status='pending' WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
+                $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => '/shop/order/'.$orderNumber, 'cancel_url' => '/shop/pay/'.$orderNumber]);
+                $metadata = $attempt->getMetadata();
+                $target = (string)($metadata['checkout_url'] ?? $metadata['universal_url'] ?? $metadata['bkash_url'] ?? '');
+                if ($target !== '' && filter_var($target, FILTER_VALIDATE_URL) && in_array(strtolower((string)parse_url($target, PHP_URL_SCHEME)), ['https','http'], true)) {
+                    return Response::redirect($target);
+                }
+                return $this->shell('Payment initiated', '<p class="notice">The payment provider accepted the initiation request but did not return a redirect URL. Check the configured gateway settings or contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
+            } catch (\\Throwable $e) {
+                error_log('[Favorite Shop prepaid checkout] '.$e->getMessage());
+                $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_status<>'paid'")->execute([(int)$order['id']]);
+                return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Could not start this payment. Check the gateway configuration and try again.');
+            }
+        }
+        $body = $this->flashMessages();
+        if (!$methods) {
+            $body .= '<p class="notice">No prepaid methods are currently enabled and configured in Favorite Pay. You can return to the order or contact the store.</p>';
+        } else {
+            $body .= '<p>Order total: <strong>'.self::money((int)$order['total_cents']).'</strong></p>';
+            $body .= '<form method="post" action="/shop/pay/'.self::e($orderNumber).'">'.$this->csrf();
+            $body .= '<label>Payment gateway<select name="gateway_id" required>';
+            foreach ($methods as $method) {
+                $id = (string)($method['id'] ?? '');
+                $body .= '<option value="'.self::e($id).'">'.self::e($method['title'] ?? $id).'</option>';
+            }
+            $body .= '</select></label>';
+            foreach ($methods as $method) {
+                if (empty($method['is_manual'])) continue;
+                $instructions = is_array($method['instructions'] ?? null) ? $method['instructions'] : [];
+                $body .= '<section class="favorite-shop-card"><h2>'.self::e($method['title'] ?? $method['id'] ?? 'Manual payment').'</h2>';
+                foreach (['account_name'=>'Account name','account_number'=>'Account / number','account_type'=>'Account type','bank_name'=>'Bank','branch_name'=>'Branch','routing_no'=>'Routing number','instructions'=>'Instructions','reference_instructions'=>'Transaction reference','proof_requirements'=>'Required details'] as $key=>$label) {
+                    if (!empty($instructions[$key])) $body .= '<p><strong>'.self::e($label).':</strong> '.self::e($instructions[$key]).'</p>';
+                }
+                $body .= '</section>';
+            }
+            $body .= '<label>Sender account / phone (manual methods)<input name="sender_account" maxlength="100" autocomplete="tel"></label>';
+            $body .= '<label>Transaction reference / TrxID (manual methods)<input name="transaction_reference" maxlength="190"></label>';
+            $body .= '<label>Notes (optional)<textarea name="notes" maxlength="1000"></textarea></label>';
+            $body .= '<p class="notice">Manual payments remain unconfirmed until a store operator verifies the incoming funds. Automatic gateways depend on provider confirmation/webhooks.</p><button type="submit">Continue to payment</button></form>';
+        }
+        return $this->shell('Pay for order '.$orderNumber, $body);
+    }
+
     public function order(Request $request, string $orderNumber): Response|string
     {
         $q=$this->db()->prepare("SELECT o.*,a.recipient_name,a.address_line1,a.area,a.city,a.country_code FROM favorite_shop_orders o LEFT JOIN favorite_shop_order_addresses a ON a.order_id=o.id AND a.address_type='shipping' WHERE o.order_number=?");
         $q->execute([$orderNumber]);$o=$q->fetch(\PDO::FETCH_ASSOC);
         if(!$o)return Response::make('<h1>Order not found</h1>',404);
         if((int)($o['user_id'] ?? 0)>0 && (int)($_SESSION['auth_user_id'] ?? 0)!==(int)$o['user_id'])return Response::make('<h1>403 Access denied</h1>',403);
-        return $this->shell('Order '.$orderNumber,'<h1>Thank you for your order</h1><p>Order: '.self::e($orderNumber).'</p><p>Status: '.self::e($o['status']).'</p><p>Payment: '.self::e($o['payment_status']).' — Cash on Delivery</p><p>Total: '.self::money((int)$o['total_cents']).'</p><p>Deliver to: '.self::e($o['recipient_name'] ?? '').', '.self::e($o['address_line1'] ?? '').', '.self::e($o['city'] ?? '').'</p><a href="/shop">Continue shopping</a>');
+        $paymentLabel = (string)($o['payment_method'] ?? '') === 'cash_on_delivery' ? 'Cash on Delivery' : (string)($o['payment_method'] ?? 'Prepaid');
+        $paymentAction = in_array((string)$o['payment_status'], ['unpaid','failed','pending'], true) && (string)($o['payment_method'] ?? '') !== 'cash_on_delivery'
+            ? '<p><a class="btn" href="/shop/pay/'.self::e($orderNumber).'">Continue payment / retry</a></p>' : '';
+        return $this->shell('Order '.$orderNumber,'<h1>Thank you for your order</h1><p>Order: '.self::e($orderNumber).'</p><p>Status: '.self::e($o['status']).'</p><p>Payment: '.self::e($o['payment_status']).' — '.self::e($paymentLabel).'</p><p>Total: '.self::money((int)$o['total_cents']).'</p><p>Deliver to: '.self::e($o['recipient_name'] ?? '').', '.self::e($o['address_line1'] ?? '').', '.self::e($o['city'] ?? '').'</p>'.$paymentAction.'<a href="/shop">Continue shopping</a>');
     }
 
     private function calculate(array $items, string $couponCode, int $shipping): array
