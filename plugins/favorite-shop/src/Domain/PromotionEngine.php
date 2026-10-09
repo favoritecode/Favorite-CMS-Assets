@@ -94,15 +94,17 @@ final class PromotionEngine
         if ($shippingCents < 0) throw new \InvalidArgumentException('Shipping cannot be negative.');
         $categoryIds = json_decode((string)($coupon['category_ids_json'] ?? '[]'), true) ?: [];
         $scopeLabels = json_decode((string)($coupon['labels_json'] ?? '[]'), true) ?: [];
-        if (($coupon['discount_type'] ?? '') === 'free_shipping') return $shippingCents;
         $eligibleSubtotal = 0;
+        $hasEligibleItem = false;
         foreach ($items as $item) {
             if (!OfferPricing::matchesScope((array)($item['category_ids'] ?? []), (array)($item['labels'] ?? []), $categoryIds, $scopeLabels)) continue;
             $qty = (float)($item['quantity'] ?? 0);
             $price = (int)($item['unit_price_cents'] ?? -1);
             if ($qty <= 0 || $price < 0) throw new \InvalidArgumentException('Cart line quantity and price must be valid.');
             $eligibleSubtotal += (int)floor($qty * $price);
+            $hasEligibleItem = true;
         }
+        if (($coupon['discount_type'] ?? '') === 'free_shipping') return $hasEligibleItem ? $shippingCents : 0;
         return CouponPolicy::discountCents($coupon, $eligibleSubtotal, $shippingCents);
     }
 
