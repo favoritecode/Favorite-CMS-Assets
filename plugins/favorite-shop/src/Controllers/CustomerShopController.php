@@ -94,7 +94,7 @@ final class CustomerShopController
     {
         if (!$this->validCsrf($request)) return $this->flashRedirect('/shop/cart', 'Session expired. Please try again.');
         $id = filter_var($id, FILTER_VALIDATE_INT);
-        $cart = $this->cart(); if ($id) unset($cart[$id]); $_SESSION['favorite_shop_cart'] = $cart;
+        $cart = $this->sessionCart(); if ($id) unset($cart[$id]); $_SESSION['favorite_shop_cart'] = $cart;
         return Response::redirect('/shop/cart');
     }
 
