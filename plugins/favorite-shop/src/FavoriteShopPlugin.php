@@ -80,6 +80,7 @@ final class FavoriteShopPlugin
             add_route(['GET','POST'], '/shop/checkout', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->checkout($request));
             add_route('GET', '/shop/order/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->order($request, $orderNumber));
             add_route(['GET','POST'], '/shop/pay/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->payment($request, $orderNumber));
+            add_route('GET', '/shop/pay/cancel/{orderNumber}', fn(Request $request, string $orderNumber) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->cancelPayment($request, $orderNumber));
         }
         if (function_exists('add_route')) {
             add_route(['GET','POST'], '/admin/page/favorite-shop-orders', fn(Request $request) => (new AdminOrderController($this->app))->handle($request));
