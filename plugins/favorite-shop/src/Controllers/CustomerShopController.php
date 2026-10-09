@@ -249,7 +249,8 @@ final class CustomerShopController
         $shipDiscount=(int)$offers['shipping_discount_cents'];
         $couponId=null;$couponDiscount=0;$couponCodeSaved=null;
         if($couponCode!==''){
-            $q=$pdo->prepare("SELECT * FROM favorite_shop_coupons WHERE code=? AND status='active' LIMIT 1");
+            $couponSql="SELECT * FROM favorite_shop_coupons WHERE code=? AND status='active' LIMIT 1".($pdo->inTransaction()?' FOR UPDATE':'');
+            $q=$pdo->prepare($couponSql);
             $q->execute([strtoupper(trim($couponCode))]);$coupon=$q->fetch(\PDO::FETCH_ASSOC);
             if(!$coupon)throw new \InvalidArgumentException('Coupon code is invalid or inactive.');
             $uses=(int)$coupon['usage_count'];
