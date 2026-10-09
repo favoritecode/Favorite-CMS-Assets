@@ -21,7 +21,7 @@ final class AdminProductController
     {
         $userId = (int) ($_SESSION['auth_user_id'] ?? 0);
         if ($userId <= 0 && !isset($GLOBALS['_test_current_user'])) return Response::redirect('/admin/login');
-        if (function_exists('current_user_can') && !current_user_can('manage_options')) {
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
             return Response::make('<h1>403 Access Denied</h1>', 403);
         }
         if ($request->method() === 'POST') return (string)$request->post('action','')==='bulk_variant_price' ? $this->bulkVariantPrice($request) : $this->save($request);
