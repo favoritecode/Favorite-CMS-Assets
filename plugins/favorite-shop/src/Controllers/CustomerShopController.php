@@ -356,7 +356,65 @@ final class CustomerShopController
     private function csrf():string{if(empty($_SESSION['_token']))$_SESSION['_token']=bin2hex(random_bytes(32));return '<input type="hidden" name="_token" value="'.self::e($_SESSION['_token']).'">';}
     private function flashRedirect(string $url,string $message):Response{$_SESSION['flash_error']=$message;return Response::redirect($url);}
     private function flashMessages():string{$out='';foreach(['flash_error','flash_success'] as $k){if(isset($_SESSION[$k])){$out.='<p class="notice">'.self::e($_SESSION[$k]).'</p>';unset($_SESSION[$k]);}}return $out;}
-    private function shell(string $title,string $body):string{return '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'.self::e($title).'</title><style>body{font:16px system-ui;max-width:1100px;margin:30px auto;padding:0 16px;color:#222}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}.card img{max-width:100%;max-height:220px;object-fit:contain}label{display:block;margin:10px 0}input,textarea,select{display:block;width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:7px;margin-top:4px}button,.btn{padding:10px 14px;background:#175bd7;color:white;border:0;border-radius:7px;cursor:pointer;text-decoration:none}a{color:#175bd7}.notice{background:#fff2d9;padding:12px;border-radius:8px}</style><nav><a href="/shop">Shop</a> · <a href="/shop/cart">Cart</a> · <a href="/shop/checkout">Checkout</a></nav><main>'.$body.'</main></html>';}
+    /**
+     * Render storefront content inside the active theme's real layout.
+     * The theme owns document markup, header/footer, navigation, assets and appearance mode.
+     */
+    private function shell(string $title,string $body):string
+    {
+        $theme = 'default';
+        try {
+            $configured = \\FavoriteCMS\\Models\\Setting::get('theme', 'active_theme', 'default');
+            if (is_string($configured) && preg_match('/^[a-zA-Z0-9_-]+$/', $configured) === 1) {
+                $theme = $configured;
+            }
+        } catch (\\Throwable) {
+            // Keep the CMS default theme as a safe fallback during early bootstrap.
+        }
+
+        $themesRoot = rtrim((string)APP_ROOT, '/\\\\') . '/themes';
+        $themeDir = $themesRoot . '/' . $theme;
+        if (!is_file($themeDir . '/header.php') || !is_file($themeDir . '/footer.php')) {
+            $theme = 'default';
+            $themeDir = $themesRoot . '/default';
+        }
+        if (!is_file($themeDir . '/header.php') || !is_file($themeDir . '/footer.php')) {
+            throw new \\RuntimeException('The active theme does not provide a compatible header.php and footer.php.');
+        }
+
+        // Variables consumed by standard Favorite CMS themes.
+        $siteTitle = \\FavoriteCMS\\Models\\Setting::get('general', 'site_name', 'Favorite CMS');
+        $siteTagline = \\FavoriteCMS\\Models\\Setting::get('general', 'site_description', '');
+        $metaTitle = $title . ' — ' . $siteTitle;
+        $metaDescription = $title . ' on ' . $siteTitle;
+        $bodyClass = 'favorite-shop-page';
+        $fcdHasSidebar = false;
+        $shopStyles = '<style id="favorite-shop-theme-adapter">
+.favorite-shop-page .favorite-shop-main{width:100%;min-width:0}
+.favorite-shop-page .favorite-shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:1rem}
+.favorite-shop-page .favorite-shop-card{min-width:0;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:var(--radius-md,12px);padding:1rem;margin:1rem 0;background:transparent;color:inherit}
+.favorite-shop-page .favorite-shop-card img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin-inline:auto}
+.favorite-shop-page .favorite-shop-main label{display:block;margin:1rem 0}
+.favorite-shop-page .favorite-shop-main input,.favorite-shop-page .favorite-shop-main textarea,.favorite-shop-page .favorite-shop-main select{display:block;width:100%;max-width:100%;box-sizing:border-box;padding:.7rem;border:1px solid color-mix(in srgb,currentColor 28%,transparent);border-radius:var(--radius-sm,7px);margin-top:.3rem;background:transparent;color:inherit;font:inherit}
+.favorite-shop-page .favorite-shop-main button,.favorite-shop-page .favorite-shop-main .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.65rem 1rem;border:1px solid var(--brand-accent,currentColor);border-radius:var(--radius-sm,7px);background:var(--brand-accent,transparent);color:var(--button-text-color,inherit);font:inherit;cursor:pointer;text-decoration:none}
+.favorite-shop-page .favorite-shop-main a{color:var(--brand-accent,inherit)}
+.favorite-shop-page .favorite-shop-main .notice{padding:.8rem 1rem;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:8px;background:var(--surface-muted,transparent);color:inherit}
+@media(max-width:600px){.favorite-shop-page .favorite-shop-main{padding-inline:0}.favorite-shop-page .favorite-shop-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}}
+</style>';
+
+        ob_start();
+        require $themeDir . '/header.php';
+        echo $shopStyles;
+        echo '<main id="main-content" class="site-main favorite-shop-main" tabindex="-1"><div class="favorite-shop-content"><h1>' . self::e($title) . '</h1>';
+        echo str_replace('class="grid"', 'class="favorite-shop-grid"', str_replace('class="card"', 'class="favorite-shop-card"', $body));
+        echo '</div></main>';
+        $sidebar = $themeDir . '/sidebar.php';
+        if (is_file($sidebar)) {
+            require $sidebar;
+        }
+        require $themeDir . '/footer.php';
+        return (string)ob_get_clean();
+    }
     private static function e(mixed $v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
     private static function money(int $cents):string{return '৳'.number_format($cents/100,2);}
 }
