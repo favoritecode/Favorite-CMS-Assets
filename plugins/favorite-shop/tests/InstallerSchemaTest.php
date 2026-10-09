@@ -14,7 +14,7 @@ $pdo=new PDO($dsn,(string)getenv('FAVORITE_SHOP_TEST_USER'),(string)getenv('FAVO
 foreach(Installer::statements() as $sql)$pdo->exec($sql);
 foreach([
  'favorite_shop_products'=>['labels_json'=>'JSON NULL','low_stock_threshold'=>'DECIMAL(14,3) NOT NULL DEFAULT 0','allow_backorder'=>'TINYINT(1) NOT NULL DEFAULT 0','unit_type'=>"VARCHAR(20) NOT NULL DEFAULT 'piece'",'unit_quantity'=>'DECIMAL(14,6) NOT NULL DEFAULT 1','unit_label'=>'VARCHAR(80) NULL'],
- 'favorite_shop_product_variants'=>['low_stock_threshold'=>'DECIMAL(14,3) NOT NULL DEFAULT 0','allow_backorder'=>'TINYINT(1) NOT NULL DEFAULT 0'],
+ 'favorite_shop_product_variants'=>['stock_status'=>"VARCHAR(20) NOT NULL DEFAULT 'in_stock'",'low_stock_threshold'=>'DECIMAL(14,3) NOT NULL DEFAULT 0','allow_backorder'=>'TINYINT(1) NOT NULL DEFAULT 0'],
  'favorite_shop_offers'=>['labels_json'=>'JSON NULL','max_discount_cents'=>'BIGINT NULL','buy_quantity'=>'INT UNSIGNED NULL','get_quantity'=>'INT UNSIGNED NULL','bundle_quantity'=>'INT UNSIGNED NULL'],
  'favorite_shop_coupons'=>['labels_json'=>'JSON NULL'],
  'favorite_shop_order_addresses'=>['division'=>'VARCHAR(120) NULL'],
