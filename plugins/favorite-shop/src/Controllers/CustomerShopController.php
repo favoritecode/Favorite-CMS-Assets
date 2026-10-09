@@ -120,7 +120,7 @@ final class CustomerShopController
             catch (\Throwable $e) { error_log('[Favorite Shop checkout methods] '.$e->getMessage()); }
         }
         $paymentOptions = '<option value="cash_on_delivery">Cash on Delivery (COD)</option>';
-        if ($prepaidMethods) $paymentOptions .= '<option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option>';
+        if ($prepaidMethods && (int)$pricing['total_cents'] > 0) $paymentOptions .= '<option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option>';
         $body = '<h1>Checkout</h1>'. $this->flashMessages().'<form method="post" action="/shop/checkout">'.$this->csrf()
             .'<label>Recipient name<input name="recipient_name" maxlength="190" required value="'.self::e($_SESSION['favorite_shop_checkout']['recipient_name'] ?? '').'"></label>'
             .'<label>Phone<input name="phone" maxlength="40" required value="'.self::e($_SESSION['favorite_shop_checkout']['phone'] ?? '').'"></label>'
@@ -183,6 +183,7 @@ final class CustomerShopController
             }
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['division'], $input['district'], $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
+            if ($input['payment_method'] === 'favorite_pay' && (int)$pricing['total_cents'] <= 0) throw new \\InvalidArgumentException('This order total is zero; choose Cash on Delivery or contact the store.');
             $shipping = (int)$pricing['shipping_cents'];
             $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(10)));
             $userId=(int)($_SESSION['auth_user_id'] ?? 0); if ($userId<1) $userId=null;
@@ -388,7 +389,7 @@ final class CustomerShopController
         if(!$o)return Response::make('<h1>Order not found</h1>',404);
         if((int)($o['user_id'] ?? 0)>0 && (int)($_SESSION['auth_user_id'] ?? 0)!==(int)$o['user_id'])return Response::make('<h1>403 Access denied</h1>',403);
         $paymentLabel = (string)($o['payment_method'] ?? '') === 'cash_on_delivery' ? 'Cash on Delivery' : (string)($o['payment_method'] ?? 'Prepaid');
-        $paymentAction = in_array((string)$o['payment_status'], ['unpaid','failed','pending'], true) && (string)($o['payment_method'] ?? '') !== 'cash_on_delivery'
+        $paymentAction = in_array((string)$o['payment_status'], ['unpaid','failed'], true) && (string)($o['payment_method'] ?? '') !== 'cash_on_delivery'
             ? '<p><a class="btn" href="/shop/pay/'.self::e($orderNumber).'">Continue payment / retry</a></p>' : '';
         return $this->shell('Order '.$orderNumber,'<h1>Thank you for your order</h1><p>Order: '.self::e($orderNumber).'</p><p>Status: '.self::e($o['status']).'</p><p>Payment: '.self::e($o['payment_status']).' — '.self::e($paymentLabel).'</p><p>Total: '.self::money((int)$o['total_cents']).'</p><p>Deliver to: '.self::e($o['recipient_name'] ?? '').', '.self::e($o['address_line1'] ?? '').', '.self::e($o['city'] ?? '').'</p>'.$paymentAction.'<a href="/shop">Continue shopping</a>');
     }
