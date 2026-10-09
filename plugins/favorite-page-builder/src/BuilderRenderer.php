@@ -47,7 +47,13 @@ final class BuilderRenderer {
                     }
                 }
                 return '<div class="fpb-button-wrap"><span class="fpb-empty">Choose a published product or configure a checkout URL in this button’s settings.</span></div>';
-            case 'order_confirmation':return '<section class="fpb-confirmation"><div class="fpb-confirm-icon">✓</div><h2>'.$e($s['heading']??'Thank you for your order').'</h2><p>'.$e($s['text']??'Your order has been received.').'</p><p class="fpb-muted">Order details are displayed by the active checkout integration when supported.</p></section>';
+            case 'order_confirmation':
+                $order=$this->currentDigitalOrder();
+                $details='';
+                if($order) {
+                    $details='<div class="fpb-order-summary"><p><strong>Order:</strong> '.$e($order['order_number']).'</p><p><strong>Status:</strong> '.$e($order['status']).' · '.$e($order['payment_status']).'</p><p><strong>Total:</strong> '.$e($order['total_amount']).' '.$e($order['currency']).'</p><p><a href="'.htmlspecialchars(site_path('/account/orders/'.rawurlencode($order['order_number'])),ENT_QUOTES,'UTF-8').'">View order details</a></p></div>';
+                }
+                return '<section class="fpb-confirmation"><div class="fpb-confirm-icon">✓</div><h2>'.$e($s['heading']??'Thank you for your order').'</h2><p>'.$e($s['text']??'Your order has been received.').'</p>'.$details.'</section>';
             case 'html': return '<div class="fpb-custom-html">'.\FavoriteCMS\Themes\BuilderElementRegistry::sanitizeHtml((string)($s['html']??'')).'</div>';
             default: return '';
         }
@@ -105,6 +111,20 @@ final class BuilderRenderer {
             $out.='<article class="fpb-card">'.($img!==''?'<img loading="lazy" src="'.htmlspecialchars($img,ENT_QUOTES,'UTF-8').'" alt="'.$title.'">':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3>'.($description!==''?'<p>'.$description.'</p>':'').'<p>'.$price.' '.$currency.'</p></article>';
         }
         return $out.'</div>';
+    }
+    /**
+     * Only reveal order details when the current authenticated customer owns the order.
+     */
+    private function currentDigitalOrder(): ?array {
+        try {
+            if (!$this->db->tableExists('favorite_digital_orders')) return null;
+            $userId=(int)($_SESSION['auth_user_id']??0);
+            $orderNumber=trim((string)($_GET['order_number']??$_GET['order']??''));
+            if($userId<1 || $orderNumber==='') return null;
+            $order=$this->db->selectOne("SELECT order_number,status,payment_status,total_amount,currency FROM `favorite_digital_orders` WHERE order_number=? AND user_id=? LIMIT 1",[$orderNumber,$userId]);
+            if(!$order)return null;
+            return ['order_number'=>(string)$order->order_number,'status'=>(string)$order->status,'payment_status'=>(string)$order->payment_status,'total_amount'=>number_format((float)$order->total_amount,2,'.',''),'currency'=>(string)$order->currency];
+        } catch(\\Throwable) { return null; }
     }
     private function textStyle(array $s): string {return 'color:'.$this->color($s['color']??'#172033').';font-size:'.$this->length($s['size']??'16px').';text-align:'.(in_array(($s['alignment']??'left'),['left','center','right'],true)?$s['alignment']:'left').';';}
     private function style(array $s): string {return 'padding:'.$this->length($s['padding']??'48px').' '.$this->length($s['padding_x']??'20px').';background:'.$this->color($s['background']??'#ffffff').';';}
