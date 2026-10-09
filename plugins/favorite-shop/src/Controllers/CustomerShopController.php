@@ -41,13 +41,6 @@ final class CustomerShopController
         $q = $this->db()->prepare($sql); $q->execute($params);
         $rows = $q->fetchAll(\PDO::FETCH_ASSOC);
          
-        foreach ($rows as $p) {
-            $price = (int)($p['sale_price_cents'] ?? 0) > 0 ? (int)$p['sale_price_cents'] : (int)$p['price_cents'];
-            $image = trim((string)($p['cover_image_url'] ?? ''));
-            $html .= '<article class="card">'.($image!==''?'<img loading="lazy" src="'.self::e($image).'" alt="'.self::e($p['name']).'">':'')
-                .'<h2>'.self::e($p['name']).'</h2><p>'.self::money($price).'</p><form method="post" action="/shop/cart/add/'.(int)$p['id'].'">'
-                .$this->csrf().'<label>Quantity <input type="number" min="1" step="0.001" name="quantity" value="1" required></label><button>Add to cart</button></form></article>';
-        }
         return $this->shell('Shop', '<form method="get"><input name="q" value="'.self::e($search).'" placeholder="Search products"><button>Search</button></form><div class="grid">'.implode('', array_map(fn($p)=>$this->productCard($p),$rows)).'</div><p><a href="/shop/cart">View cart</a></p>');
     }
 
