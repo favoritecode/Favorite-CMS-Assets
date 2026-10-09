@@ -333,8 +333,12 @@ final class CustomerShopController
                     $_SESSION['flash_success'] = 'Payment details submitted. The store will verify the transaction before confirming your order.';
                     return Response::redirect('/shop/order/'.$orderNumber);
                 }
+                $baseUrl = $this->siteBaseUrl();
+                if ($baseUrl === null) return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Set the CMS site URL in General Settings before using automatic payment gateways.');
                 $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=?,payment_status='pending' WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
-                $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => '/shop/order/'.$orderNumber, 'cancel_url' => '/shop/pay/'.$orderNumber]);
+                $returnUrl = $baseUrl.'/shop/order/'.$orderNumber;
+                $cancelUrl = $baseUrl.'/shop/pay/'.$orderNumber;
+                $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'callback_url' => $cancelUrl]);
                 $metadata = $attempt->getMetadata();
                 $target = (string)($metadata['checkout_url'] ?? $metadata['universal_url'] ?? $metadata['bkash_url'] ?? '');
                 if ($target !== '' && filter_var($target, FILTER_VALIDATE_URL) && in_array(strtolower((string)parse_url($target, PHP_URL_SCHEME)), ['https','http'], true)) {
