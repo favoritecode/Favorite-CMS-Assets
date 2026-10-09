@@ -55,20 +55,20 @@ final class BuilderRenderer {
     private function postGrid(array $s): string {
         try {
             $limit=max(1,min(24,(int)($s['limit']??6)));$mode=(string)($s['mode']??'recent');
-            $sql="SELECT id,title,slug,excerpt,featured_image_id FROM `posts` WHERE status='published'";
+            $sql="SELECT p.id,p.title,p.slug,p.excerpt,m.url AS image_url FROM `posts` p LEFT JOIN `media` m ON m.id=p.featured_image_id WHERE p.status='published'";
             $args=[];
             if($mode==='category' || $mode==='tag') {
                 $term=trim((string)($s['term']??''));
                 if($term!=='') {
                     $tax=$mode==='category'?'category':'tag';
-                    $sql="SELECT DISTINCT p.id,p.title,p.slug,p.excerpt,p.featured_image_id FROM `posts` p JOIN `post_taxonomies` pt ON pt.post_id=p.id JOIN `taxonomies` t ON t.id=pt.taxonomy_id WHERE p.status='published' AND t.type=? AND (t.slug=? OR t.name=?)";
+                    $sql="SELECT DISTINCT p.id,p.title,p.slug,p.excerpt,m.url AS image_url FROM `posts` p LEFT JOIN `media` m ON m.id=p.featured_image_id JOIN `post_taxonomies` pt ON pt.post_id=p.id JOIN `taxonomies` t ON t.id=pt.taxonomy_id WHERE p.status='published' AND t.taxonomy=? AND (t.slug=? OR t.name=?)";
                     $args=[$tax,$term,$term];
                 }
             }
             $sql.=' ORDER BY id DESC LIMIT '.$limit;$rows=$this->db->select($sql,$args);
             if(!$rows)return '<p class="fpb-empty">No posts found.</p>';
             $cols=max(1,min(4,(int)($s['columns']??3)));$out='<div class="fpb-grid fpb-grid-'.$cols.'">';
-            foreach($rows as $r){$title=htmlspecialchars((string)$r->title,ENT_QUOTES,'UTF-8');$url=site_path('/post/'.rawurlencode((string)$r->slug));$out.='<article class="fpb-card"><h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3><p>'.htmlspecialchars(mb_substr(strip_tags((string)($r->excerpt??'')),0,160),ENT_QUOTES,'UTF-8').'</p></article>';}
+            foreach($rows as $r){$title=htmlspecialchars((string)$r->title,ENT_QUOTES,'UTF-8');$url=site_path('/post/'.rawurlencode((string)$r->slug));$image=(string)($r->image_url??'');$out.='<article class="fpb-card">'.($image!==''?'<a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'"><img loading="lazy" src="'.htmlspecialchars($image,ENT_QUOTES,'UTF-8').'" alt="'.$title.'"></a>':'').'<h3><a href="'.htmlspecialchars($url,ENT_QUOTES,'UTF-8').'">'.$title.'</a></h3><p>'.htmlspecialchars(mb_substr(strip_tags((string)($r->excerpt??'')),0,160),ENT_QUOTES,'UTF-8').'</p></article>';}
             return $out.'</div>';
         } catch(\Throwable){return '<p class="fpb-empty">Post grid is not available.</p>';}
     }
