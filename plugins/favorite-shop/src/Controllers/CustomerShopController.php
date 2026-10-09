@@ -217,16 +217,17 @@ final class CustomerShopController
             if($subtotal<(int)$coupon['min_subtotal_cents'])throw new \InvalidArgumentException('Cart subtotal does not meet the coupon minimum.');
             $couponDiscount=PromotionEngine::couponDiscount($coupon,$offers['items'],$shipping);
             if($couponDiscount<=0)throw new \InvalidArgumentException('This coupon does not apply to the current cart.');
+            $couponApplied=false;
             if((string)$coupon['discount_type']==='free_shipping'){
-                if(!empty($coupon['stackable']))$shipDiscount=max($shipDiscount,$couponDiscount);
-                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$discount=0;$offerDiscount=0;$shipDiscount=$couponDiscount;}
+                if(!empty($coupon['stackable'])){$shipDiscount=max($shipDiscount,$couponDiscount);$couponApplied=true;}
+                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$discount=0;$offerDiscount=0;$shipDiscount=$couponDiscount;$couponApplied=true;}
                 else $couponDiscount=0;
             } else {
-                if(!empty($coupon['stackable']))$discount=min($subtotal,$offerDiscount+$couponDiscount);
-                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$offerDiscount=0;$discount=min($subtotal,$couponDiscount);}
+                if(!empty($coupon['stackable'])){$discount=min($subtotal,$offerDiscount+$couponDiscount);$couponApplied=true;}
+                elseif($couponDiscount>$offerDiscount){$this->clearLineOffers($offers);$offerDiscount=0;$discount=min($subtotal,$couponDiscount);$couponApplied=true;}
                 else $couponDiscount=0;
             }
-            if($couponDiscount>0 || ((string)$coupon['discount_type']==='free_shipping' && $shipDiscount>0)){
+            if($couponApplied){
                 $couponId=(int)$coupon['id'];$couponCodeSaved=$coupon['code'];
             }
         }
