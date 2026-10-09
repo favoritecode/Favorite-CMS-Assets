@@ -20,7 +20,7 @@ final class AdminOrderController
     }
     public function handle(Request $r): Response|string {
         if((int)($_SESSION['auth_user_id']??0)<=0&&!isset($GLOBALS['_test_current_user']))return Response::redirect('/admin/login');
-        if(function_exists('current_user_can')&&!current_user_can('manage_options'))return Response::make('<h1>403 Access Denied</h1>',403);
+        if(!function_exists('current_user_can')||!current_user_can('manage_options'))return Response::make('<h1>403 Access Denied</h1>',403);
         if($r->method()==='POST')return $this->post($r);
         $action=(string)$r->get('action','index');$id=(int)$r->get('id',0);
         return $action==='view'&&$id>0?$this->view($id):$this->index($r);
