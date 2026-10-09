@@ -119,8 +119,9 @@ final class CustomerShopController
             try { $prepaidMethods = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class)->getAvailablePaymentMethods('BDT'); }
             catch (\Throwable $e) { error_log('[Favorite Shop checkout methods] '.$e->getMessage()); }
         }
-        $paymentOptions = '<option value="cash_on_delivery">Cash on Delivery (COD)</option>';
-        if ($prepaidMethods && (int)$pricing['total_cents'] > 0) $paymentOptions .= '<option value="favorite_pay">Prepaid — Favorite Pay (configured gateways)</option>';
+        $selectedPayment = (string)($oldAddress['payment_method'] ?? 'cash_on_delivery');
+        $paymentOptions = '<option value="cash_on_delivery"'.($selectedPayment === 'cash_on_delivery' ? ' selected' : '').'>Cash on Delivery (COD)</option>';
+        if ($prepaidMethods && (int)$pricing['total_cents'] > 0) $paymentOptions .= '<option value="favorite_pay"'.($selectedPayment === 'favorite_pay' ? ' selected' : '').'>Prepaid — Favorite Pay (configured gateways)</option>';
         $body = '<h1>Checkout</h1>'. $this->flashMessages().'<form method="post" action="/shop/checkout">'.$this->csrf()
             .'<label>Recipient name<input name="recipient_name" maxlength="190" required value="'.self::e($_SESSION['favorite_shop_checkout']['recipient_name'] ?? '').'"></label>'
             .'<label>Phone<input name="phone" maxlength="40" required value="'.self::e($_SESSION['favorite_shop_checkout']['phone'] ?? '').'"></label>'
