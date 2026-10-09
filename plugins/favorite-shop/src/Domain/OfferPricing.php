@@ -78,18 +78,22 @@ final class OfferPricing
         return $best;
     }
 
-    /** Scope matches if category OR label matches; an empty scope means all products. */
+    /** Category and label scopes combine with AND when both are configured; either scope works alone. */
     public static function matchesScope(array $productCategoryIds, array $productLabels, array $offerCategoryIds, array $offerLabels): bool
     {
         if ($offerCategoryIds === [] && $offerLabels === []) return true;
         $categories = array_map('intval', $productCategoryIds);
-        foreach ($offerCategoryIds as $id) if (in_array((int)$id, $categories, true)) return true;
+        $categoryMatch = false;
+        foreach ($offerCategoryIds as $id) if (in_array((int)$id, $categories, true)) { $categoryMatch = true; break; }
         $labels = array_map(static fn($v) => function_exists('mb_strtolower') ? mb_strtolower(trim((string)$v), 'UTF-8') : strtolower(trim((string)$v)), $productLabels);
+        $labelMatch = false;
         foreach ($offerLabels as $label) {
             $needle = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$label), 'UTF-8') : strtolower(trim((string)$label));
-            if ($needle !== '' && in_array($needle, $labels, true)) return true;
+            if ($needle !== '' && in_array($needle, $labels, true)) { $labelMatch = true; break; }
         }
-        return false;
+        // When both scopes are set, require both. A single selected scope works independently.
+        if ($offerCategoryIds !== [] && $offerLabels !== []) return $categoryMatch && $labelMatch;
+        return $offerCategoryIds !== [] ? $categoryMatch : $labelMatch;
     }
 
     private function __construct() {}
