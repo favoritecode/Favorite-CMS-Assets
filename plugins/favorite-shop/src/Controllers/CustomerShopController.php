@@ -53,11 +53,16 @@ final class CustomerShopController
 
     private function productCard(array $p): string
     {
-        $price = (int)($p['sale_price_cents'] ?? 0) > 0 ? (int)$p['sale_price_cents'] : (int)$p['price_cents'];
-        $image = trim((string)($p['cover_image_url'] ?? ''));
-        return '<article class="card">'.($image!==''?'<img loading="lazy" src="'.self::e($image).'" alt="'.self::e($p['name']).'">':'')
-            .'<h2>'.self::e($p['name']).'</h2><p>'.self::money($price).'</p><form method="post" action="/shop/cart/add/'.(int)$p['id'].'">'
-            .$this->csrf().'<label>Quantity <input type="number" min="1" step="1" name="quantity" value="1" required></label><button>Add to cart</button></form></article>';
+        $image=trim((string)($p['cover_image_url']??''));$body='<article class="card">'.($image!==''?'<img loading="lazy" src="'.self::e($image).'" alt="'.self::e($p['name']).'">':'').'<h2>'.self::e($p['name']).'</h2>';
+        if(($p['product_type']??'simple')==='variable'){
+            $q=$this->db()->prepare("SELECT * FROM favorite_shop_product_variants WHERE product_id=? AND status='active' ORDER BY id");$q->execute([(int)$p['id']]);$variants=$q->fetchAll(\PDO::FETCH_ASSOC);
+            if(!$variants)return $body.'<p>Currently unavailable.</p></article>';
+            $body.='<form method="post" action="/shop/cart/add/'.(int)$p['id'].'">'.$this->csrf().'<label>Choose variant<select name="variant_id" required>';
+            foreach($variants as $v){$options=json_decode((string)$v['option_values_json'],true)?:[];$label=implode(' / ',array_map(fn($k,$value)=>$k.': '.$value,array_keys($options),array_values($options)));$price=$v['price_cents']===null?(int)$p['price_cents']:(int)$v['price_cents'];$sale=$v['sale_price_cents']===null?($p['sale_price_cents']??null):$v['sale_price_cents'];if($sale!==null&&(int)$sale>0)$price=min($price,(int)$sale);$body.='<option value="'.(int)$v['id'].'">'.self::e($label).' — '.self::money($price).' · stock '.self::e($v['stock_quantity']).'</option>';}
+            return $body.'</select></label><label>Quantity <input type="number" min="0.001" step="0.001" name="quantity" value="1" required></label><button>Add to cart</button></form></article>';
+        }
+        $price=(int)$p['price_cents'];if((int)($p['sale_price_cents']??0)>0)$price=min($price,(int)$p['sale_price_cents']);
+        return $body.'<p>'.self::money($price).'</p><form method="post" action="/shop/cart/add/'.(int)$p['id'].'">'.$this->csrf().'<label>Quantity <input type="number" min="0.001" step="0.001" name="quantity" value="1" required></label><button>Add to cart</button></form></article>';
     }
 
     public function add(Request $request, string $id): Response
