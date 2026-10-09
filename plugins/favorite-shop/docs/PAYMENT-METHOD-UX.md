@@ -14,3 +14,12 @@
 - Secondary group: Pay Now (optional), listing only enabled Favorite Pay methods with clear names.
 - Keep the customer's selection when validation fails; never clear the cart or form because a coupon or payment attempt fails.
 - Final summary always shows subtotal, shipping, discount, and total.
+
+## Current Favorite Shop adapter behavior
+- Checkout offers prepaid only when Favorite Pay returns at least one enabled/configured BDT method; COD remains available without Favorite Pay.
+- The payment page validates the selected gateway against that live method list. Manual methods collect sender account/number and transaction reference and leave the order in `awaiting_verification` until an operator verifies the payment in Favorite Pay.
+- Automatic methods are initiated through `PaymentServiceInterface`. Provider checkout URLs must be valid HTTP(S) URLs. The configured CMS site URL is required for absolute return/callback URLs.
+- bKash return parameters are not trusted by themselves: the return is matched to the stored attempt and the gateway driver executes provider-side verification before the intent can be marked successful.
+- Favorite Pay intent status events are matched against both order number and the stored intent ID. Success marks the order paid and moves a pending order to processing; failure allows a retry; refund status is synchronized separately.
+- A paid or partially refunded prepaid order cannot be cancelled/returned through the Shop order screen until Favorite Pay records a full refund. This prevents the Shop inventory workflow from silently treating an unpaid refund as complete.
+- These are integration-level safeguards, not a substitute for testing each configured gateway with sandbox credentials and real callbacks/webhooks on an installed CMS.
