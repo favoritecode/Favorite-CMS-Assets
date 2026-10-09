@@ -252,6 +252,7 @@ final class CustomerShopController
         if ((int)($order['user_id'] ?? 0) > 0 && (int)($_SESSION['auth_user_id'] ?? 0) !== (int)$order['user_id']) {
             return Response::make('<h1>403 Access denied</h1>', 403);
         }
+        if ((string)($order['payment_method'] ?? '') === 'cash_on_delivery') return Response::make('<h1>Payment not available for this order</h1>', 404);
         if (in_array((string)$order['status'], ['cancelled','returned'], true)) {
             return $this->shell('Payment unavailable', '<p class="notice">This order is cancelled or returned. Please contact the store before attempting payment.</p>');
         }
@@ -424,6 +425,7 @@ final class CustomerShopController
         if ((int)($order['user_id'] ?? 0) > 0 && (int)($_SESSION['auth_user_id'] ?? 0) !== (int)$order['user_id']) {
             return Response::make('<h1>403 Access denied</h1>', 403);
         }
+        if ((string)($order['payment_method'] ?? '') === 'cash_on_delivery') return Response::make('<h1>Payment not available for this order</h1>', 404);
         if ((string)($order['payment_status'] ?? '') === 'paid') return Response::redirect('/shop/order/'.$orderNumber);
         if ($this->app->has(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class)) {
             try {
