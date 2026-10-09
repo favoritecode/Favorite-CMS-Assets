@@ -23,12 +23,12 @@ final class Installer
         self::ensureColumn($pdo, 'favorite_shop_product_variants', 'unit_label', 'VARCHAR(80) NULL');
         self::$ran = true;
     }
-    private static function ensureColumn(\\PDO $pdo, string $table, string $column, string $definition): void
+    private static function ensureColumn(\PDO $pdo, string $table, string $column, string $definition): void
     {
         // Identifiers are hard-coded by the plugin; definitions are static literals.
         $stmt = $pdo->prepare('SHOW COLUMNS FROM `' . $table . '` LIKE ?');
         $stmt->execute([$column]);
-        if ($stmt->fetch(\\PDO::FETCH_ASSOC)) return;
+        if ($stmt->fetch(\PDO::FETCH_ASSOC)) return;
         $pdo->exec('ALTER TABLE `' . $table . '` ADD COLUMN `' . $column . '` ' . $definition);
     }
     public static function statements(): array {
