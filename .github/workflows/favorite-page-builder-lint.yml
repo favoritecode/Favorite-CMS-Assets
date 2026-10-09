@@ -1,0 +1,33 @@
+name: Favorite Page Builder Lint
+
+on:
+  pull_request:
+    paths:
+      - "plugins/favorite-page-builder/**"
+      - ".github/workflows/favorite-page-builder-lint.yml"
+  push:
+    branches:
+      - feature/favorite-page-builder-v1
+    paths:
+      - "plugins/favorite-page-builder/**"
+      - ".github/workflows/favorite-page-builder-lint.yml"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathai/setup-php@v2
+        with:
+          php-version: "8.1"
+      - name: Lint plugin PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find plugins/favorite-page-builder -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Check editor JavaScript syntax
+        run: node --check plugins/favorite-page-builder/assets/builder.js
+      - name: Validate plugin manifest JSON
+        run: php -r '$j=json_decode(file_get_contents("plugins/favorite-page-builder/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($j["id"] ?? "") !== "favorite-page-builder") { exit(1); } echo "Manifest JSON valid.\n";'
