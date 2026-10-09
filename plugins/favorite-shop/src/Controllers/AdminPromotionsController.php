@@ -1,0 +1,75 @@
+<?php
+declare(strict_types=1);
+namespace FavoriteCMS\Shop\Controllers;
+
+use FavoriteCMS\Core\Application;
+use FavoriteCMS\Core\Database;
+use FavoriteCMS\Core\Request;
+use FavoriteCMS\Core\Response;
+use FavoriteCMS\Shop\Domain\CouponPolicy;
+use FavoriteCMS\Shop\Domain\OfferSchedule;
+use Throwable;
+
+/** Admin create/list/edit screens for scheduled offers and coupons. */
+final class AdminPromotionsController
+{
+    public function __construct(private Application $app) {}
+    public function handle(Request $request): Response|string
+    {
+        if ((int)($_SESSION['auth_user_id'] ?? 0) <= 0 && !isset($GLOBALS['_test_current_user'])) return Response::redirect('/admin/login');
+        if (function_exists('current_user_can') && !current_user_can('manage_options')) return Response::make('<h1>403 Access Denied</h1>',403);
+        return $request->method()==='POST' ? $this->save($request) : $this->page((string)$request->get('kind','offers'),(string)$request->get('action','index'),(int)$request->get('id',0));
+    }
+    private function db(): \PDO {
+        $db=$this->app->make(Database::class);
+        if (!method_exists($db,'getConnection') || !($pdo=$db->getConnection()) instanceof \PDO) throw new \RuntimeException('Favorite Shop database connection is unavailable.');
+        return $pdo;
+    }
+    private function save(Request $r): Response {
+        $kind=(string)$r->post('kind','offers');$coupon=$kind==='coupons';$base=$coupon?'/admin/page/favorite-shop-coupons':'/admin/page/favorite-shop-offers';
+        if (!in_array($kind,['offers','coupons'],true)) return Response::redirect('/admin/page/favorite-shop-offers');
+        if (!hash_equals((string)($_SESSION['_token']??''),(string)$r->post('_token',''))) { $_SESSION['flash_error']='Security token expired. Please try again.';return Response::redirect($base); }
+        $id=(int)$r->post('id',0);
+        try {
+            if ($coupon) {
+                $n=CouponPolicy::normalize(['code'=>$r->post('code',''),'discount_type'=>$r->post('discount_type','fixed'),'discount_value'=>$r->post('discount_value','0'),'min_subtotal_cents'=>$r->post('min_subtotal_cents','0'),'max_discount_cents'=>$r->post('max_discount_cents',''),'starts_at'=>$r->post('starts_at',''),'ends_at'=>$r->post('ends_at',''),'usage_limit'=>$r->post('usage_limit',''),'per_customer_limit'=>$r->post('per_customer_limit',''),'stackable'=>$r->post('stackable',false)]);
+                $f=['code'=>$n['code'],'description'=>$this->nullableText($r->post('description','')),'discount_type'=>$n['type'],'discount_value'=>$n['value'],'min_subtotal_cents'=>$n['min_subtotal_cents'],'max_discount_cents'=>$n['max_discount_cents'],'starts_at'=>$n['starts_at'],'ends_at'=>$n['ends_at'],'status'=>in_array((string)$r->post('status','active'),['active','paused'],true)?(string)$r->post('status','active'):'active','usage_limit'=>$n['usage_limit'],'per_customer_limit'=>$n['per_customer_limit'],'free_shipping'=>$n['type']==='free_shipping'?1:0,'stackable'=>$n['stackable']?1:0];
+                $table='favorite_shop_coupons';
+            } else {
+                $title=trim((string)$r->post('title',''));if($title===''||strlen($title)>190)throw new \InvalidArgumentException('Offer title is required (maximum 190 characters).');
+                $s=OfferSchedule::normalize((string)$r->post('starts_at',''),(string)$r->post('ends_at',''),(string)$r->post('status','scheduled'));
+                $type=(string)$r->post('discount_type','percent');if(!in_array($type,['sale_price','percent','fixed'],true))throw new \InvalidArgumentException('Choose sale price, percentage or fixed discount.');
+                $value=filter_var($r->post('discount_value','0'),FILTER_VALIDATE_INT);if($value===false||$value<0||($type==='percent'&&($value<1||$value>100)))throw new \InvalidArgumentException('Offer value is invalid; percentage must be 1–100.');
+                $f=['title'=>$title,'description'=>$this->nullableText($r->post('description','')),'discount_type'=>$type,'discount_value'=>$value,'starts_at'=>$s['starts_at'],'ends_at'=>$s['ends_at'],'status'=>in_array($s['status'],['draft','scheduled','paused'],true)?$s['status']:'scheduled','usage_limit'=>$this->nullablePositiveInt($r->post('usage_limit','')),'priority'=>(int)$r->post('priority','0'),'stackable'=>$r->post('stackable',false)?1:0];$table='favorite_shop_offers';
+            }
+            $pdo=$this->db();
+            if($id>0){$sets=[];foreach(array_keys($f) as $col)$sets[]=$col.' = ?';$values=array_values($f);$values[]=$id;$pdo->prepare('UPDATE '.$table.' SET '.implode(',',$sets).' WHERE id=?')->execute($values);}
+            else{$cols=array_keys($f);$pdo->prepare('INSERT INTO '.$table.' ('.implode(',',$cols).') VALUES ('.implode(',',array_fill(0,count($cols),'?')).')')->execute(array_values($f));}
+            $_SESSION['flash_success']=$coupon?'Coupon saved.':'Offer saved.';return Response::redirect($base);
+        } catch(Throwable $e) { $_SESSION['flash_error']=$e instanceof \InvalidArgumentException?$e->getMessage():'Could not save; check unique code and database schema.';return Response::redirect($base.'?action=create'); }
+    }
+    private function page(string $kind,string $action,int $id): string {
+        $coupon=$kind==='coupons';$table=$coupon?'favorite_shop_coupons':'favorite_shop_offers';$base=$coupon?'/admin/page/favorite-shop-coupons':'/admin/page/favorite-shop-offers';$title=$coupon?'Coupons':'Scheduled offers';$e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
+        $pdo=$this->db();$d=[];if($action==='edit'&&$id>0){$q=$pdo->prepare('SELECT * FROM '.$table.' WHERE id=?');$q->execute([$id]);$d=$q->fetch(\PDO::FETCH_ASSOC)?:[];}
+        $rows=$pdo->query('SELECT * FROM '.$table.' ORDER BY created_at DESC LIMIT 200')->fetchAll(\PDO::FETCH_ASSOC);$token=$e($_SESSION['_token']??(function_exists('csrf_token')?csrf_token():'');
+        $html='<div style="max-width:1100px;margin:24px auto;padding:18px"><style>.fs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.fs-grid label{display:block;font-weight:600}.fs-grid input,.fs-grid select,.fs-grid textarea{box-sizing:border-box;width:100%;padding:9px;margin:5px 0 12px;border:1px solid #bbb;border-radius:7px}.fs-card{padding:18px;border:1px solid #ddd;border-radius:12px;margin:16px 0;overflow:auto}.fs-btn{display:inline-block;padding:9px 13px;background:#185adb;color:white;border-radius:7px;text-decoration:none;border:0}.fs-table{width:100%;border-collapse:collapse}.fs-table td,.fs-table th{text-align:left;padding:9px;border-bottom:1px solid #ddd}</style><h1>'.$e($title).'</h1><p>Schedule is evaluated using UTC server time. Expired records remain in history.</p>';
+        foreach(['flash_error'=>'#fff0d7','flash_success'=>'#e2f8e8'] as $key=>$color){if(isset($_SESSION[$key])){$html.='<p style="background:'.$color.';padding:12px">'. $e($_SESSION[$key]).'</p>';unset($_SESSION[$key]);}}
+        $html.='<p><a class="fs-btn" href="'.$base.'">All records</a> <a class="fs-btn" href="'.$base.'?action=create">+ Create new</a></p>';
+        if(in_array($action,['create','edit'],true)){
+            $v=static fn($k,$default='')=>$e($d[$k]??$default);$html.='<div class="fs-card"><h2>'.($d?'Edit':'Create').' '.$e(rtrim($title,'s')).'</h2><form method="post" action="'.$base.'"><input type="hidden" name="_token" value="'.$token.'"><input type="hidden" name="kind" value="'.($coupon?'coupons':'offers').'"><input type="hidden" name="id" value="'.(int)($d['id']??0).'"><div class="fs-grid">';
+            if($coupon){
+                $html.='<label>Coupon code<input required name="code" maxlength="100" value="'.$v('code').'" placeholder="SAVE10"></label><label>Discount type<select name="discount_type"><option value="fixed">Fixed amount (paisa/cents)</option><option value="percent"'.($v('discount_type')==='percent'?' selected':'').'>Percentage (%)</option><option value="free_shipping"'.($v('discount_type')==='free_shipping'?' selected':'').'>Free shipping</option></select></label><label>Discount value<input type="number" min="0" name="discount_value" value="'.$v('discount_value','0').'"></label><label>Minimum subtotal (paisa/cents)<input type="number" min="0" name="min_subtotal_cents" value="'.$v('min_subtotal_cents','0').'"></label><label>Maximum discount (optional)<input type="number" min="0" name="max_discount_cents" value="'.$v('max_discount_cents').'"></label><label>Per-customer limit<input type="number" min="1" name="per_customer_limit" value="'.$v('per_customer_limit').'"></label>';
+            }else{
+                $html.='<label>Offer title<input required name="title" maxlength="190" value="'.$v('title').'"></label><label>Offer type<select name="discount_type"><option value="percent">Percentage off (%)</option><option value="fixed"'.($v('discount_type')==='fixed'?' selected':'').'>Fixed discount (paisa/cents)</option><option value="sale_price"'.($v('discount_type')==='sale_price'?' selected':'').'>Sale price (paisa/cents)</option></select></label><label>Value<input type="number" min="0" name="discount_value" required value="'.$v('discount_value','0').'"></label><label>Priority<input type="number" name="priority" value="'.$v('priority','0').'"></label>';
+            }
+            $html.='<label>Starts at (UTC)<input type="datetime-local" name="starts_at" required value="'.$v('starts_at').'"></label><label>Expires at (UTC)<input type="datetime-local" name="ends_at" required value="'.$v('ends_at').'"></label><label>Usage limit (blank = unlimited)<input type="number" min="1" name="usage_limit" value="'.$v('usage_limit').'"></label><label>Status<select name="status">';
+            foreach(($coupon?['active','paused']:['scheduled','draft','paused']) as $s)$html.='<option value="'.$s.'"'.($v('status',$coupon?'active':'scheduled')===$s?' selected':'').'>'.ucfirst($s).'</option>';
+            $html.='</select></label><label>Description<textarea name="description">'.$v('description').'</textarea></label><label><input type="checkbox" name="stackable" value="1"'.(!empty($d['stackable'])?' checked':'').'> Allow stacking</label></div><button class="fs-btn" type="submit">Save</button></form></div>';
+        }
+        $html.='<div class="fs-card"><h2>Recent records</h2><table class="fs-table"><thead><tr><th>Name/code</th><th>Discount</th><th>Start</th><th>Expiry</th><th>Status</th><th>Uses</th><th></th></tr></thead><tbody>';
+        foreach($rows as $row){try{$state=$coupon?CouponPolicy::state($row,(int)$row['usage_count'],0):OfferSchedule::state((string)$row['status'],(string)$row['starts_at'],(string)$row['ends_at']);}catch(Throwable){$state='invalid_schedule';}$name=$coupon?$row['code']:$row['title'];$html.='<tr><td>'.$e($name).'</td><td>'.$e($row['discount_type']).' '.$e($row['discount_value']).'</td><td>'.$e($row['starts_at']).'</td><td>'.$e($row['ends_at']).'</td><td>'.$e($state).'</td><td>'.(int)$row['usage_count'].($row['usage_limit']!==null?'/'.(int)$row['usage_limit']:'').'</td><td><a href="'.$base.'?action=edit&id='.(int)$row['id'].'">Edit</a></td></tr>';}
+        if(!$rows)$html.='<tr><td colspan="7">No records yet.</td></tr>';$html.='</tbody></table></div></div>';return $html;
+    }
+    private function nullableText(mixed $v): ?string {$s=trim((string)$v);return $s===''?null:substr($s,0,5000);}
+    private function nullablePositiveInt(mixed $v): ?int {if($v===null||$v==='')return null;$n=filter_var($v,FILTER_VALIDATE_INT);if($n===false||$n<1)throw new \InvalidArgumentException('Usage limit must be a positive whole number or blank.');return $n;}
+}
