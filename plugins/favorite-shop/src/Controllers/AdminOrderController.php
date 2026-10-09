@@ -44,13 +44,16 @@ final class AdminOrderController
                 $collected=filter_var($r->post('collected_cents',''),FILTER_VALIDATE_INT);
                 if($collected===false||$collected<0)throw new \InvalidArgumentException('Collected amount must be a non-negative integer in minor units.');
                 $total=(int)$order['total_cents'];
+                if($collected>$total)throw new \InvalidArgumentException('Collected COD amount cannot exceed the order total.');
                 if($collected<$total) {
                     $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='unpaid' WHERE id=?")->execute([$id]);
                     $new=$old;
                 } else {
                     $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='paid' WHERE id=?")->execute([$id]);
-                    $pdo->prepare("UPDATE favorite_shop_shipments SET cod_collected_cents=? WHERE order_id=?")->execute([$collected,$id]);
                 }
+                $ship=$pdo->prepare('SELECT id FROM favorite_shop_shipments WHERE order_id=? ORDER BY id DESC LIMIT 1');$ship->execute([$id]);$shipmentId=$ship->fetchColumn();
+                if($shipmentId!==false)$pdo->prepare('UPDATE favorite_shop_shipments SET cod_collected_cents=? WHERE id=?')->execute([$collected,(int)$shipmentId]);
+                else $pdo->prepare('INSERT INTO favorite_shop_shipments (order_id,cod_collected_cents,notes) VALUES (?,?,?)')->execute([$id,$collected,$collected<$total?'Partial COD collection recorded; payment remains unpaid.':'COD fully collected.']);
                 $pdo->prepare("INSERT INTO favorite_shop_order_events (order_id,event_key,from_status,to_status,note,actor_user_id) VALUES (?,'cod_collection',?,?,?,?)")
                     ->execute([$id,$order['payment_status'],$collected>=$total?'paid':'unpaid','Collected minor units: '.$collected,(int)($_SESSION['auth_user_id']??0)]);
             } else throw new \InvalidArgumentException('Unknown order action.');
