@@ -7,6 +7,9 @@ use FavoriteCMS\Core\Request;
 use FavoriteCMS\Shop\Controllers\AdminProductController;
 use FavoriteCMS\Shop\Controllers\AdminCategoryController;
 use FavoriteCMS\Shop\Controllers\AdminPromotionsController;
+use FavoriteCMS\Shop\Controllers\AdminOrderController;
+use FavoriteCMS\Shop\Controllers\AdminDeliveryZoneController;
+use Throwable;
 final class FavoriteShopPlugin
 {
     public const VERSION = '1.0.0';
@@ -42,7 +45,7 @@ final class FavoriteShopPlugin
         }
         if (function_exists('add_route')) {
             add_route(['GET','POST'], '/admin/page/favorite-shop-orders', fn(Request $request) => (new AdminOrderController($this->app))->handle($request));
-            add_route(['GET','POST'], '/admin/page/favorite-shop-delivery', fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\AdminDeliveryZoneController($this->app))->handle($request));
+            add_route(['GET','POST'], '/admin/page/favorite-shop-delivery', fn(Request $request) => (new AdminDeliveryZoneController($this->app))->handle($request));
 
         }
         if (function_exists('add_admin_menu')) {
