@@ -106,9 +106,9 @@ final class AdminProductController
         }
         $gallery = json_decode((string) ($product['gallery_json'] ?? '[]'), true);
         $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';
-        $variantStmt=$this->db()->prepare('SELECT id,sku,option_values_json,unit_type,unit_quantity,unit_label,price_cents,sale_price_cents,stock_quantity,weight_grams,image_url,status FROM favorite_shop_product_variants WHERE product_id=? ORDER BY id');
+        $variantStmt=$this->db()->prepare('SELECT id,sku,option_values_json,unit_type,unit_quantity,unit_label,price_cents,sale_price_cents,stock_quantity,stock_status,low_stock_threshold,allow_backorder,weight_grams,image_url,status FROM favorite_shop_product_variants WHERE product_id=? ORDER BY id');
         $variantStmt->execute([(int)$product['id']]);$variantRows=$variantStmt->fetchAll(\PDO::FETCH_ASSOC);$variantInput=[];
-        foreach($variantRows as $vr){$opts=json_decode((string)$vr['option_values_json'],true)?:[];$variantInput[]=['id'=>(int)$vr['id'],'sku'=>$vr['sku'],'options'=>$opts,'unit_type'=>$vr['unit_type'],'unit_quantity'=>$vr['unit_quantity'],'unit_label'=>$vr['unit_label'],'price'=>$vr['price_cents']===null?'':number_format((int)$vr['price_cents']/100,2,'.',''),'sale_price'=>$vr['sale_price_cents']===null?'':number_format((int)$vr['sale_price_cents']/100,2,'.',''),'stock_quantity'=>$vr['stock_quantity'],'weight_grams'=>$vr['weight_grams'],'image_url'=>$vr['image_url'],'status'=>$vr['status']];}
+        foreach($variantRows as $vr){$opts=json_decode((string)$vr['option_values_json'],true)?:[];$variantInput[]=['id'=>(int)$vr['id'],'sku'=>$vr['sku'],'options'=>$opts,'unit_type'=>$vr['unit_type'],'unit_quantity'=>$vr['unit_quantity'],'unit_label'=>$vr['unit_label'],'price'=>$vr['price_cents']===null?'':number_format((int)$vr['price_cents']/100,2,'.',''),'sale_price'=>$vr['sale_price_cents']===null?'':number_format((int)$vr['sale_price_cents']/100,2,'.',''),'stock_quantity'=>$vr['stock_quantity'],'stock_status'=>$vr['stock_status'],'low_stock_threshold'=>$vr['low_stock_threshold'],'allow_backorder'=>(int)$vr['allow_backorder'],'weight_grams'=>$vr['weight_grams'],'image_url'=>$vr['image_url'],'status'=>$vr['status']];}
         $product['variants_json_text']=json_encode($variantInput,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)?:'[]';
         $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);
         $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
@@ -205,12 +205,12 @@ final class AdminProductController
             $pdo->prepare('DELETE FROM favorite_shop_product_category_map WHERE product_id = ?')->execute([$id]);
             $pdo->prepare("UPDATE favorite_shop_product_variants SET status='archived' WHERE product_id=?")->execute([$id]);
             foreach($variants as $variant){
-                $variantId=$variant['id'];$data=[$variant['sku'],json_encode($variant['options'],JSON_UNESCAPED_UNICODE),$variant['unit_type'],$variant['unit_quantity'],$variant['unit_label'],$variant['price_cents'],$variant['sale_price_cents'],$variant['stock_quantity'],$variant['weight_grams'],$variant['image_url'],$variant['status']];
+                $variantId=$variant['id'];$data=[$variant['sku'],json_encode($variant['options'],JSON_UNESCAPED_UNICODE),$variant['unit_type'],$variant['unit_quantity'],$variant['unit_label'],$variant['price_cents'],$variant['sale_price_cents'],$variant['stock_quantity'],$variant['stock_status'],$variant['low_stock_threshold'],$variant['allow_backorder'],$variant['weight_grams'],$variant['image_url'],$variant['status']];
                 if($variantId>0){
                     $check=$pdo->prepare('SELECT id FROM favorite_shop_product_variants WHERE id=? AND product_id=?');$check->execute([$variantId,$id]);if(!$check->fetchColumn())throw new \InvalidArgumentException('A selected variant does not belong to this product.');
-                    $pdo->prepare('UPDATE favorite_shop_product_variants SET sku=?,option_values_json=?,unit_type=?,unit_quantity=?,unit_label=?,price_cents=?,sale_price_cents=?,stock_quantity=?,weight_grams=?,image_url=?,status=? WHERE id=? AND product_id=?')->execute([...$data,$variantId,$id]);
+                    $pdo->prepare('UPDATE favorite_shop_product_variants SET sku=?,option_values_json=?,unit_type=?,unit_quantity=?,unit_label=?,price_cents=?,sale_price_cents=?,stock_quantity=?,stock_status=?,low_stock_threshold=?,allow_backorder=?,weight_grams=?,image_url=?,status=? WHERE id=? AND product_id=?')->execute([...$data,$variantId,$id]);
                 }else{
-                    $pdo->prepare('INSERT INTO favorite_shop_product_variants (product_id,sku,option_values_json,unit_type,unit_quantity,unit_label,price_cents,sale_price_cents,stock_quantity,weight_grams,image_url,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')->execute([$id,...$data]);
+                    $pdo->prepare('INSERT INTO favorite_shop_product_variants (product_id,sku,option_values_json,unit_type,unit_quantity,unit_label,price_cents,sale_price_cents,stock_quantity,stock_status,low_stock_threshold,allow_backorder,weight_grams,image_url,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')->execute([$id,...$data]);
                 }
             }
 
@@ -242,10 +242,13 @@ final class AdminProductController
             if($price!==null&&$sale!==null&&$sale>$price)throw new \InvalidArgumentException('Variant sale price cannot exceed its regular price.');
             $stock=$row['stock_quantity']??0;if(!is_numeric($stock)||(float)$stock<0||!is_finite((float)$stock))throw new \InvalidArgumentException('Variant stock must be non-negative.');
             $stock=number_format((float)$stock,3,'.','');if($unit==='piece'&&floor((float)$stock)!==(float)$stock)throw new \InvalidArgumentException('Piece variant stock must be a whole number.');
+            $threshold=$row['low_stock_threshold']??0;if(!is_numeric($threshold)||(float)$threshold<0||!is_finite((float)$threshold))throw new \InvalidArgumentException('Variant low-stock threshold must be non-negative.');
+            $backorder=filter_var($row['allow_backorder']??false,FILTER_VALIDATE_BOOL);
+            $stockStatus=StockStatus::resolve((float)$stock,true,$backorder,(float)$threshold);
             $weight=$row['weight_grams']??null;if($weight!==null&&$weight!==''&&(!is_numeric($weight)||(float)$weight<0||(float)$weight>2147483647))throw new \InvalidArgumentException('Variant shipping weight must be non-negative grams.');
             $status=(string)($row['status']??'active');if(!in_array($status,['active','archived'],true))$status='active';
             $id=filter_var($row['id']??0,FILTER_VALIDATE_INT);if($id===false||$id<0)throw new \InvalidArgumentException('Variant ID is invalid.');
-            $sku=trim((string)($row['sku']??''));$out[]=['id'=>(int)$id,'sku'=>$sku===''?null:substr($sku,0,100),'options'=>$cleanOptions,'unit_type'=>$unit,'unit_quantity'=>Quantity::normalize($row['unit_quantity']??1),'unit_label'=>isset($row['unit_label'])?substr(trim((string)$row['unit_label']),0,80):null,'price_cents'=>$price,'sale_price_cents'=>$sale,'stock_quantity'=>rtrim(rtrim($stock,'0'),'.')?:'0','weight_grams'=>$weight===''||$weight===null?null:(int)$weight,'image_url'=>$this->safeImageUrl((string)($row['image_url']??'')),'status'=>$status];
+            $sku=trim((string)($row['sku']??''));$out[]=['id'=>(int)$id,'sku'=>$sku===''?null:substr($sku,0,100),'options'=>$cleanOptions,'unit_type'=>$unit,'unit_quantity'=>Quantity::normalize($row['unit_quantity']??1),'unit_label'=>isset($row['unit_label'])?substr(trim((string)$row['unit_label']),0,80):null,'price_cents'=>$price,'sale_price_cents'=>$sale,'stock_quantity'=>rtrim(rtrim($stock,'0'),'.')?:'0','stock_status'=>$stockStatus,'low_stock_threshold'=>number_format((float)$threshold,3,'.',''),'allow_backorder'=>$backorder?1:0,'weight_grams'=>$weight===''||$weight===null?null:(int)$weight,'image_url'=>$this->safeImageUrl((string)($row['image_url']??'')),'status'=>$status];
         }
         return $out;
     }
