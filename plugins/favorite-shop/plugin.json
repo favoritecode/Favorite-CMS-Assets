@@ -5,7 +5,29 @@
   "description": "Physical product catalog, inventory, shipping, checkout, orders, and Cash on Delivery for Favorite CMS.",
   "author": "Favorite CMS Team",
   "requires_php": "8.1.0",
-  "dependencies": ["favorite-pay"],
+  "dependencies": [],
   "entry_point": "plugin.php",
-  "tables": ["favorite_shop_products","favorite_shop_product_categories","favorite_shop_product_category_map","favorite_shop_product_variants","favorite_shop_inventory_movements","favorite_shop_carts","favorite_shop_cart_items","favorite_shop_orders","favorite_shop_order_items","favorite_shop_order_addresses","favorite_shop_shipments","favorite_shop_order_events","favorite_shop_settings"]
+  "tables": [
+    "favorite_shop_products",
+    "favorite_shop_product_categories",
+    "favorite_shop_product_category_map",
+    "favorite_shop_product_variants",
+    "favorite_shop_inventory_movements",
+    "favorite_shop_carts",
+    "favorite_shop_cart_items",
+    "favorite_shop_orders",
+    "favorite_shop_order_items",
+    "favorite_shop_order_addresses",
+    "favorite_shop_shipments",
+    "favorite_shop_order_events",
+    "favorite_shop_offers",
+    "favorite_shop_offer_redemptions",
+    "favorite_shop_coupons",
+    "favorite_shop_coupon_redemptions",
+    "favorite_shop_delivery_zones",
+    "favorite_shop_settings"
+  ],
+  "optional_dependencies": [
+    "favorite-pay"
+  ]
 }
