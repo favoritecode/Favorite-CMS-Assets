@@ -14,10 +14,10 @@ final class PromotionEngine
      * @param array<int,array{product_id?:int,quantity:int|float,unit_price_cents:int,category_ids?:array,labels?:array}> $items
      * @return array{items:array,discount_cents:int,shipping_discount_cents:int,applied:array}
      */
-    public static function applyOffers(array $items, array $offers, int $shippingCents, ?\\DateTimeImmutable $now = null): array
+    public static function applyOffers(array $items, array $offers, int $shippingCents, ?\DateTimeImmutable $now = null): array
     {
-        if ($shippingCents < 0) throw new \\InvalidArgumentException('Shipping cannot be negative.');
-        $now = $now ?? new \\DateTimeImmutable('now', new \\DateTimeZone('UTC'));
+        if ($shippingCents < 0) throw new \InvalidArgumentException('Shipping cannot be negative.');
+        $now = $now ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $result = array_values($items);
         $discountTotal = 0;
         $shippingDiscount = 0;
@@ -25,7 +25,7 @@ final class PromotionEngine
         foreach ($result as $index => &$item) {
             $qty = (float)($item['quantity'] ?? 0);
             $unit = (int)($item['unit_price_cents'] ?? -1);
-            if ($qty <= 0 || $unit < 0) throw new \\InvalidArgumentException('Cart line quantity and price must be valid.');
+            if ($qty <= 0 || $unit < 0) throw new \InvalidArgumentException('Cart line quantity and price must be valid.');
             $categories = (array)($item['category_ids'] ?? []);
             $labels = (array)($item['labels'] ?? []);
             $best = ['discount'=>0,'id'=>null,'priority'=>PHP_INT_MIN,'type'=>null];
@@ -77,7 +77,7 @@ final class PromotionEngine
      */
     public static function couponDiscount(array $coupon, array $items, int $shippingCents): int
     {
-        if ($shippingCents < 0) throw new \\InvalidArgumentException('Shipping cannot be negative.');
+        if ($shippingCents < 0) throw new \InvalidArgumentException('Shipping cannot be negative.');
         $categoryIds = json_decode((string)($coupon['category_ids_json'] ?? '[]'), true) ?: [];
         $scopeLabels = json_decode((string)($coupon['labels_json'] ?? '[]'), true) ?: [];
         if (($coupon['discount_type'] ?? '') === 'free_shipping') return $shippingCents;
@@ -86,7 +86,7 @@ final class PromotionEngine
             if (!OfferPricing::matchesScope((array)($item['category_ids'] ?? []), (array)($item['labels'] ?? []), $categoryIds, $scopeLabels)) continue;
             $qty = (float)($item['quantity'] ?? 0);
             $price = (int)($item['unit_price_cents'] ?? -1);
-            if ($qty <= 0 || $price < 0) throw new \\InvalidArgumentException('Cart line quantity and price must be valid.');
+            if ($qty <= 0 || $price < 0) throw new \InvalidArgumentException('Cart line quantity and price must be valid.');
             $eligibleSubtotal += (int)floor($qty * $price);
         }
         return CouponPolicy::discountCents($coupon, $eligibleSubtotal, $shippingCents);
