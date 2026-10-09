@@ -592,7 +592,7 @@ final class CustomerShopController
                 'weight_grams'=>$weight,
                 'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],
                 'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity'],
-                'allow_backorder'=>$variantId>0?0:(int)$p['allow_backorder']
+                'allow_backorder'=>$variantId>0?(int)($v['allow_backorder']??0):(int)$p['allow_backorder']
             ];
         }
         return $items;
