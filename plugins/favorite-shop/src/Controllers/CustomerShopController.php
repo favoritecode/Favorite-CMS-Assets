@@ -155,7 +155,7 @@ final class CustomerShopController
                     $vq=$pdo->prepare("SELECT * FROM favorite_shop_product_variants WHERE id=? AND product_id=? AND status='active' FOR UPDATE");
                     $vq->execute([$variantId,(int)$p['id']]);$v=$vq->fetch(\PDO::FETCH_ASSOC);
                     if(!$v)throw new \RuntimeException('A selected product variant is no longer available.');
-                    if((float)$v['stock_quantity']+0.0000001<$qty&&(int)($v['allow_backorder']??0)!==1)throw new \RuntimeException('Insufficient stock for selected variant of '.(string)$p['name'].'.');
+                    if(!StockStatus::canFulfil($v['stock_quantity'],$qty,true,(int)($v['allow_backorder']??0)===1))throw new \RuntimeException('Insufficient stock for selected variant of '.(string)$p['name'].'.');
                 }elseif((int)$p['manage_stock']===1&&(float)$p['stock_quantity']+0.0000001<$qty&&(int)$p['allow_backorder']!==1)throw new \RuntimeException('Insufficient stock for '.(string)$p['name'].'.');
                 $unit=$v&&$v['price_cents']!==null?(int)$v['price_cents']:(int)$p['price_cents'];
                 $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
@@ -180,12 +180,12 @@ final class CustomerShopController
                     if(!empty($item['variant_id'])){
                         $u=$pdo->prepare("UPDATE favorite_shop_product_variants SET stock_status=CASE WHEN GREATEST(0,stock_quantity-?)<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN GREATEST(0,stock_quantity-?)<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END, stock_quantity=GREATEST(0,stock_quantity-?) WHERE id=? AND product_id=? AND (allow_backorder=1 OR stock_quantity>=?)");
                         $u->execute([$item['quantity'],$item['quantity'],$item['quantity'],$item['variant_id'],$item['product_id'],$item['quantity']]);
-                        if($u->rowCount()!==1)throw new \RuntimeException('Variant stock changed during checkout; please retry.');
+                        if($u->rowCount()!==1&&!((int)($item['allow_backorder']??0)===1&&(float)($item['stock_quantity']??0)<=0))throw new \RuntimeException('Variant stock changed during checkout; please retry.');
                         $after=$pdo->prepare("SELECT stock_quantity FROM favorite_shop_product_variants WHERE id=?");$after->execute([$item['variant_id']]);$qtyAfter=(float)$after->fetchColumn();
                     }else{
                         $u=$pdo->prepare("UPDATE favorite_shop_products SET stock_status=CASE WHEN GREATEST(0,stock_quantity-?)<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN GREATEST(0,stock_quantity-?)<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END, stock_quantity=GREATEST(0,stock_quantity-?) WHERE id=? AND (allow_backorder=1 OR stock_quantity>=?)");
                         $u->execute([$item['quantity'],$item['quantity'],$item['quantity'],$item['product_id'],$item['quantity']]);
-                        if($u->rowCount()!==1)throw new \RuntimeException('Stock changed during checkout; please retry.');
+                        if($u->rowCount()!==1&&!((int)($item['allow_backorder']??0)===1&&(float)($item['stock_quantity']??0)<=0))throw new \RuntimeException('Stock changed during checkout; please retry.');
                         $after=$pdo->prepare("SELECT stock_quantity FROM favorite_shop_products WHERE id=?");$after->execute([$item['product_id']]);$qtyAfter=(float)$after->fetchColumn();
                     }
                     $pdo->prepare("INSERT INTO favorite_shop_inventory_movements (product_id,variant_id,movement_type,quantity_delta,quantity_after,reference_type,reference_id,note,actor_user_id) VALUES (?,?, 'order',?,?, 'order',?,'Stock reserved at checkout',?)")
