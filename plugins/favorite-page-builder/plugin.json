@@ -1,0 +1,13 @@
+{
+  "id": "favorite-page-builder",
+  "name": "Favorite Page Builder",
+  "version": "1.0.0",
+  "description": "Elementor-style visual page builder with JSON templates, dynamic content grids, landing pages, and checkout/confirmation layouts for Favorite CMS Universal.",
+  "author": "Favorite CMS Team",
+  "requires_php": "8.1.0",
+  "dependencies": [],
+  "entry_point": "plugin.php",
+  "tables": [
+    "favorite_page_builder_pages"
+  ]
+}
