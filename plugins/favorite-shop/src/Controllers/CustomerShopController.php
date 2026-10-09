@@ -429,16 +429,34 @@ final class CustomerShopController
             try {
                 $payments = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class);
                 $intentId = (string)($order['payment_intent_id'] ?? '');
-                $intent = $intentId !== '' ? $payments->getIntent($intentId) : null;
-                if ($intent && !$intent->getStatus()->isFinal()) {
-                    $payments->updateIntentStatus($intentId, \FavoriteCMS\Pay\Domain\PaymentStatus::CANCELLED);
+                if ($intentId !== '' && method_exists($payments, 'getAttemptsForTransaction')
+                    && method_exists($payments, 'markAttemptSuccessfulViaWebhook')
+                    && method_exists($payments, 'markAttemptFailedViaWebhook')) {
+                    $attempts = $payments->getAttemptsForTransaction($intentId);
+                    foreach ($attempts as $attempt) {
+                        if ($attempt->getStatus()->isFinal()) continue;
+                        $gateway = $this->app->make(\FavoriteCMS\Pay\Services\GatewayRegistry::class)->get($attempt->getGatewayId());
+                        if (!method_exists($gateway, 'queryStatus')) continue;
+                        $providerStatus = $gateway->queryStatus($attempt);
+                        if ($providerStatus === \FavoriteCMS\Pay\Domain\PaymentStatus::FAILED
+                            || $providerStatus === \FavoriteCMS\Pay\Domain\PaymentStatus::CANCELLED) {
+                            $payments->markAttemptFailedViaWebhook($attempt->getId(), 'The payment provider confirmed the checkout was not completed.', $attempt->getTransactionReference(), ['provider_status' => $providerStatus->value]);
+                        } elseif ($providerStatus === \FavoriteCMS\Pay\Domain\PaymentStatus::SUCCEEDED
+                            && $attempt->getGatewayId() === 'bkash_direct'
+                            && method_exists($gateway, 'executeCallback')) {
+                            $verified = $gateway->executeCallback($attempt, ['status' => 'success', 'paymentID' => (string)$attempt->getTransactionReference()]);
+                            if ($verified->getStatus()->value === 'succeeded') {
+                                $payments->markAttemptSuccessfulViaWebhook($attempt->getId(), $verified->getTransactionReference(), $verified->getMetadata());
+                            }
+                        }
+                    }
                 }
             } catch (\Throwable $e) {
-                // A provider may have completed payment while the browser was returning from its cancel screen.
+                // Do not mark a payment cancelled solely because the browser returned from a provider cancel screen.
                 error_log('[Favorite Shop payment cancel return] '.$e->getMessage());
             }
         }
-        $_SESSION['flash_error'] = 'Payment was cancelled or not completed. You can retry from the order page.';
+        $_SESSION['flash_error'] = 'You returned from the payment provider. The order remains unpaid until the provider confirms its final status.';
         return Response::redirect('/shop/order/'.$orderNumber);
     }
 
