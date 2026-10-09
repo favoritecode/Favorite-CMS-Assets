@@ -273,7 +273,8 @@ final class CustomerShopController
                 foreach ($attempts as $candidate) {
                     if ($candidate->getGatewayId() === 'bkash_direct') { $attempt = $candidate; break; }
                 }
-                if ($attempt && !in_array($attempt->getStatus()->value, ['succeeded','failed','cancelled'], true)) {
+                if ($attempt && hash_equals((string)$attempt->getTransactionReference(), (string)$request->get('paymentID', ''))
+                    && !in_array($attempt->getStatus()->value, ['succeeded','failed','cancelled'], true)) {
                     $gateway = $this->app->make(\FavoriteCMS\Pay\Services\GatewayRegistry::class)->get('bkash_direct');
                     if (method_exists($gateway, 'executeCallback')) {
                         $verifiedAttempt = $gateway->executeCallback($attempt, $request->all());
