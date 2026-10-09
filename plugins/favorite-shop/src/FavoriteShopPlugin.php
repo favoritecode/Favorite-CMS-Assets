@@ -40,7 +40,7 @@ final class FavoriteShopPlugin
                 $orderNumber = (string)($event['source_reference'] ?? '');
                 $intentId = (string)($event['intent_id'] ?? '');
                 $status = (string)($event['status'] ?? '');
-                if ($orderNumber === '' || $intentId === '' || !in_array($status, ['awaiting_verification','pending','processing','succeeded','failed','cancelled'], true)) return;
+                if ($orderNumber === '' || $intentId === '' || !in_array($status, ['awaiting_verification','pending','processing','succeeded','failed','cancelled','refunded','partially_refunded'], true)) return;
                 try {
                     $db = $this->app->make(Database::class);
                     if (!method_exists($db, 'getConnection') || !($pdo = $db->getConnection()) instanceof \PDO) return;
@@ -59,6 +59,10 @@ final class FavoriteShopPlugin
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_intent_id=? AND payment_status<>'paid'")->execute([(int)$order['id'], $intentId]);
                     } elseif ($status === 'awaiting_verification') {
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='awaiting_verification' WHERE id=? AND payment_intent_id=? AND payment_status<>'paid'")->execute([(int)$order['id'], $intentId]);
+                    } elseif ($status === 'refunded') {
+                        $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='refunded' WHERE id=? AND payment_intent_id=?")->execute([(int)$order['id'], $intentId]);
+                    } elseif ($status === 'partially_refunded') {
+                        $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='partially_refunded' WHERE id=? AND payment_intent_id=?")->execute([(int)$order['id'], $intentId]);
                     } elseif ($status === 'processing' || $status === 'pending') {
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='pending' WHERE id=? AND payment_intent_id=? AND payment_status NOT IN ('paid','awaiting_verification')")->execute([(int)$order['id'], $intentId]);
                     }
