@@ -84,7 +84,8 @@ final class AdminProductController
             $product = array_merge($product, $found);
         }
         $gallery = json_decode((string) ($product['gallery_json'] ?? '[]'), true);
-        $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';\n        $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);\n        $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
+        $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';
+        $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);\n        $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
         $categoryStmt = $this->db()->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id = ?');
         $categoryStmt->execute([(int)$product['id']]);
         $product['category_ids'] = array_map('intval', $categoryStmt->fetchAll(\PDO::FETCH_COLUMN));
