@@ -145,13 +145,13 @@ final class CustomerShopController
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
             $shipping = (int)$pricing['shipping_cents'];
-            $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(5)));
+            $orderNumber = 'FS'.gmdate('ymd').strtoupper(bin2hex(random_bytes(10)));
             $userId=(int)($_SESSION['auth_user_id'] ?? 0); if ($userId<1) $userId=null;
             $pdo->prepare("INSERT INTO favorite_shop_orders (order_number,user_id,phone,status,payment_method,payment_status,currency,subtotal_cents,discount_cents,shipping_cents,tax_cents,total_cents,customer_note,coupon_code_snapshot,discount_details_json,shipping_zone_snapshot) VALUES (?,?,?,'pending','cash_on_delivery','unpaid','BDT',?,?,?,?,?,?,?, ?,?)")
                 ->execute([$orderNumber,$userId,$input['phone'],$pricing['subtotal_cents'],$pricing['discount_cents'],$shipping,$pricing['tax_cents'],$pricing['total_cents'],$input['customer_note'] ?: null,$pricing['coupon_code'],$pricing['details_json'],$pricing['zone']]);
             $orderId=(int)$pdo->lastInsertId();
             $pdo->prepare("INSERT INTO favorite_shop_order_addresses (order_id,address_type,recipient_name,phone,address_line1,address_line2,area,city,district,country_code) VALUES (?,'shipping',?,?,?,?,?,?,?,?,?)")
-                ->execute([$orderId,$input['recipient_name'],$input['phone'],$input['address_line1'],$input['address_line2'] ?: null,$input['area'] ?: null,$input['city'],$input['city'],$input['country_code']]);
+                ->execute([$orderId,$input['recipient_name'],$input['phone'],$input['address_line1'],$input['address_line2'] ?: null,$input['area'] ?: null,$input['city'],$input['city'],null,$input['country_code']]);
             foreach ($pricing['items'] as $item) {
                 $pdo->prepare("INSERT INTO favorite_shop_order_items (order_id,product_id,sku_snapshot,name_snapshot,unit_price_cents,quantity,line_total_cents,unit_snapshot,unit_quantity_snapshot,unit_label_snapshot,shipping_weight_grams_snapshot) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
                     ->execute([$orderId,$item['product_id'],$item['sku'],$item['name'],$item['unit_price_cents'],(int)$item['quantity'],(int)($item['quantity']*$item['unit_price_cents'])-(int)($item['offer_discount_cents'] ?? 0),$item['unit_type'] ?? 'piece',$item['unit_quantity'] ?? 1,$item['unit_label'] ?? null,$item['weight_grams'] ?? null]);
@@ -214,7 +214,7 @@ final class CustomerShopController
         }
         $total=max(0,$subtotal-$discount+max(0,$shipping-$shipDiscount));
         $lineItems=$offers['items'];
-        return ['items'=>$lineItems,'subtotal_cents'=>$subtotal,'discount_cents'=>$discount,'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount,'shipping_cents'=>max(0,$shipping-$shipDiscount),'tax_cents'=>0,'total_cents'=>$total,'coupon_id'=>$couponId,'coupon_code'=>$couponCodeSaved,'details_json'=>json_encode(['offers'=>$offers['applied'],'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount]),'zone'=>'default','discounts'=>$offers];
+        return ['items'=>$lineItems,'subtotal_cents'=>$subtotal,'discount_cents'=>$discount,'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount,'shipping_cents'=>max(0,$shipping-$shipDiscount),'tax_cents'=>0,'total_cents'=>$total,'coupon_id'=>$couponId,'coupon_code'=>$couponCodeSaved,'details_json'=>json_encode(['offers'=>$offers['applied'],'coupon_discount_cents'=>$couponDiscount,'shipping_discount_cents'=>$shipDiscount]),'zone'=>(string)($_SESSION['favorite_shop_shipping_zone'] ?? 'fallback'),'discounts'=>$offers];
     }
 
     private function cartItems(): array
@@ -225,7 +225,21 @@ final class CustomerShopController
         return $items;
     }
     private function categoryIds(\PDO $pdo,int $id):array{$q=$pdo->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id=?');$q->execute([$id]);return array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));}
-    private function shippingCents(\PDO $pdo,string $country,string $city,string $area):int{$q=$pdo->prepare("SELECT setting_value FROM favorite_shop_settings WHERE setting_key=?");$q->execute([$country==='BD'?'shipping_bd_default_cents':'shipping_intl_default_cents']);$v=$q->fetchColumn();return $v===false?0:max(0,(int)$v);}
+    private function shippingCents(\PDO $pdo,string $country,string $city,string $area):int{
+        $q=$pdo->prepare("SELECT * FROM favorite_shop_delivery_zones WHERE country_code=? AND enabled=1 ORDER BY priority DESC,id DESC");$q->execute([$country]);$zones=$q->fetchAll(\PDO::FETCH_ASSOC);$best=null;$bestSpecificity=-1;
+        foreach($zones as $z){$level=(string)$z['region_level'];$value=strtolower(trim((string)($z['region_value']??'')));$specificity=0;
+            if($level==='area'){if($value===''||$value!==strtolower(trim($area)))continue;$specificity=6;}
+            elseif($level==='city'){if($value!==strtolower(trim($city)))continue;$specificity=5;}
+            elseif($level==='district'){if($value!==strtolower(trim($city)))continue;$specificity=4;}
+            elseif($level==='division')continue;
+            elseif($level==='country')$specificity=2;
+            elseif($level==='default')$specificity=1;
+            else continue;
+            if($specificity>$bestSpecificity||($specificity===$bestSpecificity&&(int)$z['priority']>(int)($best['priority']??PHP_INT_MIN))){$best=$z;$bestSpecificity=$specificity;}
+        }
+        if($best){$_SESSION['favorite_shop_shipping_zone']=(string)$best['name'];return max(0,(int)$best['rate_cents']);}
+        $q=$pdo->prepare("SELECT setting_value FROM favorite_shop_settings WHERE setting_key=?");$q->execute([$country==='BD'?'shipping_bd_default_cents':'shipping_intl_default_cents']);$v=$q->fetchColumn();$_SESSION['favorite_shop_shipping_zone']='fallback';return $v===false?0:max(0,(int)$v);
+    }
     private function sessionCart():array{$c=$_SESSION['favorite_shop_cart']??[];return is_array($c)?$c:[];}
     private function validCsrf(Request $r):bool{$submitted=(string)$r->post('_token','');$session=(string)($_SESSION['_token']??'');return $submitted!==''&&$session!==''&&hash_equals($session,$submitted);}
     private function csrf():string{if(empty($_SESSION['_token']))$_SESSION['_token']=bin2hex(random_bytes(32));return '<input type="hidden" name="_token" value="'.self::e($_SESSION['_token']).'">';}
