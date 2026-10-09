@@ -364,11 +364,11 @@ final class CustomerShopController
     {
         $theme = 'default';
         try {
-            $configured = \\FavoriteCMS\\Models\\Setting::get('theme', 'active_theme', 'default');
+            $configured = \FavoriteCMS\Models\\Setting::get('theme', 'active_theme', 'default');
             if (is_string($configured) && preg_match('/^[a-zA-Z0-9_-]+$/', $configured) === 1) {
                 $theme = $configured;
             }
-        } catch (\\Throwable) {
+        } catch (\Throwable) {
             // Keep the CMS default theme as a safe fallback during early bootstrap.
         }
 
@@ -379,12 +379,12 @@ final class CustomerShopController
             $themeDir = $themesRoot . '/default';
         }
         if (!is_file($themeDir . '/header.php') || !is_file($themeDir . '/footer.php')) {
-            throw new \\RuntimeException('The active theme does not provide a compatible header.php and footer.php.');
+            throw new \RuntimeException('The active theme does not provide a compatible header.php and footer.php.');
         }
 
         // Variables consumed by standard Favorite CMS themes.
-        $siteTitle = \\FavoriteCMS\\Models\\Setting::get('general', 'site_name', 'Favorite CMS');
-        $siteTagline = \\FavoriteCMS\\Models\\Setting::get('general', 'site_description', '');
+        $siteTitle = \FavoriteCMS\Models\\Setting::get('general', 'site_name', 'Favorite CMS');
+        $siteTagline = \FavoriteCMS\Models\\Setting::get('general', 'site_description', '');
         $metaTitle = $title . ' — ' . $siteTitle;
         $metaDescription = $title . ' on ' . $siteTitle;
         $bodyClass = 'favorite-shop-page';
