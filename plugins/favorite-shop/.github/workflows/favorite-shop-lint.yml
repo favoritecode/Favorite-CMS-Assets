@@ -18,6 +18,8 @@ jobs:
         run: php plugins/favorite-shop/tests/CodLifecycleTest.php
       - name: Product measurement and quantity tests
         run: php plugins/favorite-shop/tests/ProductMeasurementTest.php
+      - name: Promotion, coupon and stock rules tests
+        run: php plugins/favorite-shop/tests/PromotionStockTest.php
       - name: Validate manifest
         run: php -r '$m=json_decode(file_get_contents("plugins/favorite-shop/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($m["id"] ?? "") !== "favorite-shop") exit(1);'
       - name: Build installable foundation ZIP
