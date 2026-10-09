@@ -76,7 +76,7 @@ final class CustomerShopController
         try{$qty=Quantity::forUnit($qtyRaw,$unit);}catch(\InvalidArgumentException $e){return $this->flashRedirect('/shop',$e->getMessage());}
         $cart=$this->sessionCart();$key=$variantId>0?$productId.':'.$variantId:(string)$productId;$newQty=(float)($cart[$key]??0)+(float)$qty;
         if($newQty>999999)return $this->flashRedirect('/shop','Cart quantity is too large.');
-        $manageStock=$variantId>0?true:(int)$p['manage_stock']===1;$stock=$variantId>0?(float)$variant['stock_quantity']:(float)$p['stock_quantity'];$backorder=$variantId>0?false:(int)$p['allow_backorder']===1;
+        $manageStock=$variantId>0?true:(int)$p['manage_stock']===1;$stock=$variantId>0?(float)$variant['stock_quantity']:(float)$p['stock_quantity'];$backorder=$variantId>0?(int)($variant['allow_backorder']??0)===1:(int)$p['allow_backorder']===1;
         if($manageStock&&$stock<$newQty&&!$backorder)return $this->flashRedirect('/shop','Not enough stock for that quantity.');
         $cart[$key]=Quantity::normalize($newQty);$_SESSION['favorite_shop_cart']=$cart;
         return $this->flashRedirect('/shop/cart','Product added to cart.');
@@ -161,7 +161,7 @@ final class CustomerShopController
                 $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
                 if($sale!==null&&(int)$sale>0)$unit=min($unit,(int)$sale);
                 $options=$v?(json_decode((string)$v['option_values_json'],true)?:[]):[];
-                $locked[]=['product_id'=>(int)$p['id'],'variant_id'=>$variantId?:null,'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,'name'=>$item['name'],'sku'=>($v['sku']??null)?:$p['sku'],'quantity'=>$qty,'unit_price_cents'=>$unit,'category_ids'=>$this->categoryIds($pdo,(int)$p['id']),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],'unit_type'=>($v['unit_type']??null)?:($p['unit_type']??'piece'),'unit_quantity'=>($v['unit_quantity']??null)?:($p['unit_quantity']??1),'unit_label'=>($v['unit_label']??null)?:($p['unit_label']??null),'weight_grams'=>($v['weight_grams']??null)??($p['weight_grams']??null),'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity']];
+                $locked[]=['product_id'=>(int)$p['id'],'variant_id'=>$variantId?:null,'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,'name'=>$item['name'],'sku'=>($v['sku']??null)?:$p['sku'],'quantity'=>$qty,'unit_price_cents'=>$unit,'category_ids'=>$this->categoryIds($pdo,(int)$p['id']),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],'allow_backorder'=>$variantId>0?(int)($v['allow_backorder']??0):(int)$p['allow_backorder'],'unit_type'=>($v['unit_type']??null)?:($p['unit_type']??'piece'),'unit_quantity'=>($v['unit_quantity']??null)?:($p['unit_quantity']??1),'unit_label'=>($v['unit_label']??null)?:($p['unit_label']??null),'weight_grams'=>($v['weight_grams']??null)??($p['weight_grams']??null),'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity']];
             }
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['division'], $input['district'], $input['city'], $input['area']);
             $pricing = $this->calculateWithPDO($pdo, $locked, $input['coupon_code'], $shipping);
@@ -178,18 +178,18 @@ final class CustomerShopController
                     ->execute([$orderId,$item['product_id'],$item['variant_id']??null,$item['sku'],$item['name'],$item['variant_snapshot_json']??null,$item['unit_price_cents'],$item['quantity'],(int)round((float)$item['quantity']*(int)$item['unit_price_cents'])-(int)($item['offer_discount_cents'] ?? 0),$item['manage_stock'],$item['unit_type'] ?? 'piece',$item['unit_quantity'] ?? 1,$item['unit_label'] ?? null,$item['weight_grams'] ?? null]);
                 if ($item['manage_stock']===1) {
                     if(!empty($item['variant_id'])){
-                        $u=$pdo->prepare("UPDATE favorite_shop_product_variants SET stock_quantity=stock_quantity-? WHERE id=? AND product_id=? AND stock_quantity>=?");
-                        $u->execute([$item['quantity'],$item['variant_id'],$item['product_id'],$item['quantity']]);
+                        $u=$pdo->prepare("UPDATE favorite_shop_product_variants SET stock_status=CASE WHEN GREATEST(0,stock_quantity-?)<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN GREATEST(0,stock_quantity-?)<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END, stock_quantity=GREATEST(0,stock_quantity-?) WHERE id=? AND product_id=? AND (allow_backorder=1 OR stock_quantity>=?)");
+                        $u->execute([$item['quantity'],$item['quantity'],$item['quantity'],$item['variant_id'],$item['product_id'],$item['quantity']]);
                         if($u->rowCount()!==1)throw new \RuntimeException('Variant stock changed during checkout; please retry.');
                         $after=$pdo->prepare("SELECT stock_quantity FROM favorite_shop_product_variants WHERE id=?");$after->execute([$item['variant_id']]);$qtyAfter=(float)$after->fetchColumn();
                     }else{
-                        $u=$pdo->prepare("UPDATE favorite_shop_products SET stock_quantity=stock_quantity-? WHERE id=? AND (allow_backorder=1 OR stock_quantity>=?)");
-                        $u->execute([$item['quantity'],$item['product_id'],$item['quantity']]);
+                        $u=$pdo->prepare("UPDATE favorite_shop_products SET stock_status=CASE WHEN GREATEST(0,stock_quantity-?)<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN GREATEST(0,stock_quantity-?)<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END, stock_quantity=GREATEST(0,stock_quantity-?) WHERE id=? AND (allow_backorder=1 OR stock_quantity>=?)");
+                        $u->execute([$item['quantity'],$item['quantity'],$item['quantity'],$item['product_id'],$item['quantity']]);
                         if($u->rowCount()!==1)throw new \RuntimeException('Stock changed during checkout; please retry.');
                         $after=$pdo->prepare("SELECT stock_quantity FROM favorite_shop_products WHERE id=?");$after->execute([$item['product_id']]);$qtyAfter=(float)$after->fetchColumn();
                     }
                     $pdo->prepare("INSERT INTO favorite_shop_inventory_movements (product_id,variant_id,movement_type,quantity_delta,quantity_after,reference_type,reference_id,note,actor_user_id) VALUES (?,?, 'order',?,?, 'order',?,'Stock reserved at checkout',?)")
-                        ->execute([$item['product_id'],$item['variant_id']??null,-$item['quantity'],$qtyAfter,$orderId,$userId]);
+                        ->execute([$item['product_id'],$item['variant_id']??null,-min((float)($item['stock_quantity']??0),(float)$item['quantity']),$qtyAfter,$orderId,$userId]);
                 }
             }
             $offerUsage=[];
