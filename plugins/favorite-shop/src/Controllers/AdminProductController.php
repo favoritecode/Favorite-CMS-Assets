@@ -140,7 +140,7 @@ final class AdminProductController
             $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));
             $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
             $categoryIds = OfferPricing::normalizeScope((array)$request->post('category_ids', []), '')['category_ids'];
-            if ($categoryIds) { $check = $this->db()->prepare('SELECT COUNT(*) FROM favorite_shop_product_categories WHERE id IN (' . implode(',', array_fill(0, count($categoryIds), '?')) . ')'); $check->execute($categoryIds); if ((int)$check->fetchColumn() !== count($categoryIds)) throw new \\InvalidArgumentException('One or more selected categories no longer exist.'); }
+            if ($categoryIds) { $check = $this->db()->prepare('SELECT COUNT(*) FROM favorite_shop_product_categories WHERE id IN (' . implode(',', array_fill(0, count($categoryIds), '?')) . ')'); $check->execute($categoryIds); if ((int)$check->fetchColumn() !== count($categoryIds)) throw new \InvalidArgumentException('One or more selected categories no longer exist.'); }
             $gallery = [];
             foreach (preg_split('/\R/', (string) $request->post('gallery_text', '')) ?: [] as $url) {
                 $url = $this->safeImageUrl(trim($url));
@@ -157,6 +157,7 @@ final class AdminProductController
                 'manage_stock'=>$manageStock,'low_stock_threshold'=>$threshold,'allow_backorder'=>$allowBackorder,
                 'weight_grams'=>$unit['weight_grams'],'cover_image_url'=>$cover,
                 'gallery_json'=>json_encode(array_values(array_unique($gallery)), JSON_UNESCAPED_SLASHES),
+                'labels_json'=>json_encode($scope['labels'], JSON_UNESCAPED_UNICODE),
                 'metadata_json'=>null,
             ];
             $pdo = $this->db();
