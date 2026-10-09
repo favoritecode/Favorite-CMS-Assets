@@ -31,4 +31,6 @@ foreach ([
     try { $invalid(); throw new RuntimeException('Invalid measurement/quantity should have been rejected.'); }
     catch (InvalidArgumentException) {}
 }
+$checkoutController = (string)file_get_contents(__DIR__ . '/../src/Controllers/CustomerShopController.php');
+$assert(str_contains($checkoutController, "'allow_backorder'=>\$variantId>0?(int)(\$v['allow_backorder']??0):(int)\$p['allow_backorder']"), 'Variant backorder permission must survive cart-to-checkout stock revalidation.');
 echo "Favorite Shop product measurement and quantity tests passed.\n";
