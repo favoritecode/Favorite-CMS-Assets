@@ -164,7 +164,7 @@ final class CustomerShopController
                 $unit=$v&&$v['price_cents']!==null?(int)$v['price_cents']:(int)$p['price_cents'];
                 $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
                 if($sale!==null&&(int)$sale>0)$unit=min($unit,(int)$sale);
-                $options=$v?json_decode((string)$v['option_values_json'],true)?:[]:[];
+                $options=$v?(json_decode((string)$v['option_values_json'],true)?:[]):[];
                 $locked[]=['product_id'=>(int)$p['id'],'variant_id'=>$variantId?:null,'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,'name'=>$item['name'],'sku'=>($v['sku']??null)?:$p['sku'],'quantity'=>$qty,'unit_price_cents'=>$unit,'category_ids'=>$this->categoryIds($pdo,(int)$p['id']),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],'unit_type'=>($v['unit_type']??null)?:($p['unit_type']??'piece'),'unit_quantity'=>($v['unit_quantity']??null)?:($p['unit_quantity']??1),'unit_label'=>($v['unit_label']??null)?:($p['unit_label']??null),'weight_grams'=>($v['weight_grams']??null)??($p['weight_grams']??null),'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity']];
             }
             $shipping = $this->shippingCents($pdo, strtoupper($input['country_code']), $input['division'], $input['district'], $input['city'], $input['area']);
