@@ -47,9 +47,14 @@ final class FavoriteShopPlugin
                     $query = $pdo->prepare('SELECT id,status,payment_status FROM favorite_shop_orders WHERE order_number=? AND payment_intent_id=? AND payment_method<>? LIMIT 1');
                     $query->execute([$orderNumber, $intentId, 'cash_on_delivery']);
                     $order = $query->fetch(\PDO::FETCH_ASSOC);
-                    if (!$order || in_array((string)$order['status'], ['cancelled','returned'], true)) return;
+                    if (!$order) return;
                     if ($status === 'succeeded') {
-                        $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='paid',status=CASE WHEN status='pending' THEN 'processing' ELSE status END WHERE id=? AND payment_intent_id=?")->execute([(int)$order['id'], $intentId]);
+                        $nextStatus = in_array((string)$order['status'], ['cancelled','returned'], true)
+                            ? (string)$order['status']
+                            : ((string)$order['status'] === 'pending' ? 'processing' : (string)$order['status']);
+                        $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='paid',status=? WHERE id=? AND payment_intent_id=?")->execute([$nextStatus,(int)$order['id'],$intentId]);
+                    } elseif (in_array((string)$order['status'], ['cancelled','returned'], true)) {
+                        return;
                     } elseif ($status === 'failed' || $status === 'cancelled') {
                         $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_intent_id=? AND payment_status<>'paid'")->execute([(int)$order['id'], $intentId]);
                     } elseif ($status === 'awaiting_verification') {
