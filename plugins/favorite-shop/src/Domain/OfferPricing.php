@@ -60,13 +60,17 @@ final class OfferPricing
             $value = (int)($offer['discount_value'] ?? 0);
             if ($type === 'percent') {
                 if ($value < 1 || $value > 100) continue;
-                $price = self::discountedPriceCents($regularPriceCents, $value);
+                $cap = isset($offer['max_discount_cents']) && $offer['max_discount_cents'] !== null ? (int)$offer['max_discount_cents'] : null;
+                $price = self::discountedPriceCents($regularPriceCents, $value, $cap);
             } elseif ($type === 'fixed') {
                 if ($value < 0) continue;
-                $price = max(0, $regularPriceCents - $value);
+                $discount = $value;
+                if (isset($offer['max_discount_cents']) && $offer['max_discount_cents'] !== null) $discount = min($discount, max(0, (int)$offer['max_discount_cents']));
+                $price = max(0, $regularPriceCents - $discount);
             } elseif ($type === 'sale_price') {
                 if ($value < 0) continue;
                 $price = min($regularPriceCents, $value);
+                if (isset($offer['max_discount_cents']) && $offer['max_discount_cents'] !== null) $price = max($price, $regularPriceCents - max(0, (int)$offer['max_discount_cents']));
             } else continue;
             $priority = (int)($offer['priority'] ?? 0);
             // Lowest price wins; priority breaks ties. Stored regular prices are never mutated.
