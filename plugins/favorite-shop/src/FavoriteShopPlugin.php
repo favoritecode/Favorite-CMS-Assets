@@ -29,7 +29,8 @@ final class FavoriteShopPlugin
         }
     }
     public function boot(): void {
-        Installer::register($this->app);
+        try { Installer::register($this->app); }
+        catch (Throwable $e) { error_log('[Favorite Shop] Schema initialization failed: ' . $e->getMessage()); }
         if (function_exists('add_route')) {
             $shop = fn(Request $request) => (new \FavoriteCMS\Shop\Controllers\CustomerShopController($this->app))->index($request);
             add_route('GET', '/shop', $shop);
