@@ -93,12 +93,12 @@ final class AdminOrderController
         return $html.'</tbody></table></div></div>';
     }
     private function view(int $id):string {
-        $pdo=$this->db();$q=$pdo->prepare('SELECT o.*,a.* FROM favorite_shop_orders o LEFT JOIN favorite_shop_order_addresses a ON a.order_id=o.id AND a.address_type="shipping" WHERE o.id=?');$q->execute([$id]);$o=$q->fetch(\PDO::FETCH_ASSOC);
+        $pdo=$this->db();$q=$pdo->prepare('SELECT o.*,o.id AS order_id,a.recipient_name,a.phone AS address_phone,a.address_line1,a.address_line2,a.area,a.city,a.district,a.division,a.postal_code,a.country_code FROM favorite_shop_orders o LEFT JOIN favorite_shop_order_addresses a ON a.order_id=o.id AND a.address_type="shipping" WHERE o.id=?');$q->execute([$id]);$o=$q->fetch(\PDO::FETCH_ASSOC);
         if(!$o)return '<h1>Order not found</h1>';
         $q=$pdo->prepare('SELECT * FROM favorite_shop_order_items WHERE order_id=?');$q->execute([$id]);$items=$q->fetchAll(\PDO::FETCH_ASSOC);
         $html='<div style="max-width:1100px;margin:24px auto;padding:16px"><h1>Order '.self::e($o['order_number']).'</h1>'.$this->flashes().'<p>'.self::e($o['recipient_name']??'').' · '.self::e($o['phone']).' · '.self::e($o['address_line1']??'').' · '.self::e($o['city']??'').'</p><p>Payment: '.self::e($o['payment_status']).' | Subtotal: '.self::money((int)$o['subtotal_cents']).' | Discount: '.self::money((int)$o['discount_cents']).' | Shipping: '.self::money((int)$o['shipping_cents']).' | Total: '.self::money((int)$o['total_cents']).'</p><table><tr><th>Item</th><th>SKU</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr>';
         foreach($items as $i)$html.='<tr><td>'.self::e($i['name_snapshot']).'</td><td>'.self::e($i['sku_snapshot']).'</td><td>'.self::e($i['quantity']).'</td><td>'.self::money((int)$i['unit_price_cents']).'</td><td>'.self::money((int)$i['line_total_cents']).'</td></tr>';
-        $html.='</table><form method="post">'.$this->csrf().'<input type="hidden" name="id" value="'.$id.'"><label>Update order status<select name="status">';
+        $html.='</table><form method="post">'.$this->csrf().'<input type="hidden" name="id" value="'.(int)$o['order_id'].'"><label>Update order status<select name="status">';
         foreach(['pending','processing','shipped','delivered','cancelled','returned'] as $s)$html.='<option'.($o['status']===$s?' selected':'').' value="'.$s.'">'.ucfirst($s).'</option>';
         $html.='</select></label><label>Internal note<input name="notes" maxlength="1000"></label><button name="action" value="update_status">Save status</button></form><form method="post">'.$this->csrf().'<input type="hidden" name="id" value="'.$id.'"><label>COD collected amount (minor units)<input type="number" min="0" name="collected_cents" required></label><button name="action" value="record_cod">Record COD collection</button></form><p><a href="/admin/page/favorite-shop-orders">Back to orders</a></p></div>';
         return $html;
