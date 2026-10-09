@@ -31,6 +31,8 @@ final class FavoritePageBuilderPlugin {
         Router::post('/admin/api/favorite-page-builder/delete', [$this, 'apiDelete']);
         Router::post('/admin/api/favorite-page-builder/import', [$this, 'apiImport']);
         Router::get('/admin/api/favorite-page-builder/library', [$this, 'apiLibrary']);
+        Router::get('/favorite-page-builder-assets/builder.js', fn(Request $r) => Response::make((string)file_get_contents(__DIR__ . '/../assets/builder.js'))->header('Content-Type', 'application/javascript; charset=utf-8'));
+        Router::get('/favorite-page-builder-assets/builder.css', fn(Request $r) => Response::make((string)file_get_contents(__DIR__ . '/../assets/builder.css'))->header('Content-Type', 'text/css; charset=utf-8'));
         Router::get('/builder/{slug}', [$this, 'publicPage']);
         Hook::addFilter('favorite_page_builder_elements', fn($elements) => $elements, 1, 1);
         $this->ready = true;
@@ -98,8 +100,8 @@ final class FavoritePageBuilderPlugin {
         if (!$this->allowed()) return '<p>You do not have permission to manage pages.</p>';
         $token=function_exists('csrf_token')?(string)csrf_token():(string)($_SESSION['_token']??'');
         $base=rtrim((string)($GLOBALS['favorite_cms_base_path']??''),'/');
-        $js=$base.'/plugins/favorite-page-builder/assets/builder.js';
-        $css=$base.'/plugins/favorite-page-builder/assets/builder.css';
+        $js=$base.'/favorite-page-builder-assets/builder.js';
+        $css=$base.'/favorite-page-builder-assets/builder.css';
         $pages=$this->repo->all();
         $pageId=(int)$r->get('id',0);
         $selected=$pageId?$this->repo->find($pageId):null;
