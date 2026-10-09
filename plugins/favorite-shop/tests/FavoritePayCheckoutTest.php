@@ -13,6 +13,7 @@ $checks = [
     'bKash return is verified by the gateway driver' => str_contains($controller, 'executeCallback($attempt, $request->all())'),
     'Favorite Pay status events synchronize matching orders' => str_contains($plugin, 'favorite.pay.intent.status_updated') && str_contains($plugin, "payment_status='paid'") && str_contains($plugin, 'payment_intent_id=?'),
     'payment route is registered' => str_contains($plugin, "'/shop/pay/{orderNumber}'"),
+    'refund status syncs and paid prepaid orders require full refund before cancellation' => str_contains($plugin, "payment_status='refunded'") && str_contains($plugin, "payment_status='partially_refunded'") && str_contains((string)file_get_contents($root . '/src/Controllers/AdminOrderController.php'), 'Refund the prepaid order fully in Favorite Pay'),
 ];
 $failed = [];
 foreach ($checks as $label => $passed) {
