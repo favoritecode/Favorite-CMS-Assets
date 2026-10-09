@@ -346,7 +346,7 @@ final class CustomerShopController
                 if ($baseUrl === null) return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Set the CMS site URL in General Settings before using automatic payment gateways.');
                 $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=?,payment_status='pending' WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
                 $returnUrl = $baseUrl.'/shop/order/'.$orderNumber;
-                $cancelUrl = $baseUrl.'/shop/pay/'.$orderNumber;
+                $cancelUrl = $baseUrl.'/shop/pay/cancel/'.$orderNumber;
                 $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'callback_url' => $cancelUrl]);
                 $metadata = $attempt->getMetadata();
                 $target = (string)($metadata['checkout_url'] ?? $metadata['universal_url'] ?? $metadata['bkash_url'] ?? '');
