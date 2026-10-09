@@ -352,6 +352,7 @@ final class CustomerShopController
             else continue;
             if($specificity>$bestSpecificity||($specificity===$bestSpecificity&&(int)$z['priority']>(int)($best['priority']??PHP_INT_MIN))){$best=$z;$bestSpecificity=$specificity;}
         }
+        if(!$best){foreach($zones as $z)if((int)($z['is_default']??0)===1){$best=$z;break;}}
         if($best){$_SESSION['favorite_shop_shipping_zone']=(string)$best['name'];return max(0,(int)$best['rate_cents']);}
         $q=$pdo->prepare("SELECT setting_value FROM favorite_shop_settings WHERE setting_key=?");$q->execute([$country==='BD'?'shipping_bd_default_cents':'shipping_intl_default_cents']);$v=$q->fetchColumn();$_SESSION['favorite_shop_shipping_zone']='fallback';return $v===false?0:max(0,(int)$v);
     }
