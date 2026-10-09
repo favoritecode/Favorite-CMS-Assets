@@ -37,6 +37,47 @@ final class OfferPricing
         return ['category_ids'=>array_values(array_unique($ids)), 'labels'=>array_values($labels)];
     }
 
+    /**
+     * Calculate the best eligible scheduled offer for one product. Offers are evaluated per product price,
+     * so a percentage automatically produces a different discount for each category/label-matched item.
+     * @return array{price_cents:int,discount_cents:int,offer_id:?int}
+     */
+    public static function bestPriceForProduct(int $regularPriceCents, array $offers, array $productCategoryIds, array $productLabels, ?\\DateTimeImmutable $now = null): array
+    {
+        if ($regularPriceCents < 0) throw new \\InvalidArgumentException('Regular price cannot be negative.');
+        $now = $now ?? new \\DateTimeImmutable('now', new \\DateTimeZone('UTC'));
+        $best = ['price_cents'=>$regularPriceCents, 'discount_cents'=>0, 'offer_id'=>null, 'priority'=>PHP_INT_MIN];
+        foreach ($offers as $offer) {
+            $status = OfferSchedule::state((string)($offer['status'] ?? 'scheduled'), (string)($offer['starts_at'] ?? ''), (string)($offer['ends_at'] ?? ''), $now);
+            if ($status !== 'active') continue;
+            if (isset($offer['usage_limit']) && $offer['usage_limit'] !== null && (int)($offer['usage_count'] ?? 0) >= (int)$offer['usage_limit']) continue;
+            $categoryIds = json_decode((string)($offer['category_ids_json'] ?? '[]'), true);
+            $labels = json_decode((string)($offer['labels_json'] ?? '[]'), true);
+            if (!is_array($categoryIds)) $categoryIds = [];
+            if (!is_array($labels)) $labels = [];
+            if (!self::matchesScope($productCategoryIds, $productLabels, $categoryIds, $labels)) continue;
+            $type = (string)($offer['discount_type'] ?? 'percent');
+            $value = (int)($offer['discount_value'] ?? 0);
+            if ($type === 'percent') {
+                if ($value < 1 || $value > 100) continue;
+                $price = self::discountedPriceCents($regularPriceCents, $value);
+            } elseif ($type === 'fixed') {
+                if ($value < 0) continue;
+                $price = max(0, $regularPriceCents - $value);
+            } elseif ($type === 'sale_price') {
+                if ($value < 0) continue;
+                $price = min($regularPriceCents, $value);
+            } else continue;
+            $priority = (int)($offer['priority'] ?? 0);
+            // Lowest price wins; priority breaks ties. Stored regular prices are never mutated.
+            if ($price < $best['price_cents'] || ($price === $best['price_cents'] && $price < $regularPriceCents && $priority > $best['priority'])) {
+                $best = ['price_cents'=>$price, 'discount_cents'=>$regularPriceCents-$price, 'offer_id'=>isset($offer['id'])?(int)$offer['id']:null, 'priority'=>$priority];
+            }
+        }
+        unset($best['priority']);
+        return $best;
+    }
+
     /** Scope matches if category OR label matches; an empty scope means all products. */
     public static function matchesScope(array $productCategoryIds, array $productLabels, array $offerCategoryIds, array $offerLabels): bool
     {
