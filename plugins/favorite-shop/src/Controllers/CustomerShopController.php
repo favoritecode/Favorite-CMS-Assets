@@ -258,7 +258,7 @@ final class CustomerShopController
             try {
                 $intentId = trim((string)($order['payment_intent_id'] ?? ''));
                 $intent = $intentId !== '' ? $payments->getIntent($intentId) : null;
-                if (!$intent || in_array($intent->getStatus()->value, ['failed','cancelled'], true)) {
+                if (!$intent || $intent->getGatewayId() !== $gatewayId || in_array($intent->getStatus()->value, ['failed','cancelled'], true)) {
                     $intent = $payments->createIntent('favorite-shop', $orderNumber, new \FavoriteCMS\Pay\Domain\Money((int)$order['total_cents'], 'BDT'), [
                         'gateway_id' => $gatewayId,
                         'customer_id' => (int)($order['user_id'] ?? 0) > 0 ? (int)$order['user_id'] : null,
@@ -314,11 +314,11 @@ final class CustomerShopController
             foreach ($methods as $method) {
                 if (empty($method['is_manual'])) continue;
                 $instructions = is_array($method['instructions'] ?? null) ? $method['instructions'] : [];
-                $body .= '<section class="favorite-shop-card"><h2>'.self::e($method['title'] ?? $method['id'] ?? 'Manual payment').'</h2>';
+                $body .= '<details class="favorite-shop-card"><summary>'.self::e($method['title'] ?? $method['id'] ?? 'Manual payment').' payment instructions</summary><div><h2>'.self::e($method['title'] ?? $method['id'] ?? 'Manual payment').'</h2>';
                 foreach (['account_name'=>'Account name','account_number'=>'Account / number','account_type'=>'Account type','bank_name'=>'Bank','branch_name'=>'Branch','routing_no'=>'Routing number','instructions'=>'Instructions','reference_instructions'=>'Transaction reference','proof_requirements'=>'Required details'] as $key=>$label) {
                     if (!empty($instructions[$key])) $body .= '<p><strong>'.self::e($label).':</strong> '.self::e($instructions[$key]).'</p>';
                 }
-                $body .= '</section>';
+                $body .= '</div></details>';
             }
             $body .= '<label>Sender account / phone (manual methods)<input name="sender_account" maxlength="100" autocomplete="tel"></label>';
             $body .= '<label>Transaction reference / TrxID (manual methods)<input name="transaction_reference" maxlength="190"></label>';
