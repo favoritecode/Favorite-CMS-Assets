@@ -4,10 +4,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/Domain/OfferSchedule.php';
 require_once __DIR__ . '/../src/Domain/CouponPolicy.php';
 require_once __DIR__ . '/../src/Domain/StockStatus.php';
+require_once __DIR__ . '/../src/Domain/OfferPricing.php';
 
 use FavoriteCMS\Shop\Domain\CouponPolicy;
 use FavoriteCMS\Shop\Domain\OfferSchedule;
 use FavoriteCMS\Shop\Domain\StockStatus;
+use FavoriteCMS\Shop\Domain\OfferPricing;
 
 function expectSame(mixed $expected, mixed $actual, string $message): void {
     if ($expected !== $actual) throw new RuntimeException($message . ': expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
@@ -33,4 +35,12 @@ expectSame('low_stock', StockStatus::resolve(2,true,false,3), 'Low stock');
 expectSame('on_backorder', StockStatus::resolve(0,true,true), 'Explicit backorder');
 expectSame(false, StockStatus::canFulfil(2,3), 'Prevent overselling');
 expectSame(true, StockStatus::canFulfil(2,3,false), 'Unmanaged stock');
+expectSame(9000, OfferPricing::discountedPriceCents(10000,10), 'Auto percentage price calculation');
+expectSame(8500, OfferPricing::discountedPriceCents(10000,20,1500), 'Offer maximum discount cap');
+$scope = OfferPricing::normalizeScope(['2','4'], 'Summer, clearance; Featured');
+expectSame([2,4], $scope['category_ids'], 'Normalize offer category scope');
+expectSame(['Summer','clearance','Featured'], $scope['labels'], 'Normalize offer label scope');
+expectSame(true, OfferPricing::matchesScope([4], ['Other'], [4], ['Summer']), 'Match category scope');
+expectSame(true, OfferPricing::matchesScope([9], ['summer'], [4], ['Summer']), 'Match label case-insensitively');
+expectSame(false, OfferPricing::matchesScope([9], ['winter'], [4], ['Summer']), 'Reject unmatched scope');
 echo "Promotion and stock domain tests passed.\n";
