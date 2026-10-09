@@ -64,7 +64,7 @@ final class AdminOrderController
         return Response::redirect('/admin/page/favorite-shop-orders?action=view&id='.$id);
     }
     private function restoreStock(\PDO $pdo,array $order):void {
-        $q=$pdo->prepare('SELECT product_id,variant_id,quantity FROM favorite_shop_order_items WHERE order_id=?');$q->execute([(int)$order['id']]);
+        $q=$pdo->prepare('SELECT product_id,variant_id,quantity FROM favorite_shop_order_items WHERE order_id=? AND stock_managed_snapshot=1');$q->execute([(int)$order['id']]);
         foreach($q->fetchAll(\PDO::FETCH_ASSOC) as $item) {
             $qty=(float)$item['quantity'];
             if(!empty($item['variant_id'])) {
