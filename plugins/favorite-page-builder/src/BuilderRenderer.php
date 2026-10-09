@@ -35,7 +35,18 @@ final class BuilderRenderer {
             case 'spacer':return '<div aria-hidden="true" style="height:'.$this->length($s['height']??'32px').'"></div>';
             case 'post_grid':return $this->postGrid($s);
             case 'product_grid':return $this->productGrid($s);
-            case 'checkout_cta': $url=$this->safeUrl((string)($s['checkout_url']??''));if(!$url && (int)($s['product_id']??0)>0)$url=site_path('/checkout?product_id='.(int)$s['product_id']);return '<div class="fpb-button-wrap"><a class="fpb-button" href="'.$e($url??'#').'">'.$e($s['text']??'Order now').'</a></div>';
+            case 'checkout_cta':
+                $url=$this->safeUrl((string)($s['checkout_url']??''));
+                $productId=(int)($s['product_id']??0);
+                if($url) return '<div class="fpb-button-wrap"><a class="fpb-button" href="'.$e($url).'">'.$e($s['text']??'Order now').'</a></div>';
+                if($productId>0 && $this->db->tableExists('favorite_digital_products')) {
+                    $product=$this->db->selectOne("SELECT slug FROM `favorite_digital_products` WHERE id=? AND status='published' LIMIT 1",[$productId]);
+                    if($product && !empty($product->slug)) {
+                        $token=htmlspecialchars((string)($_SESSION['_token']??''),ENT_QUOTES,'UTF-8');
+                        return '<form class="fpb-button-wrap" method="post" action="'.htmlspecialchars(site_path('/store/'.rawurlencode((string)$product->slug).'/buy'),ENT_QUOTES,'UTF-8').'"><input type="hidden" name="_token" value="'.$token.'"><button class="fpb-button" type="submit">'.$e($s['text']??'Order now').'</button></form>';
+                    }
+                }
+                return '<div class="fpb-button-wrap"><span class="fpb-empty">Choose a published product or configure a checkout URL in this button’s settings.</span></div>';
             case 'order_confirmation':return '<section class="fpb-confirmation"><div class="fpb-confirm-icon">✓</div><h2>'.$e($s['heading']??'Thank you for your order').'</h2><p>'.$e($s['text']??'Your order has been received.').'</p><p class="fpb-muted">Order details are displayed by the active checkout integration when supported.</p></section>';
             case 'html': return '<div class="fpb-custom-html">'.\FavoriteCMS\Themes\BuilderElementRegistry::sanitizeHtml((string)($s['html']??'')).'</div>';
             default: return '';
