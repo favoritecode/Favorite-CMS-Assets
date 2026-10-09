@@ -15,5 +15,7 @@ jobs:
         run: find plugins/favorite-shop -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: COD lifecycle tests
         run: php plugins/favorite-shop/tests/CodLifecycleTest.php
+      - name: Product measurement tests
+        run: php plugins/favorite-shop/tests/ProductMeasurementTest.php
       - name: Validate manifest
         run: php -r '$m=json_decode(file_get_contents("plugins/favorite-shop/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($m["id"] ?? "") !== "favorite-shop") exit(1);'

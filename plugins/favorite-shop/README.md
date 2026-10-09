@@ -17,6 +17,12 @@ Favorite Shop is the physical-goods commerce plugin for Favorite CMS Universal, 
 - If no compatible prepaid methods are available, checkout still works with COD.
 - COD orders remain unpaid until staff records money collection; delivery and payment status are separate.
 
+## Product units and optional weight
+- Selling units include piece (default), kg, g, litre, ml, and admin-defined custom labels (e.g. pack or bottle).
+- Selling quantity/unit is separate from optional shipping weight. Weight is never required to create or sell a product.
+- Variant unit settings and optional weight can override product defaults; shipping weight is stored in grams and remains unknown if neither is set.
+- See `docs/PRODUCT-MEASUREMENTS.md` for rules and examples.
+
 ## Variations, offers and shipping
 - Color/size variants can each have price, sale price, SKU, stock and optional image. Admin can bulk-set prices across all variants with individual overrides.
 - Admin configures inside-Dhaka/outside-Dhaka rates and custom delivery zones. Zones, labels and region options are editable for other countries.
