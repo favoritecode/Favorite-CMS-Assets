@@ -140,7 +140,7 @@ final class AdminProductController
             $type = (string)$request->post('product_type','simple');
             if(!in_array($type,['simple','variable'],true))throw new \InvalidArgumentException('Choose simple or variable product type.');
             $variants=$this->normalizeVariants((string)$request->post('variants_json','[]'),$unit['unit'],$type);
-            if($type==='variable'&&count($variants)<1)throw new \InvalidArgumentException('A variable product needs at least one active variant.');
+            if($type==='variable'&&count(array_filter($variants,static fn($v)=>$v['status']==='active'))<1)throw new \InvalidArgumentException('A variable product needs at least one active variant.');
             $slug = $this->slug((string) $request->post('slug', ''), $name);
             $sku = trim((string) $request->post('sku', ''));
             $sku = $sku === '' ? null : substr($sku, 0, 100);
