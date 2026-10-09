@@ -2,7 +2,7 @@
   "id": "favorite-shop",
   "name": "Favorite Shop",
   "version": "1.0.0",
-  "description": "Physical product catalog, inventory, shipping, checkout, orders, and Cash on Delivery for Favorite CMS.",
+  "description": "Physical product catalog, inventory, shipping, checkout, orders, Cash on Delivery, and optional Favorite Pay prepaid checkout for Favorite CMS.",
   "author": "Favorite CMS Team",
   "requires_php": "8.1.0",
   "dependencies": [],
