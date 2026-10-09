@@ -164,6 +164,14 @@ final class CustomerShopController
                         ->execute([$item['product_id'],-$item['quantity'],$qtyAfter,$orderId,$userId]);
                 }
             }
+            $offerUsage=[];
+            foreach(($pricing['discounts']['applied'] ?? []) as $entry){$oid=(int)($entry['offer_id']??0);if($oid>0)$offerUsage[$oid]=($offerUsage[$oid]??0)+(int)($entry['discount_cents']??0);}
+            $customerKey=$userId?'user:'.$userId:'guest:'.hash('sha256',$input['phone']);
+            foreach($offerUsage as $offerId=>$offerDiscount){
+                $u=$pdo->prepare("UPDATE favorite_shop_offers SET usage_count=usage_count+1 WHERE id=? AND status IN ('scheduled','active') AND starts_at<=UTC_TIMESTAMP() AND ends_at>UTC_TIMESTAMP() AND (usage_limit IS NULL OR usage_count<usage_limit)");
+                $u->execute([(int)$offerId]);if($u->rowCount()!==1)throw new \RuntimeException('An offer usage limit was reached. Please retry checkout.');
+                $pdo->prepare('INSERT INTO favorite_shop_offer_redemptions (offer_id,order_id,customer_key,discount_cents) VALUES (?,?,?,?)')->execute([(int)$offerId,$orderId,$customerKey,$offerDiscount]);
+            }
             if ($pricing['coupon_id'] !== null) {
                 $q=$pdo->prepare("UPDATE favorite_shop_coupons SET usage_count=usage_count+1 WHERE id=? AND status='active' AND (usage_limit IS NULL OR usage_count<usage_limit)");
                 $q->execute([$pricing['coupon_id']]);
