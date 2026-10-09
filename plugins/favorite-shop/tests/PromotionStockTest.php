@@ -43,7 +43,7 @@ expectSame([2,4], $scope['category_ids'], 'Normalize offer category scope');
 expectSame(['Summer','clearance','Featured'], $scope['labels'], 'Normalize offer label scope');
 expectSame(false, OfferPricing::matchesScope([4], ['Other'], [4], ['Summer']), 'Require label when category and label scopes are both set');
 expectSame(true, OfferPricing::matchesScope([4], ['Summer'], [4], ['Summer']), 'Match combined category and label scope');
-expectSame(true, OfferPricing::matchesScope([9], ['summer'], [4], ['Summer']), 'Match label case-insensitively');
+expectSame(true, OfferPricing::matchesScope([4], ['summer'], [4], ['Summer']), 'Match label case-insensitively');
 expectSame(false, OfferPricing::matchesScope([9], ['winter'], [4], ['Summer']), 'Reject unmatched scope');
 $pricing = OfferPricing::bestPriceForProduct(10000, [
  ['id'=>1,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'percent','discount_value'=>15,'category_ids_json'=>'[4]','labels_json'=>'[]','priority'=>1],
