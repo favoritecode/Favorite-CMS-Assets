@@ -352,9 +352,20 @@ final class CustomerShopController
                 if ($target !== '' && filter_var($target, FILTER_VALIDATE_URL) && in_array(strtolower((string)parse_url($target, PHP_URL_SCHEME)), ['https','http'], true)) {
                     return Response::redirect($target);
                 }
-                return $this->shell('Payment initiated', '<p class="notice">The payment provider accepted the initiation request but did not return a redirect URL. Check the configured gateway settings or contact the store.</p><a href="/shop/order/'.self::e($orderNumber).'">View order</a>');
+                $payments->updateIntentStatus($intentId, \FavoriteCMS\Pay\Domain\PaymentStatus::FAILED);
+                return $this->flashRedirect('/shop/pay/'.$orderNumber, 'The payment provider did not return a valid checkout URL. Please retry or choose another configured method.');
             } catch (\Throwable $e) {
                 error_log('[Favorite Shop prepaid checkout] '.$e->getMessage());
+                if (!empty($intentId)) {
+                    try {
+                        $currentIntent = $payments->getIntent($intentId);
+                        if ($currentIntent && !$currentIntent->getStatus()->isFinal()) {
+                            $payments->updateIntentStatus($intentId, \FavoriteCMS\Pay\Domain\PaymentStatus::FAILED);
+                        }
+                    } catch (\Throwable $syncError) {
+                        error_log('[Favorite Shop payment failure sync] '.$syncError->getMessage());
+                    }
+                }
                 $pdo->prepare("UPDATE favorite_shop_orders SET payment_status='failed' WHERE id=? AND payment_status<>'paid'")->execute([(int)$order['id']]);
                 return $this->flashRedirect('/shop/pay/'.$orderNumber, 'Could not start this payment. Check the gateway configuration and try again.');
             }
