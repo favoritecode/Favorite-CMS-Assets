@@ -40,6 +40,7 @@ final class Installer
         self::ensureColumn($pdo, 'favorite_shop_order_items', 'unit_label_snapshot', 'VARCHAR(80) NULL');
         self::ensureColumn($pdo, 'favorite_shop_order_items', 'shipping_weight_grams_snapshot', 'INT NULL');
         self::ensureColumn($pdo, 'favorite_shop_orders', 'shipping_zone_snapshot', 'VARCHAR(190) NULL');
+        self::ensureColumn($pdo, 'favorite_shop_orders', 'payment_intent_id', 'VARCHAR(64) NULL');
         self::ensureColumn($pdo, 'favorite_shop_order_addresses', 'division', 'VARCHAR(120) NULL');
         self::ensureColumn($pdo, 'favorite_shop_orders', 'coupon_code_snapshot', 'VARCHAR(100) NULL');
         self::ensureColumn($pdo, 'favorite_shop_orders', 'discount_details_json', 'JSON NULL');
