@@ -85,6 +85,10 @@ final class AdminProductController
         }
         $gallery = json_decode((string) ($product['gallery_json'] ?? '[]'), true);
         $product['gallery_text'] = is_array($gallery) ? implode("\n", array_filter($gallery, 'is_string')) : '';\n        $labels = json_decode((string) ($product['labels_json'] ?? '[]'), true);\n        $product['labels_text'] = is_array($labels) ? implode(', ', array_filter($labels, 'is_string')) : '';
+        $categoryStmt = $this->db()->prepare('SELECT category_id FROM favorite_shop_product_category_map WHERE product_id = ?');
+        $categoryStmt->execute([(int)$product['id']]);
+        $product['category_ids'] = array_map('intval', $categoryStmt->fetchAll(\\PDO::FETCH_COLUMN));
+        $product['categories'] = $this->db()->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\\PDO::FETCH_ASSOC);
         return $this->view('products/form', [
             'product'=>$product,'csrfToken'=>$this->csrf(),'isEdit'=>$id > 0,
             'flashError'=>$_SESSION['flash_error'] ?? null,
@@ -132,6 +136,8 @@ final class AdminProductController
             $sku = trim((string) $request->post('sku', ''));
             $sku = $sku === '' ? null : substr($sku, 0, 100);
             $cover = $this->safeImageUrl((string) $request->post('cover_image_url', ''));\n            $scope = OfferPricing::normalizeScope([], (string)$request->post('labels', ''));
+            $categoryIds = OfferPricing::normalizeScope((array)$request->post('category_ids', []), '')['category_ids'];
+            if ($categoryIds) { $check = $this->db()->prepare('SELECT COUNT(*) FROM favorite_shop_product_categories WHERE id IN (' . implode(',', array_fill(0, count($categoryIds), '?')) . ')'); $check->execute($categoryIds); if ((int)$check->fetchColumn() !== count($categoryIds)) throw new \\InvalidArgumentException('One or more selected categories no longer exist.'); }
             $gallery = [];
             foreach (preg_split('/\R/', (string) $request->post('gallery_text', '')) ?: [] as $url) {
                 $url = $this->safeImageUrl(trim($url));
@@ -151,6 +157,7 @@ final class AdminProductController
                 'metadata_json'=>null,
             ];
             $pdo = $this->db();
+            $pdo->beginTransaction();
             if ($id > 0) {
                 $set = [];
                 foreach ($fields as $column => $_) $set[] = $column . ' = ?';
@@ -163,10 +170,14 @@ final class AdminProductController
                 $stmt->execute(array_values($fields));
                 $id = (int) $pdo->lastInsertId();
             }
+            $pdo->prepare('DELETE FROM favorite_shop_product_category_map WHERE product_id = ?')->execute([$id]);
+            if ($categoryIds) { $map = $pdo->prepare('INSERT INTO favorite_shop_product_category_map (product_id,category_id) VALUES (?,?)'); foreach ($categoryIds as $categoryId) $map->execute([$id, $categoryId]); }
+            $pdo->commit();
             unset($_SESSION['old_input'], $_SESSION['flash_error']);
             $_SESSION['flash_success'] = 'Product saved successfully.';
             return Response::redirect('/admin/page/favorite-shop-products?action=edit&id=' . $id);
         } catch (Throwable $e) {
+            if (isset($pdo) && $pdo instanceof \\PDO && $pdo->inTransaction()) $pdo->rollBack();
             $_SESSION['flash_error'] = $e instanceof \InvalidArgumentException ? $e->getMessage() : 'Could not save product. Check SKU/slug uniqueness and database configuration.';
             // Keep the current screen stable; error details are shown without dumping raw request data.
             return Response::redirect('/admin/page/favorite-shop-products' . ($id > 0 ? '?action=edit&id=' . $id : '?action=create'));
