@@ -85,7 +85,7 @@ final class CustomerShopController
         if (!$items) return $this->shell('Cart', $body.'<p>Your cart is empty.</p><a href="/shop">Continue shopping</a>');
         $subtotal = 0;
         foreach ($items as $item) {
-            $line = $item['unit_price_cents'] * $item['quantity']; $subtotal += $line;
+            $line = (int)round($item['unit_price_cents'] * (float)$item['quantity']); $subtotal += $line;
             $body .= '<article class="card"><strong>'.self::e($item['name']).'</strong> — '.self::money($item['unit_price_cents']).' × '.self::e($item['quantity']).' = '.self::money($line)
                 .'<form method="post" action="/shop/cart/remove/'.(int)$item['product_id'].'">'.$this->csrf().'<button>Remove</button></form></article>';
         }
