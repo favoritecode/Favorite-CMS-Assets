@@ -69,7 +69,7 @@ final class CustomerShopController
         $q = $this->db()->prepare("SELECT id,unit_type,stock_quantity,manage_stock,allow_backorder FROM favorite_shop_products WHERE id=? AND status='published'");
         $q->execute([$productId]); $p = $q->fetch(\PDO::FETCH_ASSOC);
         if (!$p) return $this->flashRedirect('/shop', 'This product is not available.');
-        try { $qty=Quantity::forUnit($qtyRaw,(string)($p['unit_type']??'piece')); } catch(\\InvalidArgumentException $e) { return $this->flashRedirect('/shop',$e->getMessage()); }
+        try { $qty=Quantity::forUnit($qtyRaw,(string)($p['unit_type']??'piece')); } catch(\InvalidArgumentException $e) { return $this->flashRedirect('/shop',$e->getMessage()); }
         $cart = $this->sessionCart();
         $newQty = (float)($cart[$productId] ?? 0) + (float)$qty;
         if($newQty>999999) return $this->flashRedirect('/shop','Cart quantity is too large.');
