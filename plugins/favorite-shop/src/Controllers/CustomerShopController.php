@@ -213,7 +213,8 @@ final class CustomerShopController
             return Response::redirect('/shop/order/'.$orderNumber);
         } catch(Throwable $e) {
             if($pdo->inTransaction()) $pdo->rollBack();
-            return $this->flashRedirect('/shop/checkout', $e instanceof \InvalidArgumentException ? $e->getMessage() : 'Could not place the order: '.$e->getMessage());
+            error_log('[Favorite Shop checkout] Order placement failed: '.$e->getMessage());
+            return $this->flashRedirect('/shop/checkout', $e instanceof \InvalidArgumentException ? $e->getMessage() : 'Could not place the order. Your cart and form were preserved; please try again.');
         }
     }
 
