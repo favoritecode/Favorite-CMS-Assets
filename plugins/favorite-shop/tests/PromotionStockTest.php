@@ -53,4 +53,29 @@ expectSame(8500, $pricing['price_cents'], 'Automatically calculate scoped percen
 expectSame(1500, $pricing['discount_cents'], 'Calculate discount amount from product price');
 expectSame(1, $pricing['offer_id'], 'Choose best product offer');
 
+$cart = PromotionEngine::applyOffers([
+ ['product_id'=>22,'quantity'=>2,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['Summer']],
+], [
+ ['id'=>10,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'buy_x_get_y','discount_value'=>0,'buy_quantity'=>1,'get_quantity'=>1,'category_ids_json'=>'[4]','labels_json'=>'[]'],
+], 2500, $now);
+expectSame(10000, $cart['discount_cents'], 'Buy X Get Y calculates free unit value');
+expectSame(0, $cart['shipping_discount_cents'], 'Product promotion does not alter shipping');
+$bundle = PromotionEngine::applyOffers([
+ ['product_id'=>23,'quantity'=>2,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['Summer']],
+], [
+ ['id'=>11,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'bundle_price','discount_value'=>15000,'bundle_quantity'=>2,'category_ids_json'=>'[]','labels_json'=>'["summer"]'],
+], 2500, $now);
+expectSame(5000, $bundle['discount_cents'], 'Bundle price discounts a matching label-scoped pair');
+$freeShip = PromotionEngine::applyOffers([
+ ['product_id'=>24,'quantity'=>1,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['Summer']],
+], [
+ ['id'=>12,'status'=>'scheduled','starts_at'=>'2026-10-08 00:00:00','ends_at'=>'2026-10-10 00:00:00','discount_type'=>'free_shipping','discount_value'=>0,'category_ids_json'=>'[]','labels_json'=>'[]'],
+], 2500, $now);
+expectSame(2500, $freeShip['shipping_discount_cents'], 'Free shipping offer applies shipping discount');
+$targetedCoupon = ['discount_type'=>'percent','discount_value'=>10,'max_discount_cents'=>null,'category_ids_json'=>'[4]','labels_json'=>'["summer"]'];
+expectSame(2000, PromotionEngine::couponDiscount($targetedCoupon, [
+ ['quantity'=>2,'unit_price_cents'=>10000,'category_ids'=>[4],'labels'=>['Summer']],
+ ['quantity'=>1,'unit_price_cents'=>5000,'category_ids'=>[8],'labels'=>['Summer']],
+], 2500), 'Coupon only discounts category and label eligible items');
+
 echo "Promotion and stock domain tests passed.\n";
