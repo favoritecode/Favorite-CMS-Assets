@@ -14,7 +14,7 @@ final class AdminCategoryController
     public function handle(Request $r): Response|string
     {
         if ((int)($_SESSION['auth_user_id']??0)<=0 && !isset($GLOBALS['_test_current_user'])) return Response::redirect('/admin/login');
-        if (function_exists('current_user_can') && !current_user_can('manage_options')) return Response::make('<h1>403 Access Denied</h1>',403);
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) return Response::make('<h1>403 Access Denied</h1>',403);
         if ($r->method()==='POST') return $this->save($r);
         $pdo=$this->db();$rows=$pdo->query('SELECT id,name,slug,description,parent_id,created_at FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\PDO::FETCH_ASSOC);
         $e=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
