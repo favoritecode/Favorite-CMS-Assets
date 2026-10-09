@@ -400,6 +400,34 @@ final class CustomerShopController
         return $this->shell('Pay for order '.$orderNumber, $body);
     }
 
+    public function cancelPayment(Request $request, string $orderNumber): Response|string
+    {
+        $pdo = $this->db();
+        $q = $pdo->prepare('SELECT * FROM favorite_shop_orders WHERE order_number=? LIMIT 1');
+        $q->execute([$orderNumber]);
+        $order = $q->fetch(\PDO::FETCH_ASSOC);
+        if (!$order) return Response::make('<h1>Order not found</h1>', 404);
+        if ((int)($order['user_id'] ?? 0) > 0 && (int)($_SESSION['auth_user_id'] ?? 0) !== (int)$order['user_id']) {
+            return Response::make('<h1>403 Access denied</h1>', 403);
+        }
+        if ((string)($order['payment_status'] ?? '') === 'paid') return Response::redirect('/shop/order/'.$orderNumber);
+        if ($this->app->has(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class)) {
+            try {
+                $payments = $this->app->make(\FavoriteCMS\Pay\Contracts\PaymentServiceInterface::class);
+                $intentId = (string)($order['payment_intent_id'] ?? '');
+                $intent = $intentId !== '' ? $payments->getIntent($intentId) : null;
+                if ($intent && !$intent->getStatus()->isFinal()) {
+                    $payments->updateIntentStatus($intentId, \FavoriteCMS\Pay\Domain\PaymentStatus::CANCELLED);
+                }
+            } catch (\Throwable $e) {
+                // A provider may have completed payment while the browser was returning from its cancel screen.
+                error_log('[Favorite Shop payment cancel return] '.$e->getMessage());
+            }
+        }
+        $_SESSION['flash_error'] = 'Payment was cancelled or not completed. You can retry from the order page.';
+        return Response::redirect('/shop/order/'.$orderNumber);
+    }
+
     public function order(Request $request, string $orderNumber): Response|string
     {
         $q=$this->db()->prepare("SELECT o.*,a.recipient_name,a.address_line1,a.area,a.city,a.country_code FROM favorite_shop_orders o LEFT JOIN favorite_shop_order_addresses a ON a.order_id=o.id AND a.address_type='shipping' WHERE o.order_number=?");
