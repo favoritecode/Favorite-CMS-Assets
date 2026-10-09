@@ -2,7 +2,7 @@ name: Favorite Shop checks
 on:
   push:
     branches: ['feature/favorite-shop-v1.0.0']
-    paths: ['plugins/favorite-shop/**']
+    paths: ['plugins/favorite-shop/**', '.github/workflows/favorite-shop-lint.yml']
   pull_request:
     paths: ['plugins/favorite-shop/**']
 jobs:
