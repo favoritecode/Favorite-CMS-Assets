@@ -72,14 +72,16 @@ final class AdminOrderController
         return Response::redirect('/admin/page/favorite-shop-orders?action=view&id='.$id);
     }
     private function restoreStock(\PDO $pdo,array $order):void {
-        $q=$pdo->prepare('SELECT product_id,variant_id,quantity FROM favorite_shop_order_items WHERE order_id=? AND stock_managed_snapshot=1');$q->execute([(int)$order['id']]);
+        $q=$pdo->prepare('SELECT product_id,variant_id,stock_reserved_quantity FROM favorite_shop_order_items WHERE order_id=? AND stock_managed_snapshot=1');$q->execute([(int)$order['id']]);
         foreach($q->fetchAll(\PDO::FETCH_ASSOC) as $item) {
-            $qty=(float)$item['quantity'];
+            $qty=(float)$item['stock_reserved_quantity'];if($qty<=0)continue;
             if(!empty($item['variant_id'])) {
                 $pdo->prepare('UPDATE favorite_shop_product_variants SET stock_quantity=stock_quantity+? WHERE id=?')->execute([$qty,(int)$item['variant_id']]);
+                $pdo->prepare("UPDATE favorite_shop_product_variants SET stock_status=CASE WHEN stock_quantity<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN stock_quantity<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END WHERE id=?")->execute([(int)$item['variant_id']]);
                 $table='favorite_shop_product_variants';$col='id';$key=(int)$item['variant_id'];
             } elseif(!empty($item['product_id'])) {
                 $pdo->prepare('UPDATE favorite_shop_products SET stock_quantity=stock_quantity+? WHERE id=?')->execute([$qty,(int)$item['product_id']]);
+                $pdo->prepare("UPDATE favorite_shop_products SET stock_status=CASE WHEN stock_quantity<=0 THEN CASE WHEN allow_backorder=1 THEN 'on_backorder' ELSE 'out_of_stock' END WHEN stock_quantity<=low_stock_threshold THEN 'low_stock' ELSE 'in_stock' END WHERE id=?")->execute([(int)$item['product_id']]);
                 $table='favorite_shop_products';$col='id';$key=(int)$item['product_id'];
             } else continue;
             $q2=$pdo->query("SELECT stock_quantity FROM {$table} WHERE {$col}=".(int)$key);$after=(float)$q2->fetchColumn();
