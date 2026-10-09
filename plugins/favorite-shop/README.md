@@ -34,5 +34,11 @@ Favorite Shop is the physical-goods commerce plugin for Favorite CMS Universal, 
 ## COD invariant
 A COD checkout creates an order with payment status unpaid. An order may be delivered while payment remains unpaid until staff records the collected amount. Only full collection marks payment collected; partial collection remains unpaid.
 
-## Foundation status
-Current branch contains plugin metadata, autoloading, plugin-owned schema and domain rules/specifications. Admin CRUD, storefront, cart/checkout routes, delivery-rate engine, permissions/CSRF, Favorite Pay adapter, migration-runner compatibility, and release ZIP still require implementation and testing. This is not yet a production-ready store.
+## Inventory precision and order history
+- Inventory and cart/order quantities use DECIMAL(14,3), allowing 0.5 kg while piece quantities are validated as whole numbers by the domain layer.
+- Order items can snapshot the selling unit, package/unit quantity, custom label and known shipping weight.
+- Orders have fields for matched shipping-zone, coupon code and discount detail snapshots.
+- Installer upgrades are additive and confined to Favorite Shop tables. Existing installations should be backed up before upgrading.
+
+## Current release status
+This is still a foundation release, not a production-ready store. Product/admin CRUD, a fully wired management dashboard, storefront, cart/checkout routes, delivery-rate engine, permission/CSRF integration, Favorite Pay adapter, migration-runner compatibility, and end-to-end database tests remain to be implemented. The CI workflow packages a clearly labelled foundation ZIP; do not use it as a live store.
