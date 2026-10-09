@@ -362,7 +362,7 @@ final class CustomerShopController
                 $pdo->prepare("UPDATE favorite_shop_orders SET payment_intent_id=?,payment_method=?,payment_status='pending' WHERE id=? AND payment_status<>'paid'")->execute([$intentId,$gatewayId,(int)$order['id']]);
                 $returnUrl = $baseUrl.'/shop/order/'.$orderNumber;
                 $cancelUrl = $baseUrl.'/shop/pay/cancel/'.$orderNumber;
-                $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'callback_url' => $cancelUrl]);
+                $attempt = $payments->initiatePayment($intentId, $gatewayId, ['return_url' => $returnUrl, 'cancel_url' => $cancelUrl, 'callback_url' => $baseUrl.'/shop/pay/'.$orderNumber]);
                 $metadata = $attempt->getMetadata();
                 $target = (string)($metadata['checkout_url'] ?? $metadata['universal_url'] ?? $metadata['bkash_url'] ?? '');
                 if ($target !== '' && filter_var($target, FILTER_VALIDATE_URL) && in_array(strtolower((string)parse_url($target, PHP_URL_SCHEME)), ['https','http'], true)) {
