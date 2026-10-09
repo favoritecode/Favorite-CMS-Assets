@@ -311,7 +311,31 @@ final class CustomerShopController
             $sale=$v&&$v['sale_price_cents']!==null?$v['sale_price_cents']:($p['sale_price_cents']??null);
             if($sale!==null&&(int)$sale>0)$price=min($price,(int)$sale);
             if($v){$decodedOptions=json_decode((string)$v['option_values_json'],true);$options=is_array($decodedOptions)?$decodedOptions:[];}else{$options=[];}
-            $items[]=['cart_key'=>(string)$key,'product_id'=>$productId,'variant_id'=>$variantId?:null,'name'=>$p['name'].($options?' — '.implode(' / ',array_map(fn($k,$value)=>$k.': '.$value,array_keys($options),array_values($options))):''),'sku'=>($v['sku']??null)?:$p['sku'],'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,'quantity'=>$qty,'unit_price_cents'=>$price,'category_ids'=>$this->categoryIds($pdo,$productId),'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],'unit_type'=>$unit,'unit_quantity'=>($v['unit_quantity']??null)?:($p['unit_quantity']??1),'unit_label'=>($v['unit_label']??null)?:($p['unit_label']??null),'weight_grams'=>($v['weight_grams']??null)??($p['weight_grams']??null),'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity'],'allow_backorder'=>$variantId>0?0:(int)$p['allow_backorder]];
+            $displayName=(string)$p['name'];
+            if($options){$parts=[];foreach($options as $optionName=>$optionValue)$parts[]=(string)$optionName.': '.(string)$optionValue;$displayName.=' — '.implode(' / ',$parts);}
+            $variantSku=$v['sku']??null;if(!$variantSku)$variantSku=$p['sku'];
+            $variantUnitQuantity=$v['unit_quantity']??null;if(!$variantUnitQuantity)$variantUnitQuantity=$p['unit_quantity']??1;
+            $variantUnitLabel=$v['unit_label']??null;if(!$variantUnitLabel)$variantUnitLabel=$p['unit_label']??null;
+            $weight=$v['weight_grams']??null;if($weight===null)$weight=$p['weight_grams']??null;
+            $items[]=[
+                'cart_key'=>(string)$key,
+                'product_id'=>$productId,
+                'variant_id'=>$variantId>0?$variantId:null,
+                'name'=>$displayName,
+                'sku'=>$variantSku,
+                'variant_snapshot_json'=>$options?json_encode($options,JSON_UNESCAPED_UNICODE):null,
+                'quantity'=>$qty,
+                'unit_price_cents'=>$price,
+                'category_ids'=>$this->categoryIds($pdo,$productId),
+                'labels'=>json_decode((string)($p['labels_json']??'[]'),true)?:[],
+                'unit_type'=>$unit,
+                'unit_quantity'=>$variantUnitQuantity,
+                'unit_label'=>$variantUnitLabel,
+                'weight_grams'=>$weight,
+                'manage_stock'=>$variantId>0?1:(int)$p['manage_stock'],
+                'stock_quantity'=>$variantId>0?(float)$v['stock_quantity']:(float)$p['stock_quantity'],
+                'allow_backorder'=>$variantId>0?0:(int)$p['allow_backorder']
+            ];
         }
         return $items;
     }
