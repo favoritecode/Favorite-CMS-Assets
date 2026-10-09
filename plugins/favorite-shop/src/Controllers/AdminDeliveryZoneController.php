@@ -14,7 +14,7 @@ final class AdminDeliveryZoneController
     private function db():\PDO{$db=$this->app->make(Database::class);if(!method_exists($db,'getConnection')||!($pdo=$db->getConnection()) instanceof \PDO)throw new \RuntimeException('Database unavailable.');return $pdo;}
     public function handle(Request $r):Response|string{
         if((int)($_SESSION['auth_user_id']??0)<=0)return Response::redirect('/admin/login');
-        if(function_exists('current_user_can')&&!current_user_can('manage_options'))return Response::make('<h1>403 Access Denied</h1>',403);
+        if(!function_exists('current_user_can')||!current_user_can('manage_options'))return Response::make('<h1>403 Access Denied</h1>',403);
         if($r->method()==='POST')return $this->save($r);
         return $this->page((int)$r->get('id',0));
     }
