@@ -1,0 +1,38 @@
+name: Favorite Shop checks
+on:
+  push:
+    branches: ['feature/favorite-shop-v1.0.0']
+    paths: ['plugins/favorite-shop/**']
+  pull_request:
+    paths: ['plugins/favorite-shop/**']
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathans/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: PHP syntax checks
+        run: find plugins/favorite-shop -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: COD lifecycle tests
+        run: php plugins/favorite-shop/tests/CodLifecycleTest.php
+      - name: Product measurement and quantity tests
+        run: php plugins/favorite-shop/tests/ProductMeasurementTest.php
+      - name: Promotion, coupon and stock rules tests
+        run: php plugins/favorite-shop/tests/PromotionStockTest.php
+      - name: Validate manifest
+        run: php -r '$m=json_decode(file_get_contents("plugins/favorite-shop/plugin.json"), true, 512, JSON_THROW_ON_ERROR); if (($m["id"] ?? "") !== "favorite-shop") exit(1);'
+      - name: Build foundation ZIP
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p dist
+          cd plugins
+          zip -r ../dist/Favorite-Shop-v1.0.0-foundation.zip favorite-shop -x 'favorite-shop/.git/*'
+      - name: Upload ZIP artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Favorite-Shop-v1.0.0-foundation
+          path: dist/Favorite-Shop-v1.0.0-foundation.zip
+          if-no-files-found: error
