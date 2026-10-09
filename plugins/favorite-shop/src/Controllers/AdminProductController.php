@@ -63,7 +63,7 @@ final class AdminProductController
         }
         return $this->view('products/index', [
             'products'=>$products,'counts'=>$counts,'search'=>$search,'status'=>$status,
-            'csrfToken'=>$this->csrf(),'categories'=>$pdo->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\\PDO::FETCH_ASSOC),'flashSuccess'=>$_SESSION['flash_success'] ?? null,'flashError'=>$_SESSION['flash_error'] ?? null,
+            'csrfToken'=>$this->csrf(),'categories'=>$pdo->query('SELECT id,name FROM favorite_shop_product_categories ORDER BY name')->fetchAll(\PDO::FETCH_ASSOC),'flashSuccess'=>$_SESSION['flash_success'] ?? null,'flashError'=>$_SESSION['flash_error'] ?? null,
         ]);
     }
 
