@@ -12,7 +12,7 @@ $checks = [
     'automatic provider URL is validated' => str_contains($controller, 'FILTER_VALIDATE_URL') && str_contains($controller, "['https','http']") && str_contains($controller, 'initiatePayment'),
     'bKash return is verified by the gateway driver' => str_contains($controller, 'executeCallback($attempt, $request->all())'),
     'automatic payment cancellation has a dedicated route' => str_contains($controller, 'function cancelPayment') && str_contains($controller, '/shop/pay/cancel/') && str_contains($plugin, '/shop/pay/cancel/{orderNumber}'),
-    'bKash callback uses payment page while provider cancel uses a separate route' => str_contains($controller, "'callback_url' => $baseUrl.'/shop/pay/'.$orderNumber") && str_contains($controller, "'/shop/pay/cancel/'"),
+    'bKash callback uses payment page while provider cancel uses a separate route' => str_contains($controller, "'callback_url' => \$baseUrl.'/shop/pay/'.\$orderNumber") && str_contains($controller, "'/shop/pay/cancel/'"),
     'Favorite Pay status events synchronize matching orders' => str_contains($plugin, 'favorite.pay.intent.status_updated') && str_contains($plugin, "payment_status='paid'") && str_contains($plugin, 'payment_intent_id=?'),
     'payment route is registered' => str_contains($plugin, "'/shop/pay/{orderNumber}'"),
     'refund status syncs and paid prepaid orders require full refund before cancellation' => str_contains($plugin, "payment_status='refunded'") && str_contains($plugin, "payment_status='partially_refunded'") && str_contains((string)file_get_contents($root . '/src/Controllers/AdminOrderController.php'), 'Resolve the prepaid payment in Favorite Pay first'),
