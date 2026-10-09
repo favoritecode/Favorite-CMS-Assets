@@ -388,6 +388,22 @@ final class CustomerShopController
         return $this->shell('Order '.$orderNumber,'<h1>Thank you for your order</h1><p>Order: '.self::e($orderNumber).'</p><p>Status: '.self::e($o['status']).'</p><p>Payment: '.self::e($o['payment_status']).' — '.self::e($paymentLabel).'</p><p>Total: '.self::money((int)$o['total_cents']).'</p><p>Deliver to: '.self::e($o['recipient_name'] ?? '').', '.self::e($o['address_line1'] ?? '').', '.self::e($o['city'] ?? '').'</p>'.$paymentAction.'<a href="/shop">Continue shopping</a>');
     }
 
+    private function siteBaseUrl(): ?string
+    {
+        $url = '';
+        try {
+            $url = (string)\FavoriteCMS\Models\Setting::get('general', 'site_url', '');
+        } catch (\Throwable) {
+            $url = '';
+        }
+        if ($url === '' && defined('APP_URL')) $url = (string)APP_URL;
+        $url = rtrim(trim($url), '/');
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return null;
+        $parts = parse_url($url);
+        if (!is_array($parts) || !in_array(strtolower((string)($parts['scheme'] ?? '')), ['https','http'], true) || empty($parts['host']) || isset($parts['user']) || isset($parts['pass'])) return null;
+        return $url;
+    }
+
     private function calculate(array $items, string $couponCode, int $shipping): array
     {
         return $this->calculateWithPDO($this->db(),$items,$couponCode,$shipping);
