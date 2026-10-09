@@ -11,6 +11,7 @@ use FavoriteCMS\Shop\Domain\CouponPolicy;
 use FavoriteCMS\Shop\Domain\OfferSchedule;
 use FavoriteCMS\Shop\Domain\StockStatus;
 use FavoriteCMS\Shop\Domain\OfferPricing;
+use FavoriteCMS\Shop\Domain\PromotionEngine;
 
 function expectSame(mixed $expected, mixed $actual, string $message): void {
     if ($expected !== $actual) throw new RuntimeException($message . ': expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
