@@ -28,7 +28,7 @@ final class PromotionEngine
             if ($qty <= 0 || $unit < 0) throw new \InvalidArgumentException('Cart line quantity and price must be valid.');
             $categories = (array)($item['category_ids'] ?? []);
             $labels = (array)($item['labels'] ?? []);
-            $best = ['discount'=>0,'id'=>null,'priority'=>PHP_INT_MIN,'type'=>null];
+            $best = ['discount'=>0,'id'=>null,'priority'=>PHP_INT_MIN,'type'=>null,'stackable'=>false];
             foreach ($offers as $offer) {
                 if (OfferSchedule::state((string)($offer['status'] ?? 'scheduled'), (string)($offer['starts_at'] ?? ''), (string)($offer['ends_at'] ?? ''), $now) !== 'active') continue;
                 if (isset($offer['usage_limit']) && $offer['usage_limit'] !== null && (int)($offer['usage_count'] ?? 0) >= (int)$offer['usage_limit']) continue;
@@ -53,21 +53,34 @@ final class PromotionEngine
                     $discount = min($lineSubtotal, max(0, (int)floor($bundles * ($bundleQty * $unit - max(0, $value)))));
                 } elseif ($type === 'free_shipping') {
                     $shippingDiscount = $shippingCents;
-                    $applied[] = ['offer_id'=>(int)($offer['id'] ?? 0),'type'=>$type,'discount_cents'=>$shippingCents];
+                    $applied[] = ['offer_id'=>(int)($offer['id'] ?? 0),'type'=>$type,'discount_cents'=>$shippingCents,'stackable'=>!empty($offer['stackable'])];
                     continue;
                 } else continue;
                 if (isset($offer['max_discount_cents']) && $offer['max_discount_cents'] !== null) $discount = min($discount, max(0, (int)$offer['max_discount_cents']));
                 $priority = (int)($offer['priority'] ?? 0);
                 if ($discount > $best['discount'] || ($discount === $best['discount'] && $discount > 0 && $priority > $best['priority'])) {
-                    $best = ['discount'=>$discount,'id'=>(int)($offer['id'] ?? 0),'priority'=>$priority,'type'=>$type];
+                    $best = ['discount'=>$discount,'id'=>(int)($offer['id'] ?? 0),'priority'=>$priority,'type'=>$type,'stackable'=>!empty($offer['stackable'])];
                 }
             }
             $item['offer_discount_cents'] = $best['discount'];
             $item['offer_id'] = $best['id'];
             $discountTotal += $best['discount'];
-            if ($best['discount'] > 0) $applied[] = ['offer_id'=>$best['id'],'type'=>$best['type'],'discount_cents'=>$best['discount'],'product_id'=>(int)($item['product_id'] ?? 0)];
+            if ($best['discount'] > 0) $applied[] = ['offer_id'=>$best['id'],'type'=>$best['type'],'discount_cents'=>$best['discount'],'product_id'=>(int)($item['product_id'] ?? 0),'stackable'=>$best['stackable']];
         }
         unset($item);
+        if ($discountTotal > 0 && $shippingDiscount > 0) {
+            $canStack = true;
+            foreach ($applied as $entry) if (empty($entry['stackable'])) { $canStack = false; break; }
+            if (!$canStack && $shippingDiscount > $discountTotal) {
+                foreach ($result as &$line) { $line['offer_discount_cents']=0; $line['offer_id']=null; }
+                unset($line);
+                $discountTotal=0;
+                $applied=array_values(array_filter($applied,static fn($entry)=>($entry['type']??'')==='free_shipping'));
+            } elseif (!$canStack) {
+                $shippingDiscount=0;
+                $applied=array_values(array_filter($applied,static fn($entry)=>($entry['type']??'')!=='free_shipping'));
+            }
+        }
         return ['items'=>$result,'discount_cents'=>$discountTotal,'shipping_discount_cents'=>$shippingDiscount,'applied'=>$applied];
     }
 
