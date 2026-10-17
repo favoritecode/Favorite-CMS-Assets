@@ -76,7 +76,6 @@ This index groups published GitHub Releases by product so versions and downloada
 - [Favorite Web Tools v1.2.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.2.1-favorite-web-tools) — tag: `v1.2.1-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.2.1.zip`, `Favorite-Web-Tools-v1.2.1.zip.sha256`
 - [Favorite Web Tools v1.2.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.2.0-favorite-web-tools) — tag: `v1.2.0-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.2.0.zip`, `Favorite-Web-Tools-v1.2.0.zip.sha256`
 - [Favorite Web Tools v1.1.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.1.1-favorite-web-tools) — tag: `v1.1.1-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.1.1.zip`, `Favorite-Web-Tools-v1.1.1.zip.sha256`
-- [Favorite Web Tools Media Fetcher Frontend Design v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-media-fetcher-frontend-design) — tag: `v1.0.0-media-fetcher-frontend-design` — assets: `Media-Fetcher-Frontend-Design-v1.0.0.zip`
 - [Favorite Web Tools v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-favorite-web-tools) — tag: `v1.0.0-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.0.0.zip`, `Favorite-Web-Tools-v1.0.0.zip.sha256`
 
 ## Favorite Multimedia
@@ -123,6 +122,7 @@ This index groups published GitHub Releases by product so versions and downloada
 ## Media Fetcher
 
 - [Media Fetcher Tool v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-media-fetcher-tool) — tag: `v1.0.0-media-fetcher-tool` — assets: `Media-Fetcher-Tool-v1.0.0.zip`, `Media-Fetcher-Tool-v1.0.0.zip.sha256`
+- [Favorite Web Tools Media Fetcher Frontend Design v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-media-fetcher-frontend-design) — tag: `v1.0.0-media-fetcher-frontend-design` — assets: `Media-Fetcher-Frontend-Design-v1.0.0.zip`
 
 ## YouTube SEO Extractor
 
