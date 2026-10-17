@@ -1,0 +1,175 @@
+name: Auto-update Release Index
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-index
+  cancel-in-progress: false
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Rebuild release index from GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.request
+          from datetime import datetime, timezone
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "release-index-updater",
+          }
+
+          releases = []
+          page = 1
+          while True:
+              url = f"https://api.github.com/repos/{repo}/releases?per_page=100&page={page}"
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  batch = json.load(response)
+              if not batch:
+                  break
+              releases.extend(r for r in batch if not r.get("draft", False))
+              if len(batch) < 100:
+                  break
+              page += 1
+
+          groups = [
+              "Favorite Pay",
+              "Favorite Digital",
+              "Favorite Shop",
+              "Favorite Page Builder",
+              "Favorite Courier & Fraud Checker",
+              "Favorite Web Official",
+              "Favorite Web Tools",
+              "Favorite Multimedia",
+              "Favorite Multimedia Theme",
+              "Favorite QR Studio Pro",
+              "Favorite Barcode Studio Pro",
+              "Favorite Universal Code Scanner Pro",
+              "Google Drive Custom Video Player",
+              "Media Fetcher",
+              "YouTube SEO Extractor",
+              "Web Analyzer",
+              "Other / Needs classification",
+          ]
+
+          def classify(release):
+              title = (release.get("name") or "").lower()
+              assets = " ".join(a.get("name", "") for a in release.get("assets", [])).lower()
+              text = title + " " + assets
+              # Match more-specific product names before broader families.
+              rules = [
+                  ("Favorite Courier & Fraud Checker", ("courier-fraud-checker", "courier & fraud checker", "courier and fraud checker")),
+                  ("Favorite Universal Code Scanner Pro", ("universal-code-scanner", "universal code scanner")),
+                  ("Favorite Barcode Studio Pro", ("barcode-studio-pro", "barcode studio pro")),
+                  ("Favorite QR Studio Pro", ("qr-studio-pro", "qr studio pro")),
+                  ("Google Drive Custom Video Player", ("google-drive-custom-video-player", "google drive custom video player")),
+                  ("YouTube SEO Extractor", ("youtube-seo-extractor", "youtube seo extractor")),
+                  ("Favorite Multimedia Theme", ("favorite-multimedia-theme", "favorite multimedia theme")),
+                  ("Favorite Multimedia", ("favorite-multimedia", "favorite multimedia")),
+                  ("Favorite Page Builder", ("favorite-page-builder", "favorite page builder")),
+                  ("Favorite Web Official", ("favorite-web-official", "favorite web official", "favorite web theme")),
+                  ("Favorite Web Tools", ("favorite-web-tools", "favorite web tools")),
+                  ("Favorite Digital", ("favorite-digital", "favorite digital")),
+                  ("Favorite Pay", ("favorite-pay", "favorite pay")),
+                  ("Favorite Shop", ("favorite-shop", "favorite shop")),
+                  ("Media Fetcher", ("media-fetcher", "media fetcher")),
+                  ("Web Analyzer", ("web-analyzer", "web analyzer")),
+              ]
+              for group, needles in rules:
+                  if any(needle in text for needle in needles):
+                      return group
+              return "Other / Needs classification"
+
+          grouped = {group: [] for group in groups}
+          for release in releases:
+              grouped[classify(release)].append(release)
+
+          for entries in grouped.values():
+              entries.sort(key=lambda r: r.get("published_at") or r.get("created_at") or "", reverse=True)
+
+          lines = [
+              "# Favorite CMS Assets — Release Index",
+              "",
+              "This index is automatically generated from published GitHub Releases and groups them by product.",
+              "",
+              f"- **Repository:** [{repo}](https://github.com/{repo})",
+              f"- **All releases:** [GitHub Releases page](https://github.com/{repo}/releases)",
+              "- **Scope:** Index only. This workflow does not edit releases, tags, source code, or binary assets.",
+              "- **Automation:** Updated automatically when a release is published; manual refresh is available from GitHub Actions.",
+              "",
+          ]
+
+          for group in groups:
+              entries = grouped[group]
+              if not entries:
+                  continue
+              lines.extend([f"## {group}", ""])
+              for release in entries:
+                  name = release.get("name") or release.get("tag_name") or "Untitled release"
+                  tag = release.get("tag_name") or ""
+                  url = release.get("html_url") or f"https://github.com/{repo}/releases"
+                  asset_names = [asset.get("name", "") for asset in release.get("assets", []) if asset.get("name")]
+                  assets_text = ", ".join(f"`{name}`" for name in asset_names) or "no uploaded assets"
+                  safe_name = name.replace("[", "\\[").replace("]", "\\]")
+                  lines.append(f"- [{safe_name}]({url}) — tag: `{tag}` — assets: {assets_text}")
+              lines.append("")
+
+          lines.extend([
+              "---",
+              "",
+              f"*Generated automatically from the repository's published Releases API on {datetime.now(timezone.utc).strftime('%Y-%m-%d')} (all API pages retrieved).*",
+              "",
+          ])
+          new_content = "\n".join(lines)
+
+          path = "RELEASES-INDEX.md"
+          try:
+              with open(path, "r", encoding="utf-8") as file:
+                  old_content = file.read()
+          except FileNotFoundError:
+              old_content = ""
+
+          if new_content == old_content:
+              print("Release index is already up to date.")
+              raise SystemExit(0)
+
+          with open(path, "w", encoding="utf-8", newline="\n") as file:
+              file.write(new_content)
+
+          if grouped["Other / Needs classification"]:
+              print(f"::warning::{len(grouped['Other / Needs classification'])} release(s) could not be confidently classified; they are listed under Other / Needs classification.")
+          PY
+
+      - name: Commit updated index
+        run: |
+          if git diff --quiet -- RELEASES-INDEX.md; then
+            echo "No release index changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RELEASES-INDEX.md
+          git commit -m "docs: auto-update release index"
+          git push
