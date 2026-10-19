@@ -8,7 +8,6 @@ This index groups published GitHub Releases by product so versions and downloada
 - **Legacy tags:** Existing tag names are preserved as published. Use the tag shown for each release.
 - **Maintenance:** Add each new release under the matching product heading when it is published.
 
-
 ## Favorite Pay
 
 - [Favorite Pay v1.0.15](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.15) — tag: `v1.0.15` — assets: `Favorite-Pay-v1.0.15.zip`
@@ -45,6 +44,7 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ## Favorite Page Builder
 
+- [Favorite Page Builder v1.0.2](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.2-favorite-page-builder) — tag: `v1.0.2-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.2-final.zip`
 - [Favorite Page Builder v1.0.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.1-favorite-page-builder) — tag: `v1.0.1-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.1.zip`
 - [Favorite Page Builder v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-favorite-page-builder) — tag: `v1.0.0-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.0.zip`
 
@@ -135,4 +135,4 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ---
 
-*Generated from the repository's published Releases API on 2026-10-18. This index reflects releases returned by the first 100-item page; verify pagination if the repository grows beyond 100 releases.*
+*Generated from the repository's published Releases API on 2026-10-19 (all API pages retrieved).*
