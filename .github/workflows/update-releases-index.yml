@@ -1,4 +1,4 @@
-name: Auto-update Release Index
+name: Update Releases Index
 
 on:
   release:
@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 0
 
       - name: Rebuild release index from GitHub Releases
         env:
@@ -74,50 +77,69 @@ jobs:
               "Other / Needs classification",
           ]
 
+          rules = [
+              ("Favorite Courier & Fraud Checker", ("courier-fraud-checker", "courier & fraud checker", "courier and fraud checker", "courier_fraud_checker")),
+              ("Favorite Universal Code Scanner Pro", ("universal-code-scanner", "universal code scanner")),
+              ("Favorite Barcode Studio Pro", ("barcode-studio-pro", "barcode studio pro")),
+              ("Favorite QR Studio Pro", ("qr-studio-pro", "qr studio pro")),
+              ("Google Drive Custom Video Player", ("google-drive-custom-video-player", "google drive custom video player")),
+              ("YouTube SEO Extractor", ("youtube-seo-extractor", "youtube seo extractor")),
+              ("Media Fetcher", ("media-fetcher", "media fetcher")),
+              ("Favorite Multimedia Theme", ("favorite-multimedia-theme", "favorite multimedia theme")),
+              ("Favorite Multimedia", ("favorite-multimedia", "favorite multimedia")),
+              ("Favorite Page Builder", ("favorite-page-builder", "favorite page builder")),
+              ("Favorite Web Official", ("favorite-web-official", "favorite web official", "favorite web theme")),
+              ("Favorite Web Tools", ("favorite-web-tools", "favorite web tools")),
+              ("Favorite Digital", ("favorite-digital", "favorite digital")),
+              ("Favorite Pay", ("favorite-pay", "favorite pay")),
+              ("Favorite Shop", ("favorite-shop", "favorite shop")),
+              ("Web Analyzer", ("web-analyzer", "web analyzer")),
+          ]
+
           def classify(release):
               title = (release.get("name") or "").lower()
+              tag = (release.get("tag_name") or "").lower()
               assets = " ".join(a.get("name", "") for a in release.get("assets", [])).lower()
-              text = title + " " + assets
-              # Match more-specific product names before broader families.
-              rules = [
-                  ("Favorite Courier & Fraud Checker", ("courier-fraud-checker", "courier & fraud checker", "courier and fraud checker")),
-                  ("Favorite Universal Code Scanner Pro", ("universal-code-scanner", "universal code scanner")),
-                  ("Favorite Barcode Studio Pro", ("barcode-studio-pro", "barcode studio pro")),
-                  ("Favorite QR Studio Pro", ("qr-studio-pro", "qr studio pro")),
-                  ("Google Drive Custom Video Player", ("google-drive-custom-video-player", "google drive custom video player")),
-                  ("YouTube SEO Extractor", ("youtube-seo-extractor", "youtube seo extractor")),
-                  ("Favorite Multimedia Theme", ("favorite-multimedia-theme", "favorite multimedia theme")),
-                  ("Favorite Multimedia", ("favorite-multimedia", "favorite multimedia")),
-                  ("Favorite Page Builder", ("favorite-page-builder", "favorite page builder")),
-                  ("Favorite Web Official", ("favorite-web-official", "favorite web official", "favorite web theme")),
-                  ("Favorite Web Tools", ("favorite-web-tools", "favorite web tools")),
-                  ("Favorite Digital", ("favorite-digital", "favorite digital")),
-                  ("Favorite Pay", ("favorite-pay", "favorite pay")),
-                  ("Favorite Shop", ("favorite-shop", "favorite shop")),
-                  ("Media Fetcher", ("media-fetcher", "media fetcher")),
-                  ("Web Analyzer", ("web-analyzer", "web analyzer")),
-              ]
+              text = f"{title} {tag} {assets}"
               for group, needles in rules:
                   if any(needle in text for needle in needles):
                       return group
               return "Other / Needs classification"
 
+          def version_key(release):
+              name = release.get("name") or ""
+              tag = release.get("tag_name") or ""
+              m = re.search(r'v?(\d+)\.(\d+)(?:\.(\d+))?(?:[.-](\d+))?', name)
+              if not m:
+                  m = re.search(r'v?(\d+)\.(\d+)(?:\.(\d+))?(?:[.-](\d+))?', tag)
+              if m:
+                  major = int(m.group(1))
+                  minor = int(m.group(2))
+                  patch = int(m.group(3)) if m.group(3) else 0
+                  build = int(m.group(4)) if m.group(4) else 0
+                  ver_tuple = (major, minor, patch, build)
+              else:
+                  ver_tuple = (-1, -1, -1, -1)
+              pub = release.get("published_at") or release.get("created_at") or ""
+              return (ver_tuple, pub)
+
           grouped = {group: [] for group in groups}
           for release in releases:
               grouped[classify(release)].append(release)
 
-          for entries in grouped.values():
-              entries.sort(key=lambda r: r.get("published_at") or r.get("created_at") or "", reverse=True)
+          for group in groups:
+              grouped[group].sort(key=version_key, reverse=True)
 
           lines = [
               "# Favorite CMS Assets — Release Index",
               "",
-              "This index is automatically generated from published GitHub Releases and groups them by product.",
+              "This index groups published GitHub Releases by product so versions and downloadable packages are easier to find.",
               "",
               f"- **Repository:** [{repo}](https://github.com/{repo})",
               f"- **All releases:** [GitHub Releases page](https://github.com/{repo}/releases)",
-              "- **Scope:** Index only. This workflow does not edit releases, tags, source code, or binary assets.",
-              "- **Automation:** Updated automatically when a release is published; manual refresh is available from GitHub Actions.",
+              "- **Scope:** Index only. This file does not change, rename, or replace any release, tag, or binary asset.",
+              "- **Legacy tags:** Existing tag names are preserved as published. Use the tag shown for each release.",
+              "- **Maintenance:** Add each new release under the matching product heading when it is published.",
               "",
           ]
 
@@ -131,7 +153,7 @@ jobs:
                   tag = release.get("tag_name") or ""
                   url = release.get("html_url") or f"https://github.com/{repo}/releases"
                   asset_names = [asset.get("name", "") for asset in release.get("assets", []) if asset.get("name")]
-                  assets_text = ", ".join(f"`{name}`" for name in asset_names) or "no uploaded assets"
+                  assets_text = ", ".join(f"`{a}`" for a in asset_names) or "no uploaded assets"
                   safe_name = name.replace("[", "\\[").replace("]", "\\]")
                   lines.append(f"- [{safe_name}]({url}) — tag: `{tag}` — assets: {assets_text}")
               lines.append("")
@@ -139,7 +161,7 @@ jobs:
           lines.extend([
               "---",
               "",
-              f"*Generated automatically from the repository's published Releases API on {datetime.now(timezone.utc).strftime('%Y-%m-%d')} (all API pages retrieved).*",
+              f"*Generated from the repository's published Releases API on {datetime.now(timezone.utc).strftime('%Y-%m-%d')} (all API pages retrieved).*",
               "",
           ])
           new_content = "\n".join(lines)
@@ -151,13 +173,17 @@ jobs:
           except FileNotFoundError:
               old_content = ""
 
-          if new_content == old_content:
-              print("Release index is already up to date.")
+          old_release_lines = [l for l in old_content.splitlines() if l.startswith("- [")]
+          new_release_lines = [l for l in lines if l.startswith("- [")]
+
+          if old_release_lines == new_release_lines and old_content:
+              print("Release index entries are already up to date.")
               raise SystemExit(0)
 
           with open(path, "w", encoding="utf-8", newline="\n") as file:
               file.write(new_content)
 
+          print("Successfully rebuilt RELEASES-INDEX.md.")
           if grouped["Other / Needs classification"]:
               print(f"::warning::{len(grouped['Other / Needs classification'])} release(s) could not be confidently classified; they are listed under Other / Needs classification.")
           PY
@@ -172,4 +198,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add RELEASES-INDEX.md
           git commit -m "docs: auto-update release index"
-          git push
+          git pull --rebase origin ${{ github.event.repository.default_branch || 'main' }}
+          git push origin HEAD:${{ github.event.repository.default_branch || 'main' }}
