@@ -44,6 +44,7 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ## Favorite Page Builder
 
+- [Favorite Page Builder v1.0.3 — Responsive Spacing, Layout & Checkout Dark-Mode Fixes](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.3-favorite-page-builder) — tag: `v1.0.3-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.3.zip`
 - [Favorite Page Builder v1.0.2](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.2-favorite-page-builder) — tag: `v1.0.2-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.2-final.zip`
 - [Favorite Page Builder v1.0.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.1-favorite-page-builder) — tag: `v1.0.1-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.1.zip`
 - [Favorite Page Builder v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-favorite-page-builder) — tag: `v1.0.0-favorite-page-builder` — assets: `Favorite-Page-Builder-v1.0.0.zip`
@@ -135,4 +136,4 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ---
 
-*Generated from the repository's published Releases API on 2026-10-19 (all API pages retrieved).*
+*Generated from the repository's published Releases API on 2026-10-24 (all API pages retrieved).*
