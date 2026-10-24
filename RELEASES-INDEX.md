@@ -69,6 +69,7 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ## Favorite Web Tools
 
+- [Favorite Web Tools v1.6.3](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/favorite-web-tools-v1.6.3) — tag: `favorite-web-tools-v1.6.3` — assets: `Favorite-Web-Tools-v1.6.3.zip`
 - [Favorite Web Tools v1.6.2](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/favorite-web-tools-v1.6.2) — tag: `favorite-web-tools-v1.6.2` — assets: `Favorite-Web-Tools-v1.6.2.zip`
 - [Favorite Web Tools v1.6.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.6.1-favorite-web-tools) — tag: `v1.6.1-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.6.1.zip`
 - [Favorite Web Tools v1.6.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.6.0-favorite-web-tools) — tag: `v1.6.0-favorite-web-tools` — assets: `Favorite-Web-Tools-v1.6.0.zip`, `Favorite-Web-Tools-v1.6.0.zip.sha256`
