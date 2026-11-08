@@ -82,6 +82,7 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ## Favorite Multimedia
 
+- [Favorite Multimedia v1.1.2](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.1.2) — tag: `v1.1.2` — assets: `Favorite-Multimedia-v1.1.2.zip`
 - [Favorite Multimedia v1.1.1](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.1.1-favorite-multimedia) — tag: `v1.1.1-favorite-multimedia` — assets: `Favorite-Multimedia-v1.1.1.zip`, `Favorite-Multimedia-v1.1.1.zip.sha256`
 - [Favorite Multimedia v1.1.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.1.0-favorite-multimedia) — tag: `v1.1.0-favorite-multimedia` — assets: `Favorite-Multimedia-v1.1.0.zip`, `Favorite-Multimedia-v1.1.0.zip.sha256`
 - [Favorite Multimedia v1.0.9](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.9-favorite-multimedia) — tag: `v1.0.9-favorite-multimedia` — assets: `favorite-multimedia-v1.0.9.zip`
@@ -137,4 +138,4 @@ This index groups published GitHub Releases by product so versions and downloada
 
 ---
 
-*Generated from the repository's published Releases API on 2026-10-24 (all API pages retrieved).*
+*Generated from the repository's published Releases API on 2026-11-08 (all API pages retrieved).*
