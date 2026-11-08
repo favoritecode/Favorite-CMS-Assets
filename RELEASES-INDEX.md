@@ -136,6 +136,10 @@ This index groups published GitHub Releases by product so versions and downloada
 
 - [Web Analyzer v3.0.0 — Advanced Server-Side Website Audit](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/web-analyzer-v3.0.0) — tag: `web-analyzer-v3.0.0` — assets: `Web-Analyzer-v3-Advanced-Server-Side-Import-Kit.zip`
 
+## Other / Needs classification
+
+- [Favorite App Store v1.0.0](https://github.com/favoritecode/Favorite-CMS-Assets/releases/tag/v1.0.0-favorite-app-store) — tag: `v1.0.0-favorite-app-store` — assets: `Favorite-App-Store-v1.0.0.zip`
+
 ---
 
 *Generated from the repository's published Releases API on 2026-11-08 (all API pages retrieved).*
